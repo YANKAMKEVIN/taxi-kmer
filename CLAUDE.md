@@ -20,18 +20,21 @@ Kevin est le **directeur du jeu** : il conçoit, Claude implémente. Toute déci
 
 | Sujet | Valeur |
 |---|---|
-| Moteur | Unity 6 LTS, pipeline URP (décision de Kevin, 2026-11-11) |
+| Moteur | Unity 6.3 LTS (**6000.3.28f1**), pipeline URP 17.3 (décision de Kevin, 2026-11-11) |
 | Langage | C# |
 | Qualité | trois niveaux (bas / moyen / haut) via les Quality Settings et les assets URP ; tout effet coûteux doit pouvoir se couper au niveau bas |
 | Tests | Unity Test Framework (EditMode pour la logique, PlayMode pour l'intégration) |
 | Éditeur | Unity tourne sur le Mac de Kevin ; une session cloud écrit le C# et les données mais ne peut ni ouvrir l'éditeur ni compiler un APK |
 
-Le reste (version exacte, package Android) se fixe à la tâche 1.1.
+Android : identifiant `com.yankamkevin.taxikmer`, Android 8 minimum (API 26), IL2CPP, ARM64, paysage. Niveaux de qualité : `Assets/Settings/Rendering/URP-{Bas,Moyen,Haut}.asset`, Moyen par défaut ; tout se régénère avec `ProjectSetup.Run`.
 
 ## Arborescence
 
 ```
 Assets/Scripts/Core/     logique pure C# (asmdef sans moteur Unity), testable hors Unity
+Assets/Editor/           outils d'éditeur (configuration du projet, build Android)
+Assets/Settings/         assets URP par niveau de qualité
+Assets/Scenes/           scènes (Boot = scène de démarrage provisoire)
 Assets/Tests/EditMode/   tests NUnit de la logique (Unity Test Framework et dotnet)
 Assets/Resources/Data/   fichiers de données JSON (lus par JsonUtility dans Unity)
 tools/dotnet/            projet dotnet qui compile Core + tests hors Unity
@@ -44,9 +47,15 @@ docs/tech/               état du projet, plans de jalons
 
 ```bash
 tools/test_core.sh                     # tests de la logique hors Unity (dotnet 8 + NUnit), aussi lancés par la CI
+U=/Applications/Unity/Hub/Editor/6000.3.28f1/Unity.app/Contents/MacOS/Unity
+$U -batchmode -nographics -projectPath . -runTests -testPlatform EditMode -testResults Logs/editmode.xml -logFile Logs/tests.log
+$U -batchmode -nographics -projectPath . -buildTarget Android -executeMethod TaxiKmer.EditorTools.BuildAndroid.Run -quit -logFile Logs/build.log   # → build/android/TaxiKmer.apk
+$U -batchmode -nographics -projectPath . -executeMethod TaxiKmer.EditorTools.ProjectSetup.Run -quit -logFile Logs/setup.log   # réapplique qualité, lecteur Android, scène Boot
 python3 -m unittest discover -s tools/osm -p "test_*.py"   # tests de l'import OSM
 python3 tools/osm/osm_roads.py fetch --bbox S,O,N,E -o build/osm/zone.osm.json   # téléchargement OSM (réseau requis)
 python3 tools/osm/osm_roads.py convert build/osm/zone.osm.json -o Assets/Resources/Data/roads_zone.json
 ```
+
+Le batch mode refuse un projet déjà ouvert dans l'éditeur : fermer Unity avant ces commandes.
 
 Le code de `Assets/Scripts/Core` reste compatible C# 9 (Unity) : pas de `record`, pas d'`init`, pas de bibliothèque absente d'Unity (ex. System.Text.Json, réservé aux tests dotnet de `tools/dotnet/`).

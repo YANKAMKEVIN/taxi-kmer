@@ -28,7 +28,7 @@ Les montants ont été validés par Kevin le 2026-11-11 ; le carburant reste une
 
 | Tâche | État |
 |---|---|
-| 1.1 Socle Unity | à faire (Mac de Kevin, Unity 6 LTS) |
+| 1.1 Socle Unity | **fait sauf essai sur téléphone** : Unity 6.3 LTS (6000.3.28f1) + Android, URP 17.3, qualité Bas / Moyen / Haut, scène Boot, 29 tests EditMode verts dans Unity, APK de 29 Mo construit (`build/android/TaxiKmer.apk`) ; reste à l'installer sur le téléphone de Kevin |
 | 1.2 Route OSM | outil d'import écrit et testé (`tools/osm/osm_roads.py`) ; téléchargement des données de Messassi → Étoudi à faire sur le Mac (OSM bloqué depuis le cloud) ; génération du maillage dans Unity à faire |
 | 1.3 Conduite | à faire (Unity) |
 | 1.4 Logique des courses | **faite** : places et corpulence, changement de place, prix, horloge, bilan, montée et descente, générateur de clients ; 33 tests |
@@ -36,7 +36,7 @@ Les montants ont été validés par Kevin le 2026-11-11 ; le carburant reste une
 | 1.6 HUD et bilan | logique du bilan faite ; écrans à faire (Unity) |
 | 1.7 Réglages de qualité | à faire (Unity) |
 
-Valeurs par défaut ajoutées : prix 300 (≤ 2 km), 400 (≤ 4 km), 500 (≤ 7 km), 600 (≤ 10 km), 800 au-delà ; carburant 840 FCFA/L, 8 L/100 km ; carrures 30 % minces, 50 % normaux, 20 % costauds ; le taxi remplit l'arrière avant l'avant ; un client déposé au mauvais arrêt reste à bord.
+Valeurs par défaut ajoutées : prix 300 (≤ 2 km), 400 (≤ 4 km), 500 (≤ 7 km), 600 (≤ 10 km), 800 au-delà ; carburant 840 FCFA/L, 8 L/100 km ; carrures 30 % minces, 50 % normaux, 20 % costauds ; le taxi remplit l'arrière avant l'avant ; un client déposé au mauvais arrêt reste à bord. Tâche 1.1 : qualité Bas (rendu 70 %, sans ombres, sans HDR), Moyen (85 %, ombres à 35 m), Haut (100 %, ombres douces à 70 m, MSAA 4×, HDR) ; Moyen par défaut ; paysage uniquement ; Android 8 minimum ; ARM64 seulement.
 
 ## Tâches
 
