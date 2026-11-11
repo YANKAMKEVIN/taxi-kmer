@@ -28,7 +28,7 @@ namespace TaxiKmer.Driving
         [Tooltip("Monde OSM : sert à placer le taxi au départ et à le remettre sur la route.")]
         public WorldBuilder world;
         [Tooltip("Distance de départ le long de l'itinéraire (m) ; 0 = dispensaire de Messassi.")]
-        public float startDistance = 8f;
+        public float startDistance = 0f;
         [Tooltip("Décalage vers la droite de l'axe de la route (m) : on roule à droite au Cameroun.")]
         public float laneOffset = 1.8f;
 

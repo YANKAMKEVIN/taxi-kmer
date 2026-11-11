@@ -34,6 +34,7 @@ namespace TaxiKmer.Driving
         private readonly Dictionary<RoadsideClient, Person> _people = new Dictionary<RoadsideClient, Person>();
         private readonly Dictionary<string, GameObject> _stopMarkers = new Dictionary<string, GameObject>();
         private readonly List<Text> _bubbles = new List<Text>();
+        private readonly List<Rect> _placed = new List<Rect>();
         private Text _status;
         private Text _toast;
         private float _toastUntil;
@@ -185,15 +186,25 @@ namespace TaxiKmer.Driving
                 _people.Remove(c);
             }
 
-            var bubble = 0;
+            var calling = new List<RoadsideClient>();
             foreach (var c in Street.Waiting)
             {
                 if (!_people.TryGetValue(c, out var person)) _people[c] = person = MakePerson(c);
                 person.AcceptedMark.SetActive(c.State == RoadsideState.Accepted);
-                if (c.Calling) ShowBubble(bubble++, person.Root.transform.position + Vector3.up * 2.4f,
+                if (c.Calling) calling.Add(c);
+            }
+            // Le plus proche d'abord : sa bulle reste à sa place, les suivantes montent si elles la chevauchent.
+            var taxiPos = taxi.transform.position;
+            calling.Sort((a, b) => (_people[a].Root.transform.position - taxiPos).sqrMagnitude
+                .CompareTo((_people[b].Root.transform.position - taxiPos).sqrMagnitude));
+            _placed.Clear();
+            for (var i = 0; i < calling.Count; i++)
+            {
+                var c = calling[i];
+                ShowBubble(i, _people[c].Root.transform.position + Vector3.up * 2.4f,
                     $"{ShortName(c.Client.DestinationStopId)}, {c.Client.ProposedFare} !");
             }
-            for (var i = bubble; i < _bubbles.Count; i++) _bubbles[i].enabled = false;
+            for (var i = calling.Count; i < _bubbles.Count; i++) _bubbles[i].enabled = false;
         }
 
         private Person MakePerson(RoadsideClient c)
@@ -309,10 +320,24 @@ namespace TaxiKmer.Driving
             bubble.enabled = screen.z > 0f;
             if (!bubble.enabled) return;
             var h = Screen.height;
-            bubble.fontSize = Mathf.RoundToInt(h * Mathf.Clamp(0.9f / screen.z, 0.03f, 0.06f));
-            bubble.rectTransform.sizeDelta = new Vector2(h * 0.6f, h * 0.1f);
-            bubble.rectTransform.anchoredPosition = new Vector2(screen.x, screen.y);
+            bubble.fontSize = Mathf.RoundToInt(h * Mathf.Clamp(0.7f / screen.z, 0.028f, 0.045f));
             bubble.text = text;
+            var size = new Vector2(bubble.preferredWidth + h * 0.02f, bubble.fontSize * 1.25f);
+            var pos = new Vector2(screen.x, screen.y);
+            for (var guard = 0; guard < 10; guard++)
+            {
+                var r = new Rect(pos.x - size.x / 2f, pos.y, size.x, size.y);
+                var overlap = false;
+                foreach (var p in _placed)
+                {
+                    if (!p.Overlaps(r)) continue;
+                    overlap = true;
+                    pos.y = p.yMax + 1f;
+                }
+                if (!overlap) { _placed.Add(r); break; }
+            }
+            bubble.rectTransform.sizeDelta = size;
+            bubble.rectTransform.anchoredPosition = pos;
         }
 
         private void UpdateHud()
