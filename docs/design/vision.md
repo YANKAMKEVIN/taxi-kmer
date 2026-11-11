@@ -35,9 +35,9 @@ Partir le matin → enchaîner les courses → gérer les imprévus (police, pan
 |---|---|---|
 | **Course partagée** (par défaut) | plusieurs, chacun sa destination | Le client annonce sa destination et son prix au bord de la route (« Bastos, 300 ! »). Le joueur accepte d'un coup de klaxon ou passe son chemin, et organise l'ordre des dépôts. |
 | **Dépôt** | une seule personne (ou son groupe) | Course privée, plus chère, sans autre passager. |
-| **Course via application** (type Yango) | seulement les passagers de la commande | Commande reçue sur le téléphone du chauffeur, prise en charge à une adresse, pas d'autre passager. |
+| **Course via application** (appli fictive, type Yango) | seulement les passagers de la commande | Commande reçue sur le téléphone du chauffeur, prise en charge à une adresse, pas d'autre passager. |
 
-Le nom de l'application dans le jeu est à décider (le vrai nom « Yango » ou une appli fictive).
+L'application est **fictive** (décision de Kevin, 2026-11-11) : aucune vraie marque dans le jeu. Son nom reste à choisir ; en attendant, on l'appelle « l'appli ».
 
 ### 4.2 Le versement [proposition]
 Tant qu'il conduit le taxi d'un autre, le joueur doit reverser chaque jour une somme fixe au propriétaire. S'il ne l'atteint pas, la relation avec le propriétaire se dégrade.
@@ -89,7 +89,7 @@ Un bout du tronçon en monde libre, un taxi, des courses partagées (prise, refu
 
 1. ~~Taxi partagé ou une course à la fois ?~~ → **Tranché** : trois types de course (voir 4.1).
 2. ~~Monde libre ou trajets guidés ?~~ → **Tranché** : monde libre.
-3. Application de VTC : le vrai nom « Yango » ou une appli fictive ?
+3. ~~Vraie marque ou appli fictive ?~~ → **Tranché** : appli fictive. Reste à choisir son nom (propositions : Allô Taxi, Kmer Ride, Mbolo).
 4. Style visuel : réaliste, stylisé ou low-poly ?
 5. Situation familiale : choisie au départ, ou qui évolue pendant la partie (mariage, enfants) ?
 6. Peut-on perdre (dettes, taxi saisi, permis retiré) ?
