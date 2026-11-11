@@ -76,8 +76,8 @@ Réaliste, chaleureux, avec de l'humour. Les injustices sont montrées sans ton 
 | Sujet | Valeur proposée |
 |---|---|
 | Style | **Réaliste** (décision de Kevin, 2026-11-11) : textures photographiques, lumière crédible, lieux reconnaissables. Réglages de qualité adaptables (bas / moyen / haut) selon le téléphone. |
-| Moteur | **À trancher** : Godot 4 (continuité avec Pokemake) ou Unity (plus éprouvé pour une ville réaliste sur mobile) |
-| Cible principale | Android ; gamme de téléphones visée à trancher |
+| Moteur | **Unity 6 LTS**, pipeline URP (décision de Kevin, 2026-11-11) |
+| Cible principale | Android, de l'entrée de gamme au haut de gamme, avec **trois réglages de qualité : bas / moyen / haut** (décision de Kevin, 2026-11-11). Le rendu réaliste complet est réservé au réglage haut. |
 | Cible secondaire | Web (démo), éventuellement iOS |
 | Vue | 3D, caméra derrière le taxi ; contrôles tactiles |
 | Données | courses, clients, dialogues, prix et charges dans des fichiers de données |
@@ -92,11 +92,12 @@ Un bout du tronçon en monde libre, un taxi, des courses partagées (prise, refu
 2. ~~Monde libre ou trajets guidés ?~~ → **Tranché** : monde libre.
 3. ~~Vraie marque ou appli fictive ?~~ → **Tranché** : appli fictive. Reste à choisir son nom (propositions : Allô Taxi, Kmer Ride, Mbolo).
 4. ~~Style visuel ?~~ → **Tranché** : réaliste (référence : GTA, Spider-Man ; on reconnaît les lieux).
-4bis. Téléphones visés : entrée de gamme, milieu de gamme ou haut de gamme ? (le réaliste coûte cher en performances)
-4ter. Moteur : Godot 4 ou Unity ? (voir §7)
-5. Situation familiale : choisie au départ, ou qui évolue pendant la partie (mariage, enfants) ?
-6. Peut-on perdre (dettes, taxi saisi, permis retiré) ?
-7. Langue : français seulement, ou aussi pidgin et camfranglais à l'écran ?
-8. Modèle économique : payant, gratuit avec publicité, ou gratuit ?
-9. Calendrier : en parallèle de Pokemake ou après ?
-10. Nom du dépôt : `taxi-kmer` ?
+5. ~~Téléphones visés ?~~ → **Tranché** : tous, avec réglages bas / moyen / haut.
+6. ~~Moteur ?~~ → **Tranché** : Unity.
+7. Photos des lieux : qui peut photographier le tronçon Messassi → Bastos à Yaoundé (façades, enseignes, carrefours, sol) ?
+8. Situation familiale : choisie au départ, ou qui évolue pendant la partie (mariage, enfants) ?
+9. Peut-on perdre (dettes, taxi saisi, permis retiré) ?
+10. Langue : français seulement, ou aussi pidgin et camfranglais à l'écran ?
+11. Modèle économique : payant, gratuit avec publicité, ou gratuit ?
+12. Calendrier : en parallèle de Pokemake ou après ?
+13. ~~Nom du dépôt ?~~ → **Tranché** : `taxi-kmer`.

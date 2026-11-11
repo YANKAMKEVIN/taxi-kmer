@@ -1,6 +1,6 @@
 # Taxi Kmer
 
-Jeu 3D sur la vie d'un taximan à Yaoundé (tronçon Messassi → Bastos au départ, puis extension, puis Douala). Cible principale : Android (y compris entrée de gamme) ; web en démo.
+Jeu 3D sur la vie d'un taximan à Yaoundé (tronçon Messassi → Bastos au départ, puis extension, puis Douala). Style **réaliste** (lieux reconnaissables). Cible principale : Android, de l'entrée au haut de gamme, avec réglages de qualité bas / moyen / haut ; web en démo.
 
 Kevin est le **directeur du jeu** : il conçoit, Claude implémente. Toute décision de game design non documentée → la lui poser, ne pas l'inventer.
 
@@ -18,4 +18,12 @@ Kevin est le **directeur du jeu** : il conçoit, Claude implémente. Toute déci
 
 ## Décisions techniques
 
-À fixer au démarrage du premier jalon (moteur proposé : Godot 4, voir `vision.md` §7).
+| Sujet | Valeur |
+|---|---|
+| Moteur | Unity 6 LTS, pipeline URP (décision de Kevin, 2026-11-11) |
+| Langage | C# |
+| Qualité | trois niveaux (bas / moyen / haut) via les Quality Settings et les assets URP ; tout effet coûteux doit pouvoir se couper au niveau bas |
+| Tests | Unity Test Framework (EditMode pour la logique, PlayMode pour l'intégration) |
+| Éditeur | Unity tourne sur le Mac de Kevin ; une session cloud écrit le C# et les données mais ne peut ni ouvrir l'éditeur ni compiler un APK |
+
+Le reste (version exacte, structure des dossiers, package Android) se fixe au démarrage du premier jalon.
