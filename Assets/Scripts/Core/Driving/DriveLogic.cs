@@ -10,6 +10,7 @@ namespace TaxiKmer.Core.Driving
         public bool Accelerate;
         public bool Brake;
         public bool Horn;
+        public bool Action;
 
         public static DriveInput operator |(DriveInput a, DriveInput b) => new DriveInput
         {
@@ -18,6 +19,7 @@ namespace TaxiKmer.Core.Driving
             Accelerate = a.Accelerate || b.Accelerate,
             Brake = a.Brake || b.Brake,
             Horn = a.Horn || b.Horn,
+            Action = a.Action || b.Action,
         };
 
         public void Press(DriveControl control)
@@ -29,6 +31,7 @@ namespace TaxiKmer.Core.Driving
                 case DriveControl.Accelerate: Accelerate = true; break;
                 case DriveControl.Brake: Brake = true; break;
                 case DriveControl.Horn: Horn = true; break;
+                case DriveControl.Action: Action = true; break;
             }
         }
     }

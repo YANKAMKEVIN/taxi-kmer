@@ -10,6 +10,8 @@ namespace TaxiKmer.Core.Driving
         Accelerate,
         Brake,
         Horn,
+        /// <summary>Bouton contextuel « Faire monter / Faire descendre », visible seulement quand une action est possible.</summary>
+        Action,
     }
 
     public enum ScreenCorner
@@ -18,6 +20,10 @@ namespace TaxiKmer.Core.Driving
         BottomRight,
         TopLeft,
         TopRight,
+        /// <summary>Centré horizontalement, en haut (side est ignoré).</summary>
+        TopCenter,
+        /// <summary>Centré horizontalement, en bas (side est ignoré).</summary>
+        BottomCenter,
     }
 
     /// <summary>
@@ -44,8 +50,9 @@ namespace TaxiKmer.Core.Driving
             var w = width * u;
             var h = height * u;
             var left = corner == ScreenCorner.BottomLeft || corner == ScreenCorner.TopLeft;
-            var bottom = corner == ScreenCorner.BottomLeft || corner == ScreenCorner.BottomRight;
-            var x = left ? side * u : screenWidth - side * u - w;
+            var center = corner == ScreenCorner.TopCenter || corner == ScreenCorner.BottomCenter;
+            var bottom = corner == ScreenCorner.BottomLeft || corner == ScreenCorner.BottomRight || corner == ScreenCorner.BottomCenter;
+            var x = center ? (screenWidth - w) / 2f : left ? side * u : screenWidth - side * u - w;
             var y = bottom ? edge * u : screenHeight - edge * u - h;
             return new PixelRect(x, y, w, h);
         }
@@ -65,18 +72,25 @@ namespace TaxiKmer.Core.Driving
 
     /// <summary>
     /// Disposition des commandes tactiles (décision de Kevin, jalon 1) : à gauche les flèches ← →,
-    /// à droite la grande pédale d'accélérateur et la pédale de frein / marche arrière, en haut à droite le klaxon.
+    /// à droite la grande pédale d'accélérateur et la pédale de frein / marche arrière, en haut à droite le klaxon ;
+    /// bouton contextuel (faire monter, faire descendre) en haut au centre.
     /// </summary>
     [Serializable]
     public class ControlLayout
     {
         public ControlZone[] zones = Array.Empty<ControlZone>();
 
-        /// <summary>Commande sous le point (pixels, origine en bas à gauche), ou None (glisser = tourner la caméra).</summary>
-        public DriveControl ControlAt(float px, float py, float screenWidth, float screenHeight)
+        /// <summary>
+        /// Commande sous le point (pixels, origine en bas à gauche), ou None (glisser = tourner la caméra).
+        /// Le bouton contextuel ne compte que s'il est affiché (<paramref name="actionVisible"/>).
+        /// </summary>
+        public DriveControl ControlAt(float px, float py, float screenWidth, float screenHeight, bool actionVisible = true)
         {
             foreach (var z in zones)
+            {
+                if (z.control == DriveControl.Action && !actionVisible) continue;
                 if (z.Resolve(screenWidth, screenHeight).Contains(px, py)) return z.control;
+            }
             return DriveControl.None;
         }
 
@@ -91,6 +105,7 @@ namespace TaxiKmer.Core.Driving
                     new ControlZone { control = DriveControl.Accelerate, corner = ScreenCorner.BottomRight, side = 0.04f, edge = 0.05f, width = 0.22f, height = 0.48f, label = "Accélérer" },
                     new ControlZone { control = DriveControl.Brake, corner = ScreenCorner.BottomRight, side = 0.30f, edge = 0.05f, width = 0.22f, height = 0.28f, label = "Frein\nArrière" },
                     new ControlZone { control = DriveControl.Horn, corner = ScreenCorner.TopRight, side = 0.04f, edge = 0.05f, width = 0.24f, height = 0.24f, label = "Klaxon" },
+                    new ControlZone { control = DriveControl.Action, corner = ScreenCorner.TopCenter, side = 0f, edge = 0.05f, width = 0.5f, height = 0.16f, label = "" },
                 },
             };
         }

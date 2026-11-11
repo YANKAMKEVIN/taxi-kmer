@@ -52,6 +52,13 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void Street_MatchesDefaults()
+        {
+            var d = Load<StreetConfig>("street.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new StreetConfig(), Opts), JsonSerializer.Serialize(d, Opts));
+        }
+
+        [Test]
         public void World_MessassiEtoudi_IsUsable()
         {
             var w = Load<TaxiKmer.Core.World.WorldData>("world_messassi_etoudi.json");

@@ -162,10 +162,18 @@ namespace TaxiKmer.Core.World
         /// <summary>Distance le long de la polyligne du point de la polyligne le plus proche de (x, z).</summary>
         public static float DistanceAlong(float[] xz, float[] cumulative, float x, float z)
         {
+            Project(xz, cumulative, x, z, out var along, out _);
+            return along;
+        }
+
+        /// <summary>Projette (x, z) sur la polyligne : distance le long de la polyligne et écart latéral (m).</summary>
+        public static void Project(float[] xz, float[] cumulative, float x, float z, out float along, out float offset)
+        {
             var n = cumulative.Length;
-            if (n < 2) return 0f;
+            along = 0f;
+            offset = 0f;
+            if (n < 2) return;
             var best = float.MaxValue;
-            var bestD = 0f;
             for (var i = 1; i < n; i++)
             {
                 float ax = xz[i * 2 - 2], az = xz[i * 2 - 1], bx = xz[i * 2], bz = xz[i * 2 + 1];
@@ -178,10 +186,10 @@ namespace TaxiKmer.Core.World
                 if (d2 < best)
                 {
                     best = d2;
-                    bestD = cumulative[i - 1] + (cumulative[i] - cumulative[i - 1]) * t;
+                    along = cumulative[i - 1] + (cumulative[i] - cumulative[i - 1]) * t;
                 }
             }
-            return bestD;
+            offset = (float)Math.Sqrt(best);
         }
 
         /// <summary>Point et direction à la distance d le long de la polyligne (bornée à ses extrémités).</summary>

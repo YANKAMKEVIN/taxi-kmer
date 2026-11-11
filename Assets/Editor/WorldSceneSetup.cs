@@ -10,7 +10,8 @@ namespace TaxiKmer.EditorTools
 {
     /// <summary>
     /// Scène « Monde » : monde OSM construit au lancement (tâche 1.2), taxi conduit par le joueur au départ du
-    /// dispensaire de Messassi, caméra derrière le taxi, commandes tactiles, crédit OSM (tâche 1.3).
+    /// dispensaire de Messassi, caméra derrière le taxi, commandes tactiles, crédit OSM (tâche 1.3), clients au bord
+    /// de la route (tâche 1.5).
     /// Menu « Taxi Kmer > Créer la scène Monde », ou :
     /// Unity -batchmode -projectPath . -executeMethod TaxiKmer.EditorTools.WorldSceneSetup.Run -quit
     /// </summary>
@@ -85,6 +86,14 @@ namespace TaxiKmer.EditorTools
             controls.taxi = taxi;
             controls.horn = horn;
             controls.chaseCamera = chase;
+
+            // Clients au bord de la route (tâche 1.5).
+            var street = new GameObject("Clients").AddComponent<StreetView>();
+            street.world = builder;
+            street.taxi = taxi;
+            street.controls = controls;
+            street.personMaterial = MakeMaterial("Client", Color.white, 0.2f);
+            street.markerMaterial = MakeMaterial("Repère destination", new Color(0.1f, 0.85f, 0.3f), 0.6f);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
