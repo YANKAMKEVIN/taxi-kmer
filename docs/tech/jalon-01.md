@@ -28,7 +28,7 @@ Les montants ont été validés par Kevin le 2026-11-11 ; le carburant reste une
 
 | Tâche | État |
 |---|---|
-| 1.1 Socle Unity | **fait sauf essai sur téléphone** : Unity 6.3 LTS (6000.3.28f1) + Android, URP 17.3, qualité Bas / Moyen / Haut, scène Boot, 29 tests EditMode verts dans Unity, APK de 29 Mo construit (`build/android/TaxiKmer.apk`) ; reste à l'installer sur le téléphone de Kevin |
+| 1.1 Socle Unity | **faite** : Unity 6.3 LTS (6000.3.28f1) + Android, URP 17.3, qualité Bas / Moyen / Haut, scène Boot, 29 tests EditMode verts dans Unity, APK de 29 Mo construit (`build/android/TaxiKmer.apk`) ; lancé sur le Galaxy S24 de Kevin (2026-11-11), sans erreur |
 | 1.2 Route OSM | outil d'import écrit et testé (`tools/osm/osm_roads.py`) ; téléchargement des données de Messassi → Étoudi à faire sur le Mac (OSM bloqué depuis le cloud) ; génération du maillage dans Unity à faire |
 | 1.3 Conduite | à faire (Unity) |
 | 1.4 Logique des courses | **faite** : places et corpulence, changement de place, prix, horloge, bilan, montée et descente, générateur de clients ; 33 tests |

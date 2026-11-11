@@ -8,9 +8,11 @@
 
 **Feuille de route** : `docs/design/roadmap.md` (jalons 2 à 11, proposition à valider par Kevin).
 
-**Jalon 1 en cours** : logique pure faite et testée (33 tests, `tools/test_core.sh`) ; outil d'import OSM écrit ; socle Unity fait (tâche 1.1) : projet URP, qualité Bas / Moyen / Haut, tests verts dans Unity, APK construit. Détail : `docs/tech/jalon-01.md` (Avancement).
+**Jalon 1 en cours** : logique pure faite et testée (33 tests, `tools/test_core.sh`) ; outil d'import OSM écrit ; socle Unity fait (tâche 1.1) : projet URP, qualité Bas / Moyen / Haut, tests verts dans Unity, APK lancé sur le S24 de Kevin. Détail : `docs/tech/jalon-01.md` (Avancement).
 
-**Prochaine étape** : installer l'APK sur le téléphone de Kevin (`adb install -r build/android/TaxiKmer.apk`, ou le rebuilder avec `BuildAndroid.Run`) pour clore la tâche 1.1 ; puis tâche 1.2 : téléchargement OSM de Messassi → Étoudi, devant le palais de la présidence, et route dans Unity.
+**Prochaine étape** : tâche 1.2 : téléchargement OSM de Messassi → Étoudi, devant le palais de la présidence, et route dans Unity.
+
+**Téléphone** : Galaxy S24 de Kevin joignable en débogage sans fil (`adb mdns services`, puis `adb install -r build/android/TaxiKmer.apk`).
 
 **Questions ouvertes** : `vision.md` §9, `roadmap.md` (par jalon).
 
