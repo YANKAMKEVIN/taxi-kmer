@@ -41,6 +41,8 @@
 ExportedObj/
 .consulo/
 *.csproj
+# sauf le projet dotnet des tests hors Unity
+!tools/dotnet/*.csproj
 *.unityproj
 *.sln
 *.slnx
