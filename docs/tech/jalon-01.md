@@ -12,15 +12,15 @@ Unity 6 LTS (URP), C# ; Android avec réglages bas / moyen / haut ; monde libre 
 
 | Sujet | Défaut |
 |---|---|
-| Portion du tronçon | ≈ 1,5 km de l'axe Messassi → Bastos, tracé issu d'OpenStreetMap |
-| Places passagers | 4 (taxi type berline) |
-| Durée d'une journée de jeu | 12 minutes réelles (6 h → 20 h) |
-| Prix d'une course partagée | 300 FCFA (jusqu'à 500 FCFA pour les longs trajets) |
-| Versement journalier | 10 000 FCFA |
+| Portion du tronçon | **Dispensaire de Messassi → Emana** (décision de Kevin, 2026-11-11), tracé issu d'OpenStreetMap |
+| Places passagers | **5** (décision de Kevin) : 3 derrière, 2 devant selon la corpulence |
+| Durée d'une journée de jeu | **10 minutes** réelles (6 h → 20 h) (décision de Kevin) |
+| Prix d'une course partagée | **proposé par le client selon la distance : 300 à 800 FCFA** (décision de Kevin) |
+| Versement journalier | **10 000 FCFA** (validé par Kevin) |
 | Carburant | jauge simple ; plein payé en fin de journée |
 | Caméra | derrière le taxi, réglable ; vue intérieure plus tard |
 
-Les montants sont des **valeurs provisoires** : Kevin les ajustera pour qu'elles collent à la réalité de Yaoundé.
+Les montants ont été validés par Kevin le 2026-11-11 ; le carburant reste une valeur par défaut.
 
 ## Tâches
 
@@ -50,7 +50,7 @@ Heure, argent du jour, passagers à bord et leurs destinations. Fin de journée 
 
 ### 1.7 Réglages de qualité
 Sélecteur bas / moyen / haut, avec un premier écart réel (ombres, distance d'affichage, résolution de rendu).
-- **Accepté si** : le réglage bas tient 30 images par seconde sur un téléphone d'entrée de gamme et le réglage haut 60 sur le S24.
+- **Accepté si** : le réglage moyen tient 30 images par seconde sur un téléphone de milieu de gamme récent, et le réglage haut 60 sur le S24.
 
 ## Validation
 
@@ -58,6 +58,6 @@ Une seule session sur téléphone avec Kevin à la fin du jalon : jouer une jour
 
 ## Questions pour Kevin (ne bloquent pas le début)
 
-1. Quelle portion précise du tronçon pour ce jalon (point de départ et d'arrivée) ?
+1. ~~Portion du tronçon ?~~ → **Tranché** : dispensaire de Messassi → Emana.
 2. Contrôles de conduite : volant à l'écran, flèches gauche / droite, ou inclinaison du téléphone ?
-3. As-tu un téléphone d'entrée de gamme pour les tests, en plus du S24 ?
+3. Les 2 places devant : est-ce que la corpulence des clients doit compter dans le jeu (un gros client prend plus de place), ou on garde simplement 5 places ?

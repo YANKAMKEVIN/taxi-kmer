@@ -78,7 +78,7 @@ Réaliste, chaleureux, avec de l'humour. Les injustices sont montrées sans ton 
 |---|---|
 | Style | **Réaliste** (décision de Kevin, 2026-11-11) : textures photographiques, lumière crédible, lieux reconnaissables. Réglages de qualité adaptables (bas / moyen / haut) selon le téléphone. |
 | Moteur | **Unity 6 LTS**, pipeline URP (décision de Kevin, 2026-11-11) |
-| Cible principale | Android, de l'entrée de gamme au haut de gamme, avec **trois réglages de qualité : bas / moyen / haut** (décision de Kevin, 2026-11-11). Le rendu réaliste complet est réservé au réglage haut. |
+| Cible principale | Android. La plupart des joueurs camerounais ont des téléphones courants, comparables à ceux d'Europe (précision de Kevin, 2026-11-11). **Trois réglages de qualité : bas / moyen / haut** ; le réglage bas sert la minorité d'appareils anciens ou modestes. |
 | Cible secondaire | Web (démo), éventuellement iOS |
 | Vue | 3D, caméra derrière le taxi ; contrôles tactiles |
 | Données | courses, clients, dialogues, prix et charges dans des fichiers de données |
@@ -93,7 +93,7 @@ Un bout du tronçon en monde libre, un taxi, des courses partagées (prise, refu
 2. ~~Monde libre ou trajets guidés ?~~ → **Tranché** : monde libre.
 3. ~~Vraie marque ou appli fictive ?~~ → **Tranché** : appli fictive. Reste à choisir son nom (propositions : Allô Taxi, Kmer Ride, Mbolo).
 4. ~~Style visuel ?~~ → **Tranché** : réaliste (référence : GTA, Spider-Man ; on reconnaît les lieux).
-5. ~~Téléphones visés ?~~ → **Tranché** : tous, avec réglages bas / moyen / haut.
+5. ~~Téléphones visés ?~~ → **Tranché** : surtout des téléphones courants (comme en Europe), réglages bas / moyen / haut pour les autres.
 6. ~~Moteur ?~~ → **Tranché** : Unity.
 7. ~~Photos des lieux ?~~ → **Tranché** : Street View et internet servent seulement de **référence** pour modéliser ; les textures du jeu viennent de sources libres (Poly Haven, ambientCG, Mapillary, Wikimedia Commons) ; Kevin fournira les photos prises sur place quand il le faudra.
 8. Situation familiale : choisie au départ, ou qui évolue pendant la partie (mariage, enfants) ?

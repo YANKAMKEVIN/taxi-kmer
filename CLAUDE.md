@@ -1,6 +1,6 @@
 # Taxi Kmer
 
-Jeu 3D sur la vie d'un taximan à Yaoundé (tronçon Messassi → Bastos au départ, puis extension, puis Douala). Style **réaliste** (lieux reconnaissables). Cible principale : Android, de l'entrée au haut de gamme, avec réglages de qualité bas / moyen / haut ; web en démo.
+Jeu 3D sur la vie d'un taximan à Yaoundé (tronçon Messassi → Bastos au départ, puis extension, puis Douala). Style **réaliste** (lieux reconnaissables). Cible principale : Android (surtout des téléphones courants, comparables à ceux d'Europe), avec réglages de qualité bas / moyen / haut ; web en démo.
 
 Kevin est le **directeur du jeu** : il conçoit, Claude implémente. Toute décision de game design non documentée → la lui poser, ne pas l'inventer.
 
