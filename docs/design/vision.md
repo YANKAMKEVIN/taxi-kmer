@@ -91,7 +91,7 @@ Réaliste, chaleureux, avec de l'humour. Les injustices sont montrées sans ton 
 
 ## 8. Premier jalon jouable [proposition]
 
-Un bout du tronçon en monde libre, un taxi, des courses partagées (prise, refus, dépôt, paiement), le versement et le bilan du jour. Pas encore de police, de famille ni de flotte.
+Le tronçon **dispensaire de Messassi → Étoudi, devant le palais de la présidence (Palais de l’Unité)** en monde libre (décision de Kevin, 2026-11-11, remplace l’arrivée initiale à Émana), un taxi, des courses partagées (prise, refus, dépôt, paiement), le versement et le bilan du jour. Pas encore de police, de famille ni de flotte.
 
 ## 9. Questions ouvertes (à trancher par Kevin)
 
@@ -108,3 +108,7 @@ Un bout du tronçon en monde libre, un taxi, des courses partagées (prise, refu
 11. Modèle économique : payant, gratuit avec publicité, ou gratuit ?
 12. Calendrier : en parallèle de Pokemake ou après ?
 13. ~~Nom du dépôt ?~~ → **Tranché** : `taxi-kmer`.
+
+### Précision du premier jalon — 2026-11-11
+
+Repères photo demandés par Kevin : Carrefour / Marché Messassi, Borne Fontaine, Pont Émana, Émana et Étoudi devant le palais de la présidence. Le tracé et l’ordre exact des repères sont à recouper sur la carte. Bastos reste prévu pour une extension ultérieure.
