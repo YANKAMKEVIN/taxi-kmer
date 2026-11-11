@@ -13,12 +13,14 @@ Unity 6 LTS (URP), C# ; Android avec réglages bas / moyen / haut ; monde libre 
 | Sujet | Défaut |
 |---|---|
 | Portion du tronçon | **Dispensaire de Messassi → Emana** (décision de Kevin, 2026-11-11), tracé issu d'OpenStreetMap |
-| Places passagers | **5** (décision de Kevin) : 3 derrière, 2 devant selon la corpulence |
+| Places passagers | **5** (décision de Kevin) : 3 derrière, 2 devant **selon la corpulence** (voir ci-dessous) |
+| Corpulence (décision de Kevin : elle compte) | chaque client a une largeur : mince = 2, normal = 3, costaud = 4. Banquette avant = 6, arrière = 9. Exemples : costaud + mince devant ✓, costaud + normal devant ✗, trois normaux derrière ✓, deux costauds + un mince derrière ✗ |
 | Durée d'une journée de jeu | **10 minutes** réelles (6 h → 20 h) (décision de Kevin) |
 | Prix d'une course partagée | **proposé par le client selon la distance : 300 à 800 FCFA** (décision de Kevin) |
 | Versement journalier | **10 000 FCFA** (validé par Kevin) |
 | Carburant | jauge simple ; plein payé en fin de journée |
-| Caméra | derrière le taxi, réglable ; vue intérieure plus tard |
+| Caméra | derrière le taxi, réglable en glissant le doigt ; vue intérieure plus tard |
+| Commandes (décision de Kevin : flèches, pas d'inclinaison) | **à gauche** : flèches ← → pour tourner ; **à droite** : pédale d'accélérateur (grande) et pédale de frein / marche arrière (maintenue à l'arrêt) ; **en haut à droite** : klaxon (grand, c'est le geste clé pour accepter un client) ; **bouton contextuel** « Arrêt / faire monter / faire descendre » qui apparaît près d'un client ou d'une destination. Inclinaison du téléphone : éventuel second mode, plus tard |
 
 Les montants ont été validés par Kevin le 2026-11-11 ; le carburant reste une valeur par défaut.
 
@@ -37,8 +39,8 @@ Physique de voiture arcade-réaliste, contrôles tactiles (volant ou flèches, a
 - **Accepté si** : on conduit confortablement d'un bout à l'autre de la portion sur le S24.
 
 ### 1.4 Logique des courses (sans scène, testée)
-Modèle de données : client (point de prise, destination, prix), taxi (places, passagers à bord), journée (heure, recettes). Règles : accepter ou refuser, prise en charge, dépose, paiement.
-- **Accepté si** : les tests EditMode couvrent l'acceptation, la capacité pleine, la dépose au bon endroit et le paiement.
+Modèle de données : client (point de prise, destination, prix, corpulence), taxi (banquettes avant et arrière, passagers à bord), journée (heure, recettes). Règles : accepter ou refuser, placement selon la corpulence, prise en charge, dépose, paiement.
+- **Accepté si** : les tests EditMode couvrent l'acceptation, le placement selon la corpulence (avant et arrière), la dépose au bon endroit et le paiement.
 
 ### 1.5 Clients dans le monde
 Clients au bord de la route qui annoncent leur destination et leur prix ; on klaxonne pour accepter ; arrêt pour qu'ils montent ; marqueurs de destination ; dépose.
@@ -59,5 +61,6 @@ Une seule session sur téléphone avec Kevin à la fin du jalon : jouer une jour
 ## Questions pour Kevin (ne bloquent pas le début)
 
 1. ~~Portion du tronçon ?~~ → **Tranché** : dispensaire de Messassi → Emana.
-2. Contrôles de conduite : volant à l'écran, flèches gauche / droite, ou inclinaison du téléphone ?
-3. Les 2 places devant : est-ce que la corpulence des clients doit compter dans le jeu (un gros client prend plus de place), ou on garde simplement 5 places ?
+2. ~~Contrôles de conduite ?~~ → **Tranché** : flèches (schéma proposé ci-dessus) ; inclinaison en second mode éventuel.
+3. ~~Corpulence ?~~ → **Tranché** : elle compte (largeurs ci-dessus, valeurs par défaut).
+4. Quand le client ne rentre pas (banquette trop pleine) : il refuse de monter, ou le joueur peut demander à un passager de changer de place ?

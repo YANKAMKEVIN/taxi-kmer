@@ -39,6 +39,12 @@ Partir le matin → enchaîner les courses → gérer les imprévus (police, pan
 
 L'application est **fictive** (décision de Kevin, 2026-11-11) : aucune vraie marque dans le jeu. Son nom reste à choisir ; en attendant, on l'appelle « l'appli ».
 
+### 4.1 bis Places et corpulence (décision de Kevin, 2026-11-11)
+Le taxi prend 5 passagers : 3 derrière et 2 devant. La corpulence compte : à côté d'un client très costaud à l'avant, on ne peut mettre qu'un client mince. Le joueur doit donc choisir ses clients en fonction de la place restante.
+
+### 4.1 ter Interactions entre clients (décision de Kevin, 2026-11-11)
+Les passagers interagissent entre eux pendant le trajet (discussions, disputes, plaintes sur la place, sur le prix, sur le détour…). Inspiration : les nombreuses scènes de taxi camerounais sur internet ; les dialogues du jeu sont écrits pour le jeu, jamais recopiés. Prévu après le jalon 1.
+
 ### 4.2 Le versement [proposition]
 Tant qu'il conduit le taxi d'un autre, le joueur doit reverser chaque jour une somme fixe au propriétaire. S'il ne l'atteint pas, la relation avec le propriétaire se dégrade.
 
