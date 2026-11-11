@@ -1,0 +1,38 @@
+{
+    "_note": "Généré par tools/osm/osm_route.py : distances mesurées le long de l'itinéraire OSM.",
+    "stops": [
+        {
+            "id": "dispensaire-messassi",
+            "name": "Dispensaire de Messassi",
+            "distanceAlongRouteMeters": 0
+        },
+        {
+            "id": "marche-messassi",
+            "name": "Carrefour / marché de Messassi",
+            "distanceAlongRouteMeters": 631
+        },
+        {
+            "id": "pont-emana",
+            "name": "Pont d'Emana",
+            "distanceAlongRouteMeters": 1567
+        },
+        {
+            "id": "emana",
+            "name": "Emana",
+            "distanceAlongRouteMeters": 2154
+        },
+        {
+            "id": "borne-fontaine",
+            "name": "Borne Fontaine",
+            "distanceAlongRouteMeters": 2948
+        },
+        {
+            "id": "etoudi",
+            "name": "Étoudi (devant le palais de la présidence)",
+            "distanceAlongRouteMeters": 6132
+        }
+    ],
+    "minceWeight": 30,
+    "normalWeight": 50,
+    "costaudWeight": 20
+}

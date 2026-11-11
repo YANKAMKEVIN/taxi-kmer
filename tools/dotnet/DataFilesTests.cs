@@ -43,6 +43,25 @@ namespace TaxiKmer.Core.DotnetTests
             var d = Load<DayConfig>("day.json");
             Assert.AreEqual(JsonSerializer.Serialize(new DayConfig(), Opts), JsonSerializer.Serialize(d, Opts));
         }
+
+        [Test]
+        public void World_MessassiEtoudi_IsUsable()
+        {
+            var w = Load<TaxiKmer.Core.World.WorldData>("world_messassi_etoudi.json");
+            var stops = Load<StopsConfig>("stops_messassi_etoudi.json");
+            StringAssert.Contains("OpenStreetMap", w.attribution);
+            Assert.Greater(w.roads.Length, 50);
+            Assert.Greater(w.buildings.Length, 100);
+            Assert.GreaterOrEqual(w.route.xz.Length, 4);
+            Assert.AreEqual(0, w.route.xz.Length % 2);
+            foreach (var r in w.roads) Assert.AreEqual(0, r.xz.Length % 2, $"route {r.id}");
+            foreach (var b in w.buildings) Assert.GreaterOrEqual(b.xz.Length, 6, $"bâtiment {b.id}");
+
+            var cum = TaxiKmer.Core.World.WorldGeometry.CumulativeLengths(w.route.xz);
+            Assert.AreEqual(w.route.lengthMeters, cum[cum.Length - 1], 2f);
+            Assert.AreEqual(w.route.lengthMeters, stops.stops[stops.stops.Length - 1].distanceAlongRouteMeters, 2f,
+                "Le dernier lieu est au bout de l'itinéraire.");
+        }
     }
 }
 
@@ -51,16 +70,16 @@ namespace TaxiKmer.Core.DotnetTests
     public class StopsDataTests
     {
         [Test]
-        public void MessassiEmanaStops_AreOrderedAndUsable()
+        public void MessassiEtoudiStops_AreOrderedAndUsable()
         {
-            var path = Path.Combine(TestContext.CurrentContext.TestDirectory, "Data", "stops_messassi_emana.json");
+            var path = Path.Combine(TestContext.CurrentContext.TestDirectory, "Data", "stops_messassi_etoudi.json");
             var cfg = JsonSerializer.Deserialize<StopsConfig>(File.ReadAllText(path), new JsonSerializerOptions { IncludeFields = true });
             Assert.GreaterOrEqual(cfg.stops.Length, 2);
             Assert.AreEqual("dispensaire-messassi", cfg.stops[0].id);
-            Assert.AreEqual("emana", cfg.stops[cfg.stops.Length - 1].id);
+            Assert.AreEqual("etoudi", cfg.stops[cfg.stops.Length - 1].id);
             for (var i = 1; i < cfg.stops.Length; i++)
                 Assert.Greater(cfg.stops[i].distanceAlongRouteMeters, cfg.stops[i - 1].distanceAlongRouteMeters);
-            Assert.DoesNotThrow(() => new ClientFactory(cfg, FareConfig.Default(), 0).CreateAt("emana"));
+            Assert.DoesNotThrow(() => new ClientFactory(cfg, FareConfig.Default(), 0).CreateAt("etoudi"));
         }
     }
 }

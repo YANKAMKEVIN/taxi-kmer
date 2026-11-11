@@ -29,14 +29,14 @@ Les montants ont été validés par Kevin le 2026-11-11 ; le carburant reste une
 | Tâche | État |
 |---|---|
 | 1.1 Socle Unity | **faite** : Unity 6.3 LTS (6000.3.28f1) + Android, URP 17.3, qualité Bas / Moyen / Haut, scène Boot, 29 tests EditMode verts dans Unity, APK de 29 Mo construit (`build/android/TaxiKmer.apk`) ; lancé sur le Galaxy S24 de Kevin (2026-11-11), sans erreur |
-| 1.2 Route OSM | outil d'import écrit et testé (`tools/osm/osm_roads.py`) ; téléchargement des données de Messassi → Étoudi à faire sur le Mac (OSM bloqué depuis le cloud) ; génération du maillage dans Unity à faire |
+| 1.2 Route OSM | **faite sauf essai sur téléphone** : données OSM téléchargées, itinéraire de 6,1 km calculé (`tools/osm/osm_route.py`), monde découpé dans un couloir de 250 m (289 routes, 4 542 bâtiments, `world_messassi_etoudi.json`), construit au lancement par `WorldBuilder` (scène `Monde`, 165 blocs de maillage) ; caméra provisoire qui parcourt l'itinéraire ; crédit OSM à l'écran ; captures de contrôle (`WorldSnapshots`) ; APK construit, pas encore installé (téléphone hors ligne) |
 | 1.3 Conduite | à faire (Unity) |
 | 1.4 Logique des courses | **faite** : places et corpulence, changement de place, prix, horloge, bilan, montée et descente, générateur de clients ; 33 tests |
-| 1.5 Clients dans le monde | logique faite (générateur) ; lieux de clients nommés par Kevin dans `stops_messassi_emana.json` (dispensaire de Messassi, carrefour / marché de Messassi, Borne Fontaine, pont d'Emana, Emana, Étoudi (devant le palais de la présidence) ; distances provisoires en attendant l'OSM) ; présentation Unity à faire |
+| 1.5 Clients dans le monde | logique faite (générateur) ; lieux de clients dans `stops_messassi_etoudi.json`, distances mesurées sur l'itinéraire OSM : dispensaire de Messassi 0 m, carrefour / marché de Messassi 631 m, pont d'Emana 1 567 m, Emana 2 154 m, Borne Fontaine 2 948 m, Étoudi devant le palais 6 132 m ; présentation Unity à faire |
 | 1.6 HUD et bilan | logique du bilan faite ; écrans à faire (Unity) |
 | 1.7 Réglages de qualité | à faire (Unity) |
 
-Valeurs par défaut ajoutées : prix 300 (≤ 2 km), 400 (≤ 4 km), 500 (≤ 7 km), 600 (≤ 10 km), 800 au-delà ; carburant 840 FCFA/L, 8 L/100 km ; carrures 30 % minces, 50 % normaux, 20 % costauds ; le taxi remplit l'arrière avant l'avant ; un client déposé au mauvais arrêt reste à bord. Tâche 1.1 : qualité Bas (rendu 70 %, sans ombres, sans HDR), Moyen (85 %, ombres à 35 m), Haut (100 %, ombres douces à 70 m, MSAA 4×, HDR) ; Moyen par défaut ; paysage uniquement ; Android 8 minimum ; ARM64 seulement.
+Valeurs par défaut ajoutées : prix 300 (≤ 2 km), 400 (≤ 4 km), 500 (≤ 7 km), 600 (≤ 10 km), 800 au-delà ; carburant 840 FCFA/L, 8 L/100 km ; carrures 30 % minces, 50 % normaux, 20 % costauds ; le taxi remplit l'arrière avant l'avant ; un client déposé au mauvais arrêt reste à bord. Tâche 1.1 : qualité Bas (rendu 70 %, sans ombres, sans HDR), Moyen (85 %, ombres à 35 m), Haut (100 %, ombres douces à 70 m, MSAA 4×, HDR) ; Moyen par défaut ; paysage uniquement ; Android 8 minimum ; ARM64 seulement. Tâche 1.2 : monde **plat** (pas de relief) ; couloir de 250 m de part et d'autre de l'itinéraire ; itinéraire calculé en préférant les grands axes, lieux raccrochés au grand axe le plus proche ; largeurs OSM gardées seulement entre 2 et 25 m (sinon voies × 3,25 m) ; bâtiments de 3 m par étage (1 étage si OSM ne dit rien) ; couleurs provisoires (asphalte gris, bâtiments gris clair, sol latérite) ; brouillard de 150 à 600 m ; caméra provisoire à 40 km/h en allers-retours.
 
 ## Tâches
 
@@ -84,4 +84,9 @@ Une seule session sur téléphone avec Kevin à la fin du jalon : jouer une jour
 
 Le premier jalon se termine désormais à **Étoudi, devant le palais de la présidence (Palais de l’Unité)**, au lieu d’Émana. Les repères à documenter sont Carrefour / Marché Messassi, Borne Fontaine, Pont Émana, Émana et l’arrivée à Étoudi. L’ordre géographique et le tracé exact doivent être recoupés avec la carte et Kevin ; les positions des photos d’une fiche Maps ne sont pas automatiquement celles du repère.
 
-À réaliser : étendre les données de lieux de clients et la couverture OSM jusqu’à Étoudi. Le fichier `stops_messassi_emana.json` existant n’a pas encore été modifié pour cette extension. Bastos reste une extension ultérieure.
+Réalisé le 2026-11-11 (tâche 1.2) : lieux et couverture OSM étendus jusqu'à Étoudi ; `stops_messassi_emana.json` remplacé par `stops_messassi_etoudi.json`. Coordonnées des lieux dans `tools/osm/landmarks_messassi_etoudi.json`. Bastos reste une extension ultérieure.
+
+**À relire par Kevin** (choix faits par défaut) :
+- « Borne Fontaine » = le **Carrefour Bonne Fontaine** d'OSM. Il est **au sud d'Emana** : l'ordre sur la route est donc dispensaire → carrefour Messassi → pont d'Emana → Emana → Bonne Fontaine → Étoudi (et non Borne Fontaine avant le pont).
+- Dispensaire de Messassi = le **Centre Médical d'Arrondissement Yaoundé I Olembe** (seul centre de santé au nord du carrefour sur OSM), à 630 m au nord-est du carrefour.
+- Arrivée : l'itinéraire quitte la N1 au carrefour d'Étoudi et prend la rue Charles Bindzi vers l'ouest jusqu'au palais (3,2 km depuis Bonne Fontaine).

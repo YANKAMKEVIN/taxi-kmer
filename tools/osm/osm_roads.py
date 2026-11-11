@@ -7,11 +7,15 @@ Deux étapes :
             prêtes à être lues par Unity.
 
 Exemples :
-  python3 tools/osm/osm_roads.py fetch --bbox 3.88,11.49,3.93,11.53 -o build/osm/messassi_emana.osm.json
-  python3 tools/osm/osm_roads.py convert build/osm/messassi_emana.osm.json -o Assets/Resources/Data/roads_messassi_emana.json
+  python3 tools/osm/osm_roads.py fetch --bbox 3.905,11.505,3.952,11.535 -o build/osm/messassi_etoudi.osm.json
+  python3 tools/osm/osm_roads.py convert build/osm/messassi_etoudi.osm.json -o build/osm/roads_full.json
+  puis tools/osm/osm_route.py (itinéraire, lieux, couloir).
+
+Sur macOS, le Python de Xcode échoue en HTTPS avec Overpass (LibreSSL) : télécharger avec curl
+(voir CLAUDE.md) ou un Python récent.
 
 Données © contributeurs OpenStreetMap, licence ODbL : le crédit doit apparaître dans le jeu.
-La bbox par défaut est approximative : à ajuster sur la carte (sud, ouest, nord, est).
+Bbox du jalon 1 (Messassi → Étoudi) : 3.905,11.505,3.952,11.535 (sud, ouest, nord, est).
 """
 from __future__ import annotations
 
@@ -69,6 +73,22 @@ def _lanes(tags: dict) -> int:
         return HIGHWAY_TYPES.get(tags.get("highway", ""), 2)
 
 
+MIN_WIDTH_M, MAX_WIDTH_M = 2.0, 25.0
+
+
+def _width(tags: dict, lanes: int) -> float:
+    """Largeur du tag OSM si elle est plausible (« 7 », « 7 m », « 7.5 »), sinon déduite des voies.
+    Certaines saisies OSM sont fausses (ex. 1471 m sur une rue d'Étoudi)."""
+    raw = str(tags.get("width", "")).replace(",", ".").replace("m", "").strip()
+    try:
+        w = float(raw)
+        if MIN_WIDTH_M <= w <= MAX_WIDTH_M:
+            return round(w, 2)
+    except ValueError:
+        pass
+    return round(lanes * LANE_WIDTH_M, 2)
+
+
 def convert(osm: dict) -> dict:
     nodes = {el["id"]: (el["lat"], el["lon"]) for el in osm.get("elements", []) if el.get("type") == "node"}
     ways = [el for el in osm.get("elements", []) if el.get("type") == "way"]
@@ -94,7 +114,7 @@ def convert(osm: dict) -> dict:
                 "name": tags.get("name", ""),
                 "highway": tags["highway"],
                 "lanes": lanes,
-                "width": round(float(tags.get("width", lanes * LANE_WIDTH_M)), 2),
+                "width": _width(tags, lanes),
                 "oneway": tags.get("oneway") in ("yes", "1", "true"),
                 "nodes": refs,
                 "points": pts,

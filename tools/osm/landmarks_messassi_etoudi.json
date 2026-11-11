@@ -1,0 +1,11 @@
+{
+    "_note": "Lieux à clients du jalon 1, dans l'ordre du trajet. Coordonnées tirées d'OpenStreetMap (Nominatim / Overpass, 2026-11-11). Ordre géographique : Bonne Fontaine est au sud d'Emana. À relire par Kevin.",
+    "landmarks": [
+        { "id": "dispensaire-messassi", "name": "Dispensaire de Messassi", "lat": 3.94638, "lon": 11.52211, "osm": "Centre Médical d'Arrondissement Yaoundé I Olembe (à confirmer)" },
+        { "id": "marche-messassi", "name": "Carrefour / marché de Messassi", "lat": 3.94194, "lon": 11.51846, "osm": "Carrefour Messassi" },
+        { "id": "pont-emana", "name": "Pont d'Emana", "lat": 3.93572, "lon": 11.51982, "osm": "Emana Pont" },
+        { "id": "emana", "name": "Emana", "lat": 3.92951, "lon": 11.52013, "osm": "Quifeutou Emana (centre d'Emana sur la grande route)" },
+        { "id": "borne-fontaine", "name": "Borne Fontaine", "lat": 3.92285, "lon": 11.51904, "osm": "Carrefour Bonne Fontaine" },
+        { "id": "etoudi", "name": "Étoudi (devant le palais de la présidence)", "lat": 3.91152, "lon": 11.51454, "osm": "Palais de l'Unité ; point de route le plus proche" }
+    ]
+}

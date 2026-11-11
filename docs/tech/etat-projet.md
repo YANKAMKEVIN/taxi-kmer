@@ -8,12 +8,12 @@
 
 **Feuille de route** : `docs/design/roadmap.md` (jalons 2 à 11, proposition à valider par Kevin).
 
-**Jalon 1 en cours** : logique pure faite et testée (33 tests, `tools/test_core.sh`) ; outil d'import OSM écrit ; socle Unity fait (tâche 1.1) : projet URP, qualité Bas / Moyen / Haut, tests verts dans Unity, APK lancé sur le S24 de Kevin. Détail : `docs/tech/jalon-01.md` (Avancement).
+**Jalon 1 en cours** : logique pure faite et testée (33 tests, `tools/test_core.sh`) ; outil d'import OSM écrit ; socle Unity fait (tâche 1.1) : projet URP, qualité Bas / Moyen / Haut, tests verts dans Unity, APK lancé sur le S24 de Kevin ; monde OSM Messassi → Étoudi construit dans Unity (tâche 1.2, essai sur téléphone en attente). Détail : `docs/tech/jalon-01.md` (Avancement).
 
-**Prochaine étape** : tâche 1.2 : téléchargement OSM de Messassi → Étoudi, devant le palais de la présidence, et route dans Unity.
+**Prochaine étape** : installer l'APK de la tâche 1.2 quand le téléphone est joignable ; tâche 1.3 (conduite du taxi sur ce monde).
 
 **Téléphone** : Galaxy S24 de Kevin joignable en débogage sans fil (`adb mdns services`, puis `adb install -r build/android/TaxiKmer.apk`).
 
 **Questions ouvertes** : `vision.md` §9, `roadmap.md` (par jalon).
 
-**Mise à jour Kevin (2026-11-11)** : arrivée du jalon 1 déplacée d’Émana à Étoudi devant le palais ; recherche photo ciblée sur les repères du trajet. Extension du JSON de lieux et du tracé OSM encore à réaliser ; aucune distance supplémentaire validée.
+**Mise à jour Kevin (2026-11-11)** : arrivée du jalon 1 déplacée d’Émana à Étoudi devant le palais ; recherche photo ciblée sur les repères du trajet. Lieux et tracé OSM étendus le jour même (tâche 1.2) ; distances mesurées sur la carte, ordre et dispensaire à relire par Kevin (`jalon-01.md`, « À relire par Kevin »).

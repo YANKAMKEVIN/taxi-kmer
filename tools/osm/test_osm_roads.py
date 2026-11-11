@@ -32,6 +32,11 @@ class ConvertTests(unittest.TestCase):
         self.assertTrue(side["oneway"])
         self.assertEqual(side["name"], "")
 
+    def test_width_tag_sanity(self):
+        self.assertEqual(osm_roads._width({"width": "7 m"}, 2), 7.0)
+        self.assertEqual(osm_roads._width({"width": "1471.06"}, 2), 6.5)
+        self.assertEqual(osm_roads._width({"width": "abc"}, 1), 3.25)
+
     def test_intersections(self):
         self.assertEqual([i["node"] for i in self.result["intersections"]], [2])
 

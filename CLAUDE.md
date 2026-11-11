@@ -31,7 +31,8 @@ Android : identifiant `com.yankamkevin.taxikmer`, Android 8 minimum (API 26), IL
 ## Arborescence
 
 ```
-Assets/Scripts/Core/     logique pure C# (asmdef sans moteur Unity), testable hors Unity
+Assets/Scripts/Core/     logique pure C# (asmdef sans moteur Unity), testable hors Unity ; Core/World = géométrie du monde
+Assets/Scripts/World/    construction du monde OSM dans Unity (WorldBuilder), caméra provisoire, crédit OSM
 Assets/Editor/           outils d'éditeur (configuration du projet, build Android)
 Assets/Settings/         assets URP par niveau de qualité
 Assets/Scenes/           scènes (Boot = scène de démarrage provisoire)
@@ -52,8 +53,12 @@ $U -batchmode -nographics -projectPath . -runTests -testPlatform EditMode -testR
 $U -batchmode -nographics -projectPath . -buildTarget Android -executeMethod TaxiKmer.EditorTools.BuildAndroid.Run -quit -logFile Logs/build.log   # → build/android/TaxiKmer.apk
 $U -batchmode -nographics -projectPath . -executeMethod TaxiKmer.EditorTools.ProjectSetup.Run -quit -logFile Logs/setup.log   # réapplique qualité, lecteur Android, scène Boot
 python3 -m unittest discover -s tools/osm -p "test_*.py"   # tests de l'import OSM
-python3 tools/osm/osm_roads.py fetch --bbox S,O,N,E -o build/osm/zone.osm.json   # téléchargement OSM (réseau requis)
-python3 tools/osm/osm_roads.py convert build/osm/zone.osm.json -o Assets/Resources/Data/roads_zone.json
+# Monde OSM du jalon 1 (le Python de Xcode échoue en HTTPS avec Overpass : téléchargement par curl)
+Q=$(python3 -c "import sys;sys.path.insert(0,'tools/osm');import osm_roads;print(osm_roads.overpass_query((3.905,11.505,3.952,11.535)))")
+curl -s -f -A taxi-kmer-osm-import --data-urlencode "data=$Q" https://overpass-api.de/api/interpreter -o build/osm/messassi_etoudi.osm.json
+python3 tools/osm/osm_roads.py convert build/osm/messassi_etoudi.osm.json -o build/osm/roads_full.json
+python3 tools/osm/osm_route.py build/osm/roads_full.json tools/osm/landmarks_messassi_etoudi.json --stops Assets/Resources/Data/stops_messassi_etoudi.json --world Assets/Resources/Data/world_messassi_etoudi.json --corridor 250
+$U -batchmode -projectPath . -executeMethod TaxiKmer.EditorTools.WorldSnapshots.Run -quit -logFile Logs/snap.log   # captures dans build/snapshots (sans -nographics)
 ```
 
 Le batch mode refuse un projet déjà ouvert dans l'éditeur : fermer Unity avant ces commandes.
