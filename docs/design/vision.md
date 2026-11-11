@@ -64,7 +64,8 @@ Chauffeur salarié → propriétaire d'un taxi → plusieurs taxis avec des chau
   - **Routes** : tracé issu d'OpenStreetMap (licence ODbL, à créditer).
   - **Bâtiments ordinaires** : générés à partir des emprises OSM, puis habillés.
   - **Lieux emblématiques** : modélisés à la main.
-  - **Interdit** : les données 3D de type Google (licence incompatible).
+  - **Interdit dans le jeu** : données 3D Google, images Maps / Street View et photos d'internet sans licence libre (référence visuelle seulement).
+  - **Textures** : sources libres d'abord, puis photos prises sur place, fournies par Kevin.
 - **Extensions** : d'autres quartiers de Yaoundé, puis Douala.
 
 ## 6. Ton
@@ -94,7 +95,7 @@ Un bout du tronçon en monde libre, un taxi, des courses partagées (prise, refu
 4. ~~Style visuel ?~~ → **Tranché** : réaliste (référence : GTA, Spider-Man ; on reconnaît les lieux).
 5. ~~Téléphones visés ?~~ → **Tranché** : tous, avec réglages bas / moyen / haut.
 6. ~~Moteur ?~~ → **Tranché** : Unity.
-7. Photos des lieux : qui peut photographier le tronçon Messassi → Bastos à Yaoundé (façades, enseignes, carrefours, sol) ?
+7. ~~Photos des lieux ?~~ → **Tranché** : Street View et internet servent seulement de **référence** pour modéliser ; les textures du jeu viennent de sources libres (Poly Haven, ambientCG, Mapillary, Wikimedia Commons) ; Kevin fournira les photos prises sur place quand il le faudra.
 8. Situation familiale : choisie au départ, ou qui évolue pendant la partie (mariage, enfants) ?
 9. Peut-on perdre (dettes, taxi saisi, permis retiré) ?
 10. Langue : français seulement, ou aussi pidgin et camfranglais à l'écran ?
