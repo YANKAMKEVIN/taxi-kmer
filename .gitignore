@@ -146,3 +146,6 @@ build/
 # dotnet (tests hors Unity)
 tools/dotnet/bin/
 tools/dotnet/obj/
+
+# Python
+__pycache__/

@@ -1,6 +1,6 @@
 # État du projet — Taxi Kmer
 
-**Phase** : conception terminée pour le jalon 1 ; plan technique prêt (`docs/tech/jalon-01.md`).
+**Phase** : jalon 1 en cours.
 
 **Décidé** (Kevin, 2026-11-11) : nom « Taxi Kmer » ; dépôt séparé de Pokemake ; trois types de course (partagée, dépôt, via une appli fictive) ; monde libre ; style réaliste ; Unity 6 LTS (URP) avec réglages bas / moyen / haut ; Street View et internet = référence seulement, textures libres puis photos sur place fournies par Kevin.
 
