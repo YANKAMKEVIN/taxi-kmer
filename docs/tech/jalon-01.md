@@ -12,7 +12,7 @@ Unity 6 LTS (URP), C# ; Android avec réglages bas / moyen / haut ; monde libre 
 
 | Sujet | Défaut |
 |---|---|
-| Portion du tronçon | **Dispensaire de Messassi → Emana** (décision de Kevin, 2026-11-11), tracé issu d'OpenStreetMap |
+| Portion du tronçon | **Dispensaire de Messassi → Étoudi** (décision de Kevin, 2026-11-11), tracé issu d'OpenStreetMap |
 | Places passagers | **5** (décision de Kevin) : 3 derrière, 2 devant **selon la corpulence** (voir ci-dessous) |
 | Corpulence (décision de Kevin : elle compte) | chaque client a une largeur : mince = 2, normal = 3, costaud = 4. Banquette avant = 6, arrière = 9. Exemples : costaud + mince devant ✓, costaud + normal devant ✗, trois normaux derrière ✓, deux costauds + un mince derrière ✗ |
 | Durée d'une journée de jeu | **10 minutes** réelles (6 h → 20 h) (décision de Kevin) |
@@ -29,10 +29,10 @@ Les montants ont été validés par Kevin le 2026-11-11 ; le carburant reste une
 | Tâche | État |
 |---|---|
 | 1.1 Socle Unity | à faire (Mac de Kevin, Unity 6 LTS) |
-| 1.2 Route OSM | outil d'import écrit et testé (`tools/osm/osm_roads.py`) ; téléchargement des données de Messassi → Emana à faire sur le Mac (OSM bloqué depuis le cloud) ; génération du maillage dans Unity à faire |
+| 1.2 Route OSM | outil d'import écrit et testé (`tools/osm/osm_roads.py`) ; téléchargement des données de Messassi → Étoudi à faire sur le Mac (OSM bloqué depuis le cloud) ; génération du maillage dans Unity à faire |
 | 1.3 Conduite | à faire (Unity) |
 | 1.4 Logique des courses | **faite** : places et corpulence, changement de place, prix, horloge, bilan, montée et descente, générateur de clients ; 33 tests |
-| 1.5 Clients dans le monde | logique faite (générateur) ; lieux de clients nommés par Kevin dans `stops_messassi_emana.json` (dispensaire de Messassi, marché de Messassi, pont d'Emana, Emana ; distances provisoires en attendant l'OSM) ; présentation Unity à faire |
+| 1.5 Clients dans le monde | logique faite (générateur) ; lieux de clients nommés par Kevin dans `stops_messassi_emana.json` (dispensaire de Messassi, carrefour / marché de Messassi, Borne Fontaine, pont d'Emana, Emana, Étoudi (devant le palais de la présidence) ; distances provisoires en attendant l'OSM) ; présentation Unity à faire |
 | 1.6 HUD et bilan | logique du bilan faite ; écrans à faire (Unity) |
 | 1.7 Réglages de qualité | à faire (Unity) |
 
@@ -74,8 +74,14 @@ Une seule session sur téléphone avec Kevin à la fin du jalon : jouer une jour
 
 ## Questions pour Kevin (ne bloquent pas le début)
 
-1. ~~Portion du tronçon ?~~ → **Tranché** : dispensaire de Messassi → Emana.
+1. ~~Portion du tronçon ?~~ → **Tranché** : dispensaire de Messassi → Étoudi.
 2. ~~Contrôles de conduite ?~~ → **Tranché** : flèches (schéma proposé ci-dessus) ; inclinaison en second mode éventuel.
 3. ~~Corpulence ?~~ → **Tranché** : elle compte (largeurs ci-dessus, valeurs par défaut).
 4. ~~Client qui ne rentre pas ?~~ → **Tranché** : au choix du joueur, il refuse le client ou demande à un passager de changer de banquette (`TaxiCabin.FindMoveToFit`, `Shift.MovePassenger`).
-5. ~~Noms des arrêts ?~~ → **Tranché** : pas d'arrêts comme pour un bus, mais des lieux où l'on trouve beaucoup de clients : dispensaire de Messassi, marché de Messassi, pont d'Emana, Emana.
+5. ~~Noms des arrêts ?~~ → **Tranché** : pas d'arrêts comme pour un bus, mais des lieux où l'on trouve beaucoup de clients : dispensaire de Messassi, carrefour / marché de Messassi, Borne Fontaine, pont d'Emana, Emana, Étoudi (devant le palais de la présidence).
+
+## Extension décidée par Kevin — 2026-11-11
+
+Le premier jalon se termine désormais à **Étoudi, devant le palais de la présidence (Palais de l’Unité)**, au lieu d’Émana. Les repères à documenter sont Carrefour / Marché Messassi, Borne Fontaine, Pont Émana, Émana et l’arrivée à Étoudi. L’ordre géographique et le tracé exact doivent être recoupés avec la carte et Kevin ; les positions des photos d’une fiche Maps ne sont pas automatiquement celles du repère.
+
+À réaliser : étendre les données de lieux de clients et la couverture OSM jusqu’à Étoudi. Le fichier `stops_messassi_emana.json` existant n’a pas encore été modifié pour cette extension. Bastos reste une extension ultérieure.
