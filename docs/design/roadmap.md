@@ -14,7 +14,7 @@
 
 | # | Jalon | En une phrase |
 |---|---|---|
-| 1 | Une journée de taxi | Conduire de Messassi à Emana, courses partagées, corpulence, versement, bilan. *(plan : `docs/tech/jalon-01.md`)* |
+| 1 | Une journée de taxi | Conduire de Messassi à Étoudi (devant le palais de la présidence), courses partagées, corpulence, versement, bilan. *(plan : `docs/tech/jalon-01.md`)* |
 | 2 | La ville vit | Trafic, mototaxis, piétons, embouteillages, clients qui réagissent. |
 | 3 | Les jours s'enchaînent | Sauvegarde, journée suivante, carburant et station-service, réputation. |
 | 4 | Le contrôle | Police, papiers, corruption, négociation. |
@@ -32,7 +32,7 @@ Après le jalon 11 : l'entreprise de taxis, le reste de Yaoundé, puis Douala, l
 
 ## Jalon 2 — La ville vit
 
-**But** : que la route de Messassi à Emana ressemble à une vraie route de Yaoundé, pleine de monde.
+**But** : que la route de Messassi à Étoudi (devant le palais de la présidence) ressemble à une vraie route de Yaoundé, pleine de monde.
 
 **Contenu**
 - Voitures et taxis concurrents sur des voies suivant le tracé OSM, avec priorités aux carrefours.
@@ -191,9 +191,9 @@ Après le jalon 11 : l'entreprise de taxis, le reste de Yaoundé, puis Douala, l
 **But** : tout le tronçon prévu, et le premier passage au rendu réaliste.
 
 **Contenu**
-- Prolongement de la carte d'Emana à Bastos (OSM).
+- Prolongement de la carte d’Étoudi à Bastos (OSM).
 - Lieux emblématiques modélisés à partir des photos de Kevin.
-- Passage réaliste de la portion Messassi → Emana (textures, éclairage, végétation, enseignes).
+- Passage réaliste de la portion Messassi → Étoudi (textures, éclairage, végétation, enseignes).
 - Profilage des trois réglages de qualité sur la carte complète.
 
 **Accepté si** : on reconnaît les lieux ; 30 images/s au réglage moyen sur un téléphone courant.
