@@ -43,6 +43,9 @@ namespace TaxiKmer.Core.Rides
             return Cabin.TryBoard(client, out side) ? BoardResult.Boarded : BoardResult.NoRoom;
         }
 
+        /// <summary>Le joueur demande à un passager de changer de banquette ; false si impossible.</summary>
+        public bool MovePassenger(string clientId) => !Clock.IsOver && Cabin.TryMove(clientId);
+
         /// <summary>Fait descendre un client ; il paie s'il est à sa destination, sinon il reste à bord.</summary>
         public DropResult Drop(string clientId, string atStopId)
         {

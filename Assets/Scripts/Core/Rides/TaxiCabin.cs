@@ -58,6 +58,53 @@ namespace TaxiKmer.Core.Rides
             return result;
         }
 
+        public Bench BenchOf(Client client)
+        {
+            foreach (var p in Back.Passengers) if (p == client) return Back;
+            foreach (var p in Front.Passengers) if (p == client) return Front;
+            return null;
+        }
+
+        private Bench Other(Bench bench) => bench == Back ? Front : Back;
+
+        /// <summary>
+        /// Fait passer un passager sur l'autre banquette (le joueur lui demande de changer de place).
+        /// Renvoie false s'il n'est pas à bord ou s'il ne rentre pas de l'autre côté.
+        /// </summary>
+        public bool TryMove(string clientId)
+        {
+            var client = Find(clientId);
+            if (client == null) return false;
+            var from = BenchOf(client);
+            var to = Other(from);
+            if (!to.CanSeat(client)) return false;
+            from.Remove(client);
+            to.Seat(client);
+            return true;
+        }
+
+        /// <summary>
+        /// Quand le client ne rentre pas : passager à faire changer de place pour lui libérer une place, ou null.
+        /// Le joueur choisit ensuite : refuser le client, ou demander ce changement de place.
+        /// </summary>
+        public Client FindMoveToFit(Client newcomer)
+        {
+            if (CanBoard(newcomer)) return null;
+            foreach (var p in Passengers)
+            {
+                var from = BenchOf(p);
+                var to = Other(from);
+                if (!to.CanSeat(p)) continue;
+                from.Remove(p);
+                to.Seat(p);
+                var fits = CanBoard(newcomer);
+                to.Remove(p);
+                from.Seat(p);
+                if (fits) return p;
+            }
+            return null;
+        }
+
         internal bool Remove(Client client) => Back.Remove(client) || Front.Remove(client);
     }
 }

@@ -83,6 +83,43 @@ namespace TaxiKmer.Core.Tests
             Assert.AreEqual(1, _cabin.PassengerCount);
         }
 
+        [Test]
+        public void ClientWhoDoesNotFit_CanBeSeatedAfterMovingAPassenger()
+        {
+            Assert.IsTrue(_cabin.TryBoard(C(Corpulence.Costaud), out _));
+            var mince = C(Corpulence.Mince);
+            Assert.IsTrue(_cabin.TryBoard(mince, out _));
+            Assert.IsTrue(_cabin.TryBoard(C(Corpulence.Costaud), out var s3));
+            Assert.AreEqual(BenchSide.Front, s3);
+
+            var newcomer = C(Corpulence.Costaud);
+            Assert.IsFalse(_cabin.CanBoard(newcomer), "Sans changement de place, il ne rentre pas.");
+            Assert.AreSame(mince, _cabin.FindMoveToFit(newcomer), "Le mince passe devant pour libérer l'arrière.");
+            Assert.IsFalse(_cabin.CanBoard(newcomer), "La recherche ne modifie pas l'habitacle.");
+
+            Assert.IsTrue(_cabin.TryMove(mince.Id));
+            Assert.AreSame(_cabin.Front, _cabin.BenchOf(mince));
+            Assert.IsTrue(_cabin.TryBoard(newcomer, out var side));
+            Assert.AreEqual(BenchSide.Back, side);
+        }
+
+        [Test]
+        public void FindMoveToFit_ReturnsNull_WhenNoMoveHelps()
+        {
+            for (var i = 0; i < 5; i++) Assert.IsTrue(_cabin.TryBoard(C(Corpulence.Normal), out _));
+            Assert.IsNull(_cabin.FindMoveToFit(C(Corpulence.Mince)));
+        }
+
+        [Test]
+        public void TryMove_FailsWhenOtherBenchIsFull()
+        {
+            FillBack();
+            var front = C(Corpulence.Mince);
+            Assert.IsTrue(_cabin.TryBoard(front, out _));
+            Assert.IsFalse(_cabin.TryMove(front.Id));
+            Assert.AreSame(_cabin.Front, _cabin.BenchOf(front));
+        }
+
         private void FillBack()
         {
             for (var i = 0; i < 3; i++) Assert.IsTrue(_cabin.TryBoard(C(Corpulence.Normal), out var s) && s == BenchSide.Back);

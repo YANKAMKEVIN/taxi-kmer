@@ -31,8 +31,8 @@ Les montants ont été validés par Kevin le 2026-11-11 ; le carburant reste une
 | 1.1 Socle Unity | à faire (Mac de Kevin, Unity 6 LTS) |
 | 1.2 Route OSM | outil d'import écrit et testé (`tools/osm/osm_roads.py`) ; téléchargement des données de Messassi → Emana à faire sur le Mac (OSM bloqué depuis le cloud) ; génération du maillage dans Unity à faire |
 | 1.3 Conduite | à faire (Unity) |
-| 1.4 Logique des courses | **faite** : places et corpulence, prix, horloge, bilan, montée et descente, générateur de clients ; 30 tests |
-| 1.5 Clients dans le monde | logique faite (générateur) ; arrêts **provisoires** dans `stops_messassi_emana.json`, à nommer par Kevin ; présentation Unity à faire |
+| 1.4 Logique des courses | **faite** : places et corpulence, changement de place, prix, horloge, bilan, montée et descente, générateur de clients ; 33 tests |
+| 1.5 Clients dans le monde | logique faite (générateur) ; lieux de clients nommés par Kevin dans `stops_messassi_emana.json` (dispensaire de Messassi, marché de Messassi, pont d'Emana, Emana ; distances provisoires en attendant l'OSM) ; présentation Unity à faire |
 | 1.6 HUD et bilan | logique du bilan faite ; écrans à faire (Unity) |
 | 1.7 Réglages de qualité | à faire (Unity) |
 
@@ -77,4 +77,5 @@ Une seule session sur téléphone avec Kevin à la fin du jalon : jouer une jour
 1. ~~Portion du tronçon ?~~ → **Tranché** : dispensaire de Messassi → Emana.
 2. ~~Contrôles de conduite ?~~ → **Tranché** : flèches (schéma proposé ci-dessus) ; inclinaison en second mode éventuel.
 3. ~~Corpulence ?~~ → **Tranché** : elle compte (largeurs ci-dessus, valeurs par défaut).
-4. Quand le client ne rentre pas (banquette trop pleine) : il refuse de monter, ou le joueur peut demander à un passager de changer de place ?
+4. ~~Client qui ne rentre pas ?~~ → **Tranché** : au choix du joueur, il refuse le client ou demande à un passager de changer de banquette (`TaxiCabin.FindMoveToFit`, `Shift.MovePassenger`).
+5. ~~Noms des arrêts ?~~ → **Tranché** : pas d'arrêts comme pour un bus, mais des lieux où l'on trouve beaucoup de clients : dispensaire de Messassi, marché de Messassi, pont d'Emana, Emana.
