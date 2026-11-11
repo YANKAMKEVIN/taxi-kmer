@@ -1,0 +1,8 @@
+# Godot
+.godot/
+*.import.tmp
+export_presets.cfg.bak
+build/
+*.apk
+*.aab
+.DS_Store
