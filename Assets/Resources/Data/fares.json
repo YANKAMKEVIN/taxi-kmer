@@ -1,0 +1,9 @@
+{
+    "bands": [
+        { "maxDistanceMeters": 2000, "fare": 300 },
+        { "maxDistanceMeters": 4000, "fare": 400 },
+        { "maxDistanceMeters": 7000, "fare": 500 },
+        { "maxDistanceMeters": 10000, "fare": 600 }
+    ],
+    "longDistanceFare": 800
+}

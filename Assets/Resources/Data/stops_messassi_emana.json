@@ -1,0 +1,13 @@
+{
+    "_note": "PROVISOIRE : arrêts et distances à remplacer par les vrais lieux (Kevin) et les distances mesurées sur la route OSM.",
+    "stops": [
+        { "id": "dispensaire-messassi", "name": "Dispensaire de Messassi", "distanceAlongRouteMeters": 0 },
+        { "id": "arret-2", "name": "Arrêt 2 (à nommer)", "distanceAlongRouteMeters": 900 },
+        { "id": "arret-3", "name": "Arrêt 3 (à nommer)", "distanceAlongRouteMeters": 1800 },
+        { "id": "arret-4", "name": "Arrêt 4 (à nommer)", "distanceAlongRouteMeters": 2700 },
+        { "id": "emana", "name": "Emana", "distanceAlongRouteMeters": 3600 }
+    ],
+    "minceWeight": 30,
+    "normalWeight": 50,
+    "costaudWeight": 20
+}

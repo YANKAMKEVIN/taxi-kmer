@@ -24,6 +24,20 @@ Unity 6 LTS (URP), C# ; Android avec réglages bas / moyen / haut ; monde libre 
 
 Les montants ont été validés par Kevin le 2026-11-11 ; le carburant reste une valeur par défaut.
 
+## Avancement
+
+| Tâche | État |
+|---|---|
+| 1.1 Socle Unity | à faire (Mac de Kevin, Unity 6 LTS) |
+| 1.2 Route OSM | outil d'import écrit et testé (`tools/osm/osm_roads.py`) ; téléchargement des données de Messassi → Emana à faire sur le Mac (OSM bloqué depuis le cloud) ; génération du maillage dans Unity à faire |
+| 1.3 Conduite | à faire (Unity) |
+| 1.4 Logique des courses | **faite** : places et corpulence, prix, horloge, bilan, montée et descente, générateur de clients ; 30 tests |
+| 1.5 Clients dans le monde | logique faite (générateur) ; arrêts **provisoires** dans `stops_messassi_emana.json`, à nommer par Kevin ; présentation Unity à faire |
+| 1.6 HUD et bilan | logique du bilan faite ; écrans à faire (Unity) |
+| 1.7 Réglages de qualité | à faire (Unity) |
+
+Valeurs par défaut ajoutées : prix 300 (≤ 2 km), 400 (≤ 4 km), 500 (≤ 7 km), 600 (≤ 10 km), 800 au-delà ; carburant 840 FCFA/L, 8 L/100 km ; carrures 30 % minces, 50 % normaux, 20 % costauds ; le taxi remplit l'arrière avant l'avant ; un client déposé au mauvais arrêt reste à bord.
+
 ## Tâches
 
 ### 1.1 Socle du projet

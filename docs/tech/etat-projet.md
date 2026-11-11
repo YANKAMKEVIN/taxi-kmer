@@ -8,6 +8,8 @@
 
 **Feuille de route** : `docs/design/roadmap.md` (jalons 2 à 11, proposition à valider par Kevin).
 
-**Prochaine étape** : tâche 1.1 (socle du projet Unity), qui demande Unity 6 LTS installé sur le Mac de Kevin.
+**Jalon 1 en cours** : logique pure faite et testée (30 tests, `tools/test_core.sh`) ; outil d'import OSM écrit. Détail : `docs/tech/jalon-01.md` (Avancement).
 
-**Questions ouvertes** : `vision.md` §9 et `jalon-01.md` (client qui ne rentre pas : refus ou changement de place).
+**Prochaine étape** : tâche 1.1 sur le Mac de Kevin (Unity 6 LTS + module Android), puis téléchargement OSM de Messassi → Emana.
+
+**Questions ouvertes** : `vision.md` §9, `roadmap.md` (par jalon), `jalon-01.md` (client qui ne rentre pas : refus ou changement de place ; noms des arrêts entre le dispensaire de Messassi et Emana).

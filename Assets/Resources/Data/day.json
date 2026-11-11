@@ -1,0 +1,8 @@
+{
+    "dayLengthRealSeconds": 600,
+    "startHour": 6,
+    "endHour": 20,
+    "versement": 10000,
+    "fuelPricePerLitre": 840,
+    "fuelLitresPer100Km": 8
+}

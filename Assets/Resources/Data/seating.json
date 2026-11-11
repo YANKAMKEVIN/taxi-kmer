@@ -1,0 +1,9 @@
+{
+    "minceWidth": 2,
+    "normalWidth": 3,
+    "costaudWidth": 4,
+    "frontBenchWidth": 6,
+    "backBenchWidth": 9,
+    "frontMaxPassengers": 2,
+    "backMaxPassengers": 3
+}
