@@ -8,13 +8,15 @@
 
 **Feuille de route** : `docs/design/roadmap.md` (jalons 2 à 11, proposition à valider par Kevin).
 
-**Jalon 1 en cours** : logique pure faite et testée (33 tests, `tools/test_core.sh`) ; outil d'import OSM écrit ; socle Unity fait (tâche 1.1) : projet URP, qualité Bas / Moyen / Haut, tests verts dans Unity, APK lancé sur le S24 de Kevin ; monde OSM Messassi → Étoudi construit dans Unity (tâche 1.2) ; conduite du taxi sur ce monde (tâche 1.3 : taxi jaune provisoire, commandes tactiles décidées par Kevin, caméra réglable au doigt, klaxon provisoire ; 56 tests EditMode et 3 PlayMode verts). Essai sur téléphone des tâches 1.2 et 1.3 en attente (S24 injoignable le 2026-11-11). Détail : `docs/tech/jalon-01.md` (Avancement).
+**Jalon 1 en cours** : logique pure faite et testée (33 tests, `tools/test_core.sh`) ; outil d'import OSM écrit ; socle Unity fait (tâche 1.1) : projet URP, qualité Bas / Moyen / Haut, tests verts dans Unity, APK lancé sur le S24 de Kevin ; monde OSM Messassi → Étoudi construit dans Unity (tâche 1.2) ; conduite du taxi sur ce monde (tâche 1.3 : taxi jaune provisoire, commandes tactiles décidées par Kevin, caméra réglable au doigt, klaxon provisoire ; 56 tests EditMode et 3 PlayMode verts). Vérifié sur émulateur Android le 2026-11-11 (jeu lancé, commandes tactiles et marche arrière OK, pas d'erreur) ; essai sur le S24 en attente (injoignable). Détail : `docs/tech/jalon-01.md` (Avancement).
 
 **Prochaine étape** : installer l'APK (conduite) quand le téléphone est joignable et faire régler la conduite par Kevin (`driving.json`) ; tâche 1.5 (clients dans le monde : klaxon pour accepter, arrêt, montée, dépose).
 
 **Tests** : `tools/test_core.sh` (dotnet 8 ; pas installé sur le Mac, un SDK temporaire a servi le 2026-11-11) ; PlayMode : `$U -batchmode -projectPath . -runTests -testPlatform PlayMode -testResults Logs/playmode.xml` (sans `-nographics`).
 
 **Téléphone** : Galaxy S24 de Kevin joignable en débogage sans fil (`adb mdns services`, puis `adb install -r build/android/TaxiKmer.apk`).
+
+**Émulateur** (sans téléphone) : AVD `TaxiKmer_Test` créé pour le projet (8 Go de données, 4 Go de RAM, 4 cœurs ; l'AVD `Medium_Phone` est trop plein et à 1 cœur) : `~/Library/Android/sdk/emulator/emulator -avd TaxiKmer_Test -no-boot-anim -gpu host`, puis `adb install -r build/android/TaxiKmer.apk`. Ses performances ne représentent pas un téléphone.
 
 **Questions ouvertes** : `vision.md` §9, `roadmap.md` (par jalon).
 
