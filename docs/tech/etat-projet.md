@@ -6,6 +6,8 @@
 
 **Jalon 1** (validé par Kevin) : dispensaire de Messassi → Emana ; 5 places ; journée de 10 min ; course partagée de 300 à 800 FCFA selon la distance ; versement de 10 000 FCFA ; corpulence des clients (2 places devant selon la carrure) ; commandes à flèches (pas d'inclinaison).
 
+**Feuille de route** : `docs/design/roadmap.md` (jalons 2 à 11, proposition à valider par Kevin).
+
 **Prochaine étape** : tâche 1.1 (socle du projet Unity), qui demande Unity 6 LTS installé sur le Mac de Kevin.
 
 **Questions ouvertes** : `vision.md` §9 et `jalon-01.md` (client qui ne rentre pas : refus ou changement de place).
