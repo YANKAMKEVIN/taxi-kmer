@@ -45,6 +45,13 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void Driving_MatchesDefaults()
+        {
+            var d = Load<TaxiKmer.Core.Driving.DriveConfig>("driving.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Driving.DriveConfig(), Opts), JsonSerializer.Serialize(d, Opts));
+        }
+
+        [Test]
         public void World_MessassiEtoudi_IsUsable()
         {
             var w = Load<TaxiKmer.Core.World.WorldData>("world_messassi_etoudi.json");

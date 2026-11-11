@@ -4,6 +4,7 @@
     "references": [
         "TaxiKmer.Core",
         "TaxiKmer.World",
+        "TaxiKmer.Driving",
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.Universal.Runtime"
     ],

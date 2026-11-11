@@ -1,0 +1,54 @@
+{
+    "_note": "Réglages de conduite (tâche 1.3, valeurs par défaut). Vitesses en km/h, angles en degrés, durées en s. layout : control 1 = ←, 2 = →, 3 = accélérateur, 4 = frein / marche arrière, 5 = klaxon ; corner 0 = bas gauche, 1 = bas droite, 2 = haut gauche, 3 = haut droite ; side, edge, width, height en fractions de la hauteur d'écran.",
+    "steering": {
+        "maxAngleDeg": 35,
+        "highSpeedAngleDeg": 10,
+        "highSpeedKmh": 70,
+        "riseRate": 2.5,
+        "returnRate": 4
+    },
+    "pedals": {
+        "maxForwardKmh": 80,
+        "maxReverseKmh": 15,
+        "stoppedKmh": 2,
+        "reverseHoldSeconds": 0.35,
+        "parkingBrake": 0.3,
+        "limiterBand": 0.1
+    },
+    "car": {
+        "massKg": 1150,
+        "motorTorqueNm": 1100,
+        "brakeTorqueNm": 1700,
+        "coastBrakeTorqueNm": 80,
+        "downforce": 4,
+        "antiRoll": 6000,
+        "centerOfMassHeight": 0.25,
+        "wheelRadius": 0.32,
+        "suspensionDistance": 0.18,
+        "springStrength": 35000,
+        "damper": 4500,
+        "sidewaysStiffness": 1.6,
+        "forwardStiffness": 1.8,
+        "flippedResetSeconds": 3
+    },
+    "camera": {
+        "distance": 7,
+        "lookHeight": 1.4,
+        "defaultPitchDeg": 12,
+        "minPitchDeg": 2,
+        "maxPitchDeg": 60,
+        "dragDegreesPerScreen": 270,
+        "recenterDelaySeconds": 2,
+        "recenterRateDeg": 120,
+        "followSharpness": 6
+    },
+    "layout": {
+        "zones": [
+            { "control": 1, "corner": 0, "side": 0.04, "edge": 0.05, "width": 0.27, "height": 0.32, "label": "◄" },
+            { "control": 2, "corner": 0, "side": 0.35, "edge": 0.05, "width": 0.27, "height": 0.32, "label": "►" },
+            { "control": 3, "corner": 1, "side": 0.04, "edge": 0.05, "width": 0.22, "height": 0.48, "label": "Accélérer" },
+            { "control": 4, "corner": 1, "side": 0.30, "edge": 0.05, "width": 0.22, "height": 0.28, "label": "Frein\nArrière" },
+            { "control": 5, "corner": 3, "side": 0.04, "edge": 0.05, "width": 0.24, "height": 0.24, "label": "Klaxon" }
+        ]
+    }
+}

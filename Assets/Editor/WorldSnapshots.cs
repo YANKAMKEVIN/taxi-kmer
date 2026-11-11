@@ -1,5 +1,6 @@
 using System.IO;
 using TaxiKmer.Core.World;
+using TaxiKmer.Driving;
 using TaxiKmer.World;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -23,7 +24,8 @@ namespace TaxiKmer.EditorTools
             var builder = Object.FindFirstObjectByType<WorldBuilder>();
             builder.BuildNow();
             var cam = Camera.main;
-            cam.GetComponent<RouteFlyCamera>().enabled = false;
+            var chase = cam.GetComponent<ChaseCamera>();
+            if (chase != null) chase.enabled = false;
             Directory.CreateDirectory(OutDir);
 
             var xz = builder.Data.route.xz;
@@ -55,6 +57,20 @@ namespace TaxiKmer.EditorTools
                 var pos = new Vector3(cx, 5f, cz);
                 cam.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(new Vector3(tx, 1.5f, tz) - pos, Vector3.up));
                 Capture(cam, $"{k + 1:00}-{Mathf.RoundToInt(d)}m");
+            }
+            // Taxi au départ (dispensaire de Messassi), vu de derrière comme en jeu.
+            var taxi = Object.FindFirstObjectByType<TaxiCar>();
+            if (taxi != null)
+            {
+                taxi.PlaceOnRoute(taxi.startDistance);
+                var t = taxi.transform;
+                var pivot = t.position + Vector3.up * 1.4f;
+                var pos = pivot - t.forward * 7f + Vector3.up * 1.5f;
+                cam.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(pivot - pos, Vector3.up));
+                Capture(cam, "10-taxi-depart");
+                pos = t.position + t.forward * 5f + t.right * 3f + Vector3.up * 1.6f;
+                cam.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(t.position + Vector3.up * 0.8f - pos, Vector3.up));
+                Capture(cam, "11-taxi-avant");
             }
             Debug.Log("[TaxiKmer] Captures écrites dans " + OutDir);
         }

@@ -6,6 +6,8 @@ namespace TaxiKmer.World
     public sealed class OsmCredit : MonoBehaviour
     {
         public string text = "© contributeurs OpenStreetMap";
+        [Tooltip("Coin ou bord de l'écran où afficher le crédit (en bas au centre quand les commandes occupent les coins).")]
+        public TextAnchor alignment = TextAnchor.LowerRight;
         private GUIStyle _style;
 
         private void OnGUI()
@@ -15,7 +17,7 @@ namespace TaxiKmer.World
                 _style = new GUIStyle(GUI.skin.label)
                 {
                     fontSize = Mathf.Max(12, Screen.height / 45),
-                    alignment = TextAnchor.LowerRight,
+                    alignment = alignment,
                 };
                 _style.normal.textColor = new Color(1f, 1f, 1f, 0.85f);
             }

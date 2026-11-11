@@ -159,6 +159,31 @@ namespace TaxiKmer.Core.World
             return result;
         }
 
+        /// <summary>Distance le long de la polyligne du point de la polyligne le plus proche de (x, z).</summary>
+        public static float DistanceAlong(float[] xz, float[] cumulative, float x, float z)
+        {
+            var n = cumulative.Length;
+            if (n < 2) return 0f;
+            var best = float.MaxValue;
+            var bestD = 0f;
+            for (var i = 1; i < n; i++)
+            {
+                float ax = xz[i * 2 - 2], az = xz[i * 2 - 1], bx = xz[i * 2], bz = xz[i * 2 + 1];
+                float ex = bx - ax, ez = bz - az;
+                var len2 = ex * ex + ez * ez;
+                var t = len2 > 1e-8f ? ((x - ax) * ex + (z - az) * ez) / len2 : 0f;
+                t = Math.Max(0f, Math.Min(1f, t));
+                float px = ax + ex * t - x, pz = az + ez * t - z;
+                var d2 = px * px + pz * pz;
+                if (d2 < best)
+                {
+                    best = d2;
+                    bestD = cumulative[i - 1] + (cumulative[i] - cumulative[i - 1]) * t;
+                }
+            }
+            return bestD;
+        }
+
         /// <summary>Point et direction à la distance d le long de la polyligne (bornée à ses extrémités).</summary>
         public static void SampleAlong(float[] xz, float[] cumulative, float d, out float x, out float z, out float dirX, out float dirZ)
         {
