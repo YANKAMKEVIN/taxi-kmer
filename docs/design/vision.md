@@ -75,8 +75,9 @@ Réaliste, chaleureux, avec de l'humour. Les injustices sont montrées sans ton 
 
 | Sujet | Valeur proposée |
 |---|---|
-| Moteur | Godot 4 (continuité avec Pokemake : tests, déploiement S24) |
-| Cible principale | Android, y compris les téléphones d'entrée de gamme |
+| Style | **Réaliste** (décision de Kevin, 2026-11-11) : textures photographiques, lumière crédible, lieux reconnaissables. Réglages de qualité adaptables (bas / moyen / haut) selon le téléphone. |
+| Moteur | **À trancher** : Godot 4 (continuité avec Pokemake) ou Unity (plus éprouvé pour une ville réaliste sur mobile) |
+| Cible principale | Android ; gamme de téléphones visée à trancher |
 | Cible secondaire | Web (démo), éventuellement iOS |
 | Vue | 3D, caméra derrière le taxi ; contrôles tactiles |
 | Données | courses, clients, dialogues, prix et charges dans des fichiers de données |
@@ -90,7 +91,9 @@ Un bout du tronçon en monde libre, un taxi, des courses partagées (prise, refu
 1. ~~Taxi partagé ou une course à la fois ?~~ → **Tranché** : trois types de course (voir 4.1).
 2. ~~Monde libre ou trajets guidés ?~~ → **Tranché** : monde libre.
 3. ~~Vraie marque ou appli fictive ?~~ → **Tranché** : appli fictive. Reste à choisir son nom (propositions : Allô Taxi, Kmer Ride, Mbolo).
-4. Style visuel : réaliste, stylisé ou low-poly ?
+4. ~~Style visuel ?~~ → **Tranché** : réaliste (référence : GTA, Spider-Man ; on reconnaît les lieux).
+4bis. Téléphones visés : entrée de gamme, milieu de gamme ou haut de gamme ? (le réaliste coûte cher en performances)
+4ter. Moteur : Godot 4 ou Unity ? (voir §7)
 5. Situation familiale : choisie au départ, ou qui évolue pendant la partie (mariage, enfants) ?
 6. Peut-on perdre (dettes, taxi saisi, permis retiré) ?
 7. Langue : français seulement, ou aussi pidgin et camfranglais à l'écran ?
