@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TaxiKmer.Core.Day;
 
 namespace TaxiKmer.Core.Rides
 {
@@ -85,6 +86,8 @@ namespace TaxiKmer.Core.Rides
         None,
         Board,
         Drop,
+        /// <summary>Après l'heure de fin, avec des passagers encore à bord : terminer quand même (ils ne paient pas).</summary>
+        EndDay,
     }
 
     /// <summary>Action proposée par le bouton contextuel.</summary>
@@ -129,6 +132,15 @@ namespace TaxiKmer.Core.Rides
         public IReadOnlyList<RoadsideClient> Waiting => _waiting;
         public Shift Shift => _shift;
 
+        /// <summary>
+        /// La journée est terminée et le bilan est arrêté : à l'heure de fin dès que le taxi est vide,
+        /// ou quand le joueur choisit de terminer avec des passagers à bord (<see cref="StreetActionKind.EndDay"/>).
+        /// </summary>
+        public bool DayFinished => Summary != null;
+
+        /// <summary>Le bilan de la journée, figé quand elle se termine (null avant).</summary>
+        public DaySummary Summary { get; private set; }
+
         public Street(StreetConfig config, StopsConfig stops, ClientFactory factory, Shift shift, float routeLength)
         {
             _config = config ?? throw new ArgumentNullException(nameof(config));
@@ -143,6 +155,8 @@ namespace TaxiKmer.Core.Rides
 
         public void Update(float dt, TaxiOnRoute taxi)
         {
+            if (DayFinished) return;
+            if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
             if (!_shift.Clock.IsOver)
             {
                 for (var i = 0; i < _stops.stops.Length; i++)
@@ -192,6 +206,7 @@ namespace TaxiKmer.Core.Rides
         public StreetAction AvailableAction(TaxiOnRoute taxi)
         {
             var none = new StreetAction { Kind = StreetActionKind.None };
+            if (DayFinished) return none;
             if (Math.Abs(taxi.SpeedKmh) > _config.stoppedKmh || taxi.Lateral > _config.maxLateralMeters) return none;
 
             foreach (var stop in _stops.stops)
@@ -200,6 +215,11 @@ namespace TaxiKmer.Core.Rides
                 var count = _shift.Cabin.PassengersFor(stop.id).Count;
                 if (count > 0) return new StreetAction { Kind = StreetActionKind.Drop, Stop = stop, Count = count };
             }
+
+            if (_shift.Clock.IsOver)
+                return _shift.Cabin.PassengerCount > 0
+                    ? new StreetAction { Kind = StreetActionKind.EndDay, Count = _shift.Cabin.PassengerCount }
+                    : none;
 
             RoadsideClient nearest = null;
             var best = float.MaxValue;
@@ -236,8 +256,20 @@ namespace TaxiKmer.Core.Rides
                     }
                     else c.State = RoadsideState.Waiting;
                     break;
+                case StreetActionKind.EndDay:
+                    Finish();
+                    break;
             }
+            if (!DayFinished && _shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
             return outcome;
+        }
+
+        private void Finish()
+        {
+            var unpaid = 0;
+            foreach (var p in _shift.Cabin.Passengers) unpaid += p.ProposedFare;
+            Summary = DaySummary.From(_shift.Ledger, _shift.Cabin.PassengerCount, unpaid);
+            foreach (var c in _waiting) c.Calling = false;
         }
 
         public Stop FindStop(string id) => _factory.FindStop(id);

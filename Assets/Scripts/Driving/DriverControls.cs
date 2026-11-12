@@ -41,6 +41,8 @@ namespace TaxiKmer.Driving
         /// <summary>Calque d'interface où le jeu peut ajouter ses propres textes.</summary>
         public RectTransform Overlay => _canvas;
         public Font Font { get; private set; }
+        /// <summary>Commandes bloquées (écran de bilan) : le taxi ne reçoit plus rien et les boutons sont cachés.</summary>
+        public bool Locked { get; set; }
 
         private static readonly Color Idle = new Color(0f, 0f, 0f, 0.28f);
         private static readonly Color Pressed = new Color(1f, 0.82f, 0.1f, 0.55f);
@@ -57,6 +59,7 @@ namespace TaxiKmer.Driving
         private void Update()
         {
             var input = ReadKeyboard() | ReadPointers();
+            if (Locked) input = default;
             if (!ActionVisible) input.Action = false;
             ActionTriggered = input.Action && !_previous.Action;
             HornTriggered = input.Horn && !_previous.Horn;
@@ -64,7 +67,7 @@ namespace TaxiKmer.Driving
             if (taxi != null)
             {
                 taxi.Controls = input;
-                if (UnityEngine.Input.GetKeyDown(KeyCode.R)) taxi.ResetToRoute();
+                if (!Locked && UnityEngine.Input.GetKeyDown(KeyCode.R)) taxi.ResetToRoute();
             }
             if (horn != null) horn.SetPressed(input.Horn);
             UpdateView(input);
@@ -201,8 +204,9 @@ namespace TaxiKmer.Driving
                 _speed.fontSize = Mathf.RoundToInt(size.y * 0.07f);
             }
 
-            foreach (var (zone, image, _) in _buttons)
+            foreach (var (zone, image, rect) in _buttons)
             {
+                rect.gameObject.SetActive(!Locked);
                 var on = zone.control switch
                 {
                     DriveControl.SteerLeft => input.Left,
@@ -224,6 +228,7 @@ namespace TaxiKmer.Driving
                 image.color = on ? Pressed : Idle;
             }
 
+            _speed.enabled = !Locked;
             if (taxi != null)
             {
                 var gear = taxi.Command.Gear == Gear.Reverse ? "  R" : "";

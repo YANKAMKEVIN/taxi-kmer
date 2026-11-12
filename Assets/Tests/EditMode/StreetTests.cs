@@ -163,5 +163,85 @@ namespace TaxiKmer.Core.Tests
             street.Update(cfg.spawnIntervalSeconds * 0.6f, At(200f, 1, 30f));
             Assert.AreEqual(before + 1, street.Waiting.Count);
         }
+
+        private static RoadsideClient BoardOne(Street street)
+        {
+            var taxi = At(0f, 1);
+            street.Update(0.1f, taxi);
+            street.Honk(taxi, out var client);
+            Assert.AreEqual(BoardResult.Boarded, street.Perform(At(client.Along, 1)).Board);
+            return client;
+        }
+
+        [Test]
+        public void EndOfDay_EmptyCabin_FinishesAtOnce_WithSummary()
+        {
+            var street = NewStreet(out _);
+            var shift = street.Shift;
+            var client = BoardOne(street);
+            var dest = street.FindStop(client.Client.DestinationStopId);
+            street.Perform(At(dest.distanceAlongRouteMeters, 1));
+            shift.Ledger.AddDistance(12500f);
+            Assert.IsFalse(street.DayFinished);
+
+            shift.Clock.Advance(10000f);
+            street.Update(0.1f, At(200f, 1, 30f));
+            Assert.IsTrue(street.DayFinished);
+            var s = street.Summary;
+            Assert.AreEqual(client.Client.ProposedFare, s.Revenue);
+            Assert.AreEqual(1, s.RideCount);
+            Assert.AreEqual(shift.Ledger.FuelCost, s.FuelCost);
+            Assert.AreEqual(s.Revenue - s.Versement - s.FuelCost, s.Remaining);
+            Assert.AreEqual(0, s.UnpaidPassengers);
+            Assert.IsFalse(street.Waiting.Any(c => c.Calling), "Plus personne n'appelle.");
+            Assert.AreEqual(StreetActionKind.None, street.AvailableAction(At(client.Pickup.distanceAlongRouteMeters, 1)).Kind);
+        }
+
+        [Test]
+        public void EndOfDay_WithPassengers_CanStillDropThem_ThenFinishes()
+        {
+            var street = NewStreet(out _);
+            var client = BoardOne(street);
+            street.Shift.Clock.Advance(10000f);
+            street.Update(0.1f, At(200f, 1, 30f));
+            Assert.IsFalse(street.DayFinished, "On laisse le temps de déposer les passagers.");
+
+            var dest = street.FindStop(client.Client.DestinationStopId);
+            var there = At(dest.distanceAlongRouteMeters, 1);
+            Assert.AreEqual(StreetActionKind.Drop, street.AvailableAction(there).Kind, "La dépose reste possible après l'heure.");
+            Assert.AreEqual(client.Client.ProposedFare, street.Perform(there).Paid);
+            Assert.IsTrue(street.DayFinished, "Taxi vide après l'heure : la journée se termine.");
+            Assert.AreEqual(client.Client.ProposedFare, street.Summary.Revenue);
+        }
+
+        [Test]
+        public void EndOfDay_PlayerEndsWithPassengersOnBoard_TheyDoNotPay()
+        {
+            var street = NewStreet(out _);
+            var client = BoardOne(street);
+            Assert.AreNotEqual(StreetActionKind.EndDay, street.AvailableAction(At(250f, 1)).Kind, "Pas avant l'heure.");
+            street.Shift.Clock.Advance(10000f);
+            Assert.AreEqual(StreetActionKind.None, street.AvailableAction(At(250f, 1, 20f)).Kind, "Seulement à l'arrêt.");
+            var action = street.AvailableAction(At(250f, 1));
+            Assert.AreEqual(StreetActionKind.EndDay, action.Kind);
+            Assert.AreEqual(1, action.Count);
+
+            street.Perform(At(250f, 1));
+            Assert.IsTrue(street.DayFinished);
+            Assert.AreEqual(0, street.Summary.Revenue);
+            Assert.AreEqual(1, street.Summary.UnpaidPassengers);
+            Assert.AreEqual(client.Client.ProposedFare, street.Summary.UnpaidFares);
+        }
+
+        [Test]
+        public void EndOfDay_NoBoardingAfterTheHour()
+        {
+            var street = NewStreet(out _);
+            var taxi = At(0f, 1);
+            street.Update(0.1f, taxi);
+            street.Honk(taxi, out var client);
+            street.Shift.Clock.Advance(10000f);
+            Assert.AreNotEqual(StreetActionKind.Board, street.AvailableAction(At(client.Along, 1)).Kind);
+        }
     }
 }

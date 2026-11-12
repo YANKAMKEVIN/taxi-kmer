@@ -39,6 +39,7 @@ namespace TaxiKmer.Driving
         private Text _toast;
         private float _toastUntil;
         private bool _dayOverShown;
+        private DaySummaryView _summaryView;
         private MaterialPropertyBlock _block;
         private Camera _camera;
 
@@ -105,8 +106,11 @@ namespace TaxiKmer.Driving
         {
             var dt = Time.deltaTime;
             var shift = Street.Shift;
-            shift.Clock.Advance(dt);
-            shift.Ledger.AddDistance(taxi.SpeedKmh / 3.6f * dt);
+            if (!Street.DayFinished)
+            {
+                shift.Clock.Advance(dt);
+                shift.Ledger.AddDistance(Mathf.Abs(taxi.SpeedKmh) / 3.6f * dt);
+            }
 
             var state = TaxiState();
             Street.Update(dt, state);
@@ -120,14 +124,16 @@ namespace TaxiKmer.Driving
             {
                 StreetActionKind.Drop => action.Count > 1 ? $"Faire descendre ({action.Count})" : "Faire descendre",
                 StreetActionKind.Board => action.MoveFirst != null ? "Changer de place et monter" : "Faire monter",
+                StreetActionKind.EndDay => "Terminer la journée",
                 _ => "",
             };
 
-            if (shift.Clock.IsOver && !_dayOverShown)
+            if (shift.Clock.IsOver && !_dayOverShown && !Street.DayFinished)
             {
                 _dayOverShown = true;
-                Toast($"Fin de la journée : {Money(shift.Ledger.Revenue)} en {shift.Ledger.RideCount} courses", 8f);
+                Toast("Fin de la journée : dépose tes passagers, ou arrête-toi pour terminer", 8f);
             }
+            if (Street.DayFinished) ShowSummary();
 
             SyncPeople();
             SyncStopMarkers();
@@ -171,6 +177,20 @@ namespace TaxiKmer.Driving
                     break;
             }
         }
+
+        private void ShowSummary()
+        {
+            if (_summaryView != null) return;
+            controls.Locked = true;
+            controls.ActionVisible = false;
+            _toast.enabled = false;
+            _toastUntil = 0f;
+            _summaryView = gameObject.AddComponent<DaySummaryView>();
+            _summaryView.Show(Street.Summary, Street.Shift.Clock.Display, controls.Font);
+        }
+
+        /// <summary>L'écran de bilan (null tant que la journée n'est pas terminée).</summary>
+        public DaySummaryView SummaryView => _summaryView;
 
         // ---------- Silhouettes ----------
 
@@ -346,6 +366,10 @@ namespace TaxiKmer.Driving
             var shift = Street.Shift;
             var sb = new StringBuilder();
             sb.Append(shift.Clock.Display).Append("   ").Append(Money(shift.Ledger.Revenue)).Append('\n');
+            var versement = shift.Ledger.Versement;
+            sb.Append("Versement ").Append(Thousands(System.Math.Min(shift.Ledger.Revenue, versement)))
+              .Append(" / ").Append(Thousands(versement))
+              .Append(shift.Ledger.Revenue >= versement ? " (atteint)" : "").Append('\n');
             sb.Append("À bord ").Append(shift.Cabin.PassengerCount).Append("/5");
             var first = true;
             foreach (var p in shift.Cabin.Passengers)
@@ -356,7 +380,8 @@ namespace TaxiKmer.Driving
             _status.text = sb.ToString();
             _status.fontSize = Mathf.RoundToInt(h * 0.04f);
             _status.rectTransform.anchoredPosition = new Vector2(h * 0.04f, -h * 0.12f);
-            _status.rectTransform.sizeDelta = new Vector2(h * 1.2f, h * 0.2f);
+            _status.rectTransform.sizeDelta = new Vector2(h * 1.2f, h * 0.3f);
+            _status.enabled = !Street.DayFinished;
 
             _toast.enabled = Time.time < _toastUntil;
             _toast.fontSize = Mathf.RoundToInt(h * 0.045f);
@@ -386,17 +411,9 @@ namespace TaxiKmer.Driving
             _ => "carrure normale",
         };
 
-        /// <summary>1200 → « 1 200 FCFA ».</summary>
-        private static string Money(int amount)
-        {
-            var s = Mathf.Abs(amount).ToString();
-            var sb = new StringBuilder();
-            for (var i = 0; i < s.Length; i++)
-            {
-                if (i > 0 && (s.Length - i) % 3 == 0) sb.Append(' ');
-                sb.Append(s[i]);
-            }
-            return (amount < 0 ? "-" : "") + sb + " FCFA";
-        }
+        private static string Money(int amount) => DaySummary.Money(amount);
+
+        /// <summary>10000 → « 10 000 » (sans la devise).</summary>
+        private static string Thousands(int amount) => DaySummary.Money(amount).Replace(" FCFA", "");
     }
 }

@@ -63,5 +63,43 @@ namespace TaxiKmer.PlayModeTests
             Assert.AreEqual(client.Client.ProposedFare, street.Shift.Ledger.Revenue);
             yield return null;
         }
+
+        [UnityTest]
+        public IEnumerator Monde_EndOfDay_ShowsSummary_ThenNewDay()
+        {
+            SceneManager.LoadScene("Monde");
+            yield return null;
+            yield return new WaitForSeconds(0.5f);
+            var view = Object.FindFirstObjectByType<StreetView>();
+            var controls = Object.FindFirstObjectByType<DriverControls>();
+            var ledger = view.Street.Shift.Ledger;
+            ledger.AddFare(500);
+            ledger.AddDistance(10000f);
+            Assert.IsNull(view.SummaryView);
+
+            view.Street.Shift.Clock.Advance(1e6f);
+            yield return null;
+            yield return null;
+            Assert.IsTrue(view.Street.DayFinished, "Taxi vide à l'heure de fin : journée terminée");
+            Assert.IsNotNull(view.SummaryView, "Écran de bilan affiché");
+            Assert.IsTrue(view.SummaryView.Visible);
+            Assert.IsTrue(controls.Locked, "Commandes bloquées pendant le bilan");
+            Assert.IsNotNull(GameObject.Find("Bilan"));
+            var s = view.Street.Summary;
+            Assert.AreEqual(500, s.Revenue);
+            Assert.AreEqual(s.Revenue - s.Versement - s.FuelCost, s.Remaining);
+            var meters = ledger.MetersDriven;
+            yield return new WaitForSeconds(0.3f);
+            Assert.AreEqual(meters, ledger.MetersDriven, "Plus de distance comptée après le bilan");
+
+            view.SummaryView.NewDay();
+            yield return null;
+            yield return new WaitForSeconds(0.5f);
+            var fresh = Object.FindFirstObjectByType<StreetView>();
+            Assert.AreNotSame(view, fresh);
+            Assert.IsFalse(fresh.Street.DayFinished, "Nouvelle journée");
+            Assert.AreEqual(0, fresh.Street.Shift.Ledger.Revenue);
+            Assert.AreEqual("06:00", fresh.Street.Shift.Clock.Display);
+        }
     }
 }
