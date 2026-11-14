@@ -17,8 +17,11 @@ namespace TaxiKmer.Core.Traffic
         public float Length { get; }
         /// <summary>Carrefours avec une rue latérale à droite, par distance croissante.</summary>
         public IReadOnlyList<Junction> Junctions { get; }
+        /// <summary>Feux tricolores de ce sens, par distance croissante.</summary>
+        public IReadOnlyList<PathLight> Lights { get; }
 
-        public TrafficPath(float[] xz, int[] twoWay = null, IReadOnlyList<Junction> junctions = null)
+        public TrafficPath(float[] xz, int[] twoWay = null, IReadOnlyList<Junction> junctions = null,
+            IReadOnlyList<PathLight> lights = null)
         {
             _xz = xz ?? throw new ArgumentNullException(nameof(xz));
             if (xz.Length < 4) throw new ArgumentException("Il faut au moins deux points.", nameof(xz));
@@ -26,6 +29,7 @@ namespace TaxiKmer.Core.Traffic
             _twoWay = twoWay ?? Array.Empty<int>();
             Length = _cum[_cum.Length - 1];
             Junctions = junctions ?? Array.Empty<Junction>();
+            Lights = lights ?? Array.Empty<PathLight>();
         }
 
         public static TrafficPath From(TrafficPathData data)
@@ -36,7 +40,11 @@ namespace TaxiKmer.Core.Traffic
                     if (j.xz != null && j.xz.Length >= 4)
                         list.Add(new Junction(j.along, new TrafficPath(j.xz), j.canEnter != 0, j.canExit != 0, j.highway));
             list.Sort((a, b) => a.Along.CompareTo(b.Along));
-            return new TrafficPath(data.xz, data.twoWay, list);
+            var lights = new List<PathLight>();
+            if (data.lights != null)
+                foreach (var l in data.lights) lights.Add(new PathLight(l.id, l.along));
+            lights.Sort((a, b) => a.Along.CompareTo(b.Along));
+            return new TrafficPath(data.xz, data.twoWay, list, lights);
         }
 
         /// <summary>Point à <paramref name="along"/> m, décalé de <paramref name="lateral"/> m à droite ; direction de marche.</summary>
@@ -88,6 +96,19 @@ namespace TaxiKmer.Core.Traffic
             if (i < 0) i = ~i;
             var seg = Math.Max(0, Math.Min(_twoWay.Length - 1, i - 1));
             return _twoWay[seg] != 0;
+        }
+    }
+
+    /// <summary>Feu tricolore sur une trajectoire (même identifiant dans les deux sens : ils passent au vert ensemble).</summary>
+    public sealed class PathLight
+    {
+        public int Id { get; }
+        public float Along { get; }
+
+        public PathLight(int id, float along)
+        {
+            Id = id;
+            Along = along;
         }
     }
 

@@ -30,7 +30,13 @@
         "enterGapSeconds": 4,
         "forceInAfterSeconds": 20,
         "stopLineMeters": 6,
-        "maxQueuePerJunction": 2
+        "maxQueuePerJunction": 2,
+        "lightGreenSeconds": 25,
+        "lightAmberSeconds": 3,
+        "lightRedSeconds": 20,
+        "lightStopLineMeters": 6,
+        "lightJunctionRadiusMeters": 25,
+        "motoRunsRedChance": 0.3
     },
     "pedestrians": {
         "perKmBySideByHour": [1, 0, 0, 0, 1, 4, 10, 14, 14, 10, 9, 9, 10, 10, 9, 9, 11, 14, 14, 11, 7, 4, 2, 1],

@@ -52,6 +52,8 @@ namespace TaxiKmer.Core.Traffic
         internal object TargetClient;
         internal readonly HashSet<object> Considered = new HashSet<object>();
         internal Junction Junction;
+        /// <summary>Mototaxi qui a décidé de griller ce feu.</summary>
+        internal PathLight RunsLight;
         /// <summary>Dans une rue latérale : distance au carrefour (m).</summary>
         internal float SideDistance;
 
@@ -165,6 +167,7 @@ namespace TaxiKmer.Core.Traffic
         {
             _taken.Clear();
             if (dt <= 0f) return;
+            Time += dt;
             LocatePlayer(player);
             BuildObstacles(player, pedestrians);
             DecideClientStops(clients);
@@ -307,6 +310,12 @@ namespace TaxiKmer.Core.Traffic
             }
             if (v.State == VehicleState.Boarding) return -k.comfortDecel * 2f;
 
+            if (MustStopAtLight(v, out var toLine) && toLine + k.minGap < gap)
+            {
+                gap = Math.Max(0.1f, toLine + k.minGap);
+                leaderSpeed = 0f;
+            }
+
             // Fin de la trajectoire : on ne s'arrête pas (le véhicule disparaît en sortant de la zone).
             return Idm(k, v.Speed, Math.Max(desired, 0.1f), gap, leaderSpeed);
         }
@@ -392,7 +401,7 @@ namespace TaxiKmer.Core.Traffic
             var gap = float.MaxValue;
             var leaderSpeed = 0f;
             FindLeader(v, ref gap, ref leaderSpeed, out var pedestrian);
-            var blocked = gap < 12f && leaderSpeed < 1.5f && !pedestrian;
+            var blocked = gap < 12f && leaderSpeed < 1.5f && !pedestrian && !LightBlocksOvertake(v);
             v.BlockedSeconds = blocked ? v.BlockedSeconds + dt : 0f;
             if (v.BlockedSeconds < _config.overtakeWaitSeconds) return;
 

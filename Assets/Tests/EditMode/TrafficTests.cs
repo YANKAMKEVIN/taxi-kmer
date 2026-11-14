@@ -370,6 +370,119 @@ namespace TaxiKmer.Core.Tests
         }
     }
 
+    public class TrafficLightTests
+    {
+        private static TrafficPath NorthWithLight() =>
+            new TrafficPath(new float[] { 0, 0, 0, 2000 }, null, null, new[] { new PathLight(1, 1000f) });
+
+        private static TrafficConfig Config() => new TrafficConfig
+        {
+            vehiclesPerKmByHour = new float[24],
+            lightGreenSeconds = 20f,
+            lightAmberSeconds = 3f,
+            lightRedSeconds = 15f,
+            motoRunsRedChance = 0f,
+        };
+
+        /// <summary>Avance la simulation jusqu'à ce que le feu 1 ait la couleur voulue.</summary>
+        private static void WaitFor(TrafficSim sim, LightColor color, PlayerCar player)
+        {
+            for (var i = 0; i < 1000 && sim.LightFor(1) != color; i++) sim.Update(0.1f, 12f, player);
+            Assert.AreEqual(color, sim.LightFor(1));
+        }
+
+        [Test]
+        public void Cycle_GreenAmberRed()
+        {
+            var sim = new TrafficSim(Config(), NorthWithLight(), TrafficSimTests.South(), 1);
+            // Feu 1 décalé de 11 s : à t = 0, il est à 11 s de son cycle (vert).
+            Assert.AreEqual(LightColor.Green, sim.LightAt(1, 0f));
+            Assert.AreEqual(LightColor.Amber, sim.LightAt(1, 10f));
+            Assert.AreEqual(LightColor.Red, sim.LightAt(1, 13f));
+            Assert.AreEqual(LightColor.Green, sim.LightAt(1, 28f));
+        }
+
+        [Test]
+        public void Car_StopsAtRed_BeforeTheLine_ThenGoesOnGreen()
+        {
+            var cfg = Config();
+            var sim = new TrafficSim(cfg, NorthWithLight(), TrafficSimTests.South(), 1);
+            var player = TrafficSimTests.PlayerAt(1000f, x: 60f);
+            WaitFor(sim, LightColor.Red, player);
+            var car = sim.TrySpawn(0, 920f, VehicleKind.Car);
+            for (var step = 0; step < 100 && sim.LightFor(1) == LightColor.Red; step++) sim.Update(0.1f, 12f, player);
+            Assert.Less(car.Along + car.Length / 2f, 1000f - cfg.lightStopLineMeters + 0.5f, "Arrêté avant la ligne.");
+            WaitFor(sim, LightColor.Green, player);
+            for (var step = 0; step < 100; step++) sim.Update(0.1f, 12f, player);
+            Assert.Greater(car.Along, 1010f, "Repart au vert.");
+        }
+
+        [Test]
+        public void Queue_AtRed_DoesNotOvertake()
+        {
+            var cfg = Config();
+            cfg.lightRedSeconds = 60f;
+            var sim = new TrafficSim(cfg, NorthWithLight(), TrafficSimTests.South(), 1);
+            var player = TrafficSimTests.PlayerAt(1000f, x: 60f);
+            WaitFor(sim, LightColor.Red, player);
+            var first = sim.TrySpawn(0, 970f, VehicleKind.Car);
+            var second = sim.TrySpawn(0, 940f, VehicleKind.Car);
+            for (var step = 0; step < 300 && sim.LightFor(1) == LightColor.Red; step++)
+            {
+                sim.Update(0.1f, 12f, player);
+                Assert.AreNotEqual(VehicleState.Overtaking, second.State, "On attend au feu, on ne double pas.");
+            }
+            Assert.Less(second.Along, first.Along);
+        }
+
+        [Test]
+        public void SomeMotos_RunTheRedLight()
+        {
+            var cfg = Config();
+            cfg.motoRunsRedChance = 1f;
+            var sim = new TrafficSim(cfg, NorthWithLight(), TrafficSimTests.South(), 1);
+            var player = TrafficSimTests.PlayerAt(1000f, x: 60f);
+            WaitFor(sim, LightColor.Red, player);
+            var moto = sim.TrySpawn(0, 950f, VehicleKind.Moto);
+            for (var step = 0; step < 60; step++) sim.Update(0.1f, 12f, player);
+            Assert.Greater(moto.Along, 1000f);
+        }
+
+        [Test]
+        public void SideRoadNearLight_EntersOnlyOnAxisRed()
+        {
+            var cfg = Config();
+            cfg.junctionEntriesPerMinuteAtPeak = 6000f;
+            cfg.maxQueuePerJunction = 1;
+            cfg.vehiclesPerKmByHour = Enumerable.Repeat(10f, 24).ToArray();
+            cfg.minSpawnDistanceMeters = 5000f;
+            cfg.exitChance = 0f;
+            var side = new TrafficPath(new float[] { 0, 1010, 40, 1010 });
+            var path = new TrafficPath(new float[] { 0, 0, 0, 2000 }, null,
+                new[] { new Junction(1010f, side, true, true) }, new[] { new PathLight(1, 1000f) });
+            var sim = new TrafficSim(cfg, path, TrafficSimTests.South(), 1);
+            var player = TrafficSimTests.PlayerAt(1000f, x: 80f);
+            sim.Update(0.1f, 12f, player); // apparition dans la rue latérale
+            WaitFor(sim, LightColor.Green, player);
+            var waiting = sim.Vehicles.FirstOrDefault(v => v.State == VehicleState.EnteringFromSideRoad);
+            Assert.IsNotNull(waiting);
+            var joinedOnGreen = false;
+            var joined = false;
+            for (var step = 0; step < 900 && !joined; step++)
+            {
+                var colorBefore = sim.LightFor(1);
+                sim.Update(0.1f, 12f, player);
+                if (waiting.State == VehicleState.Driving)
+                {
+                    joined = true;
+                    joinedOnGreen = colorBefore != LightColor.Red;
+                }
+            }
+            Assert.IsTrue(joined);
+            Assert.IsFalse(joinedOnGreen, "Entre seulement quand l'axe est au rouge.");
+        }
+    }
+
     public class PedestrianSimTests
     {
         [Test]

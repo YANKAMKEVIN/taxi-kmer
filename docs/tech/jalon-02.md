@@ -23,6 +23,7 @@
 | 2.4 Piétons sur les bas-côtés, traversées | **logique faite et testée** : ils traversent quand le trafic peut freiner, jamais juste devant le joueur ; le trafic s'arrête pour eux |
 | 2.5 Concurrence pour les clients | **logique faite et testée** : les taxis concurrents prennent les clients qui attendent ; un client accepté attend 30 s puis refait signe aux autres ; pour monter, le taxi doit s'arrêter du côté du client |
 | 2.6 Carrefours et rues latérales | **logique faite et testée** (2026-11-14) : 31 carrefours à droite vers Étoudi, 34 vers le dispensaire (`osm_traffic.py`) ; des véhicules tournent à droite dans les rues latérales, d'autres en sortent, s'arrêtent à la ligne d'arrêt et entrent sur l'axe quand il y a un trou (priorité au grand axe, jamais devant le joueur) ; pas de tourne-à-gauche (on ne coupe pas le trafic d'en face) |
+| 2.8 Feux tricolores | **logique faite et testée** (2026-11-14) : cycle vert 25 s, orange 3 s, rouge 20 s (l'axe, les deux sens ensemble ; feux décalés entre eux) ; le trafic s'arrête au rouge (à l'orange s'il peut freiner sans brusquer), ne double pas devant un feu, ligne d'arrêt 6 m avant le carrefour ; les rues latérales du carrefour entrent quand l'axe est au rouge ; 3 mototaxis sur 10 grillent le rouge ; poteaux affichés dans Unity. Le joueur qui grille un feu : aucune conséquence avant le jalon 4 (police) |
 | 2.7 Performance et qualité | à faire sur téléphone : mesurer les 30 images/s en Moyen avec le trafic de pointe ; le réglage Bas réduit la densité |
 
 ## Valeurs par défaut (à régler avec Kevin après essai)
@@ -47,7 +48,7 @@ Toutes dans `Assets/Resources/Data/traffic.json` et `street.json`.
 
 ## Questions pour Kevin (réponses provisoires en place)
 
-1. **Feux tricolores** sur cette portion, ou seulement des carrefours sans feux ? → *provisoire* : pas de feux.
+1. ~~Feux tricolores sur cette portion ?~~ → **Tranché** (Kevin, 2026-11-14) : oui, il y en a. OpenStreetMap n'en a aucun sur le secteur (vérifié sur les 16 tuiles de la zone) : ils sont dans un fichier fait main, `tools/osm/traffic_lights_messassi_etoudi.json`, repérés par leur distance le long de l'itinéraire. **À corriger par Kevin** : feux provisoires au carrefour de Messassi (631 m), au carrefour de la rue 5.760 (3 545 m) et à celui de la rue 5.769 / rue Albert Ateba Ebe (3 780 m) ; dire où sont les vrais (nom du carrefour ou repère proche).
 2. ~~Les mototaxis peuvent-ils « voler » des clients au joueur ?~~ → **Tranché** (Kevin, 2026-11-14) : oui tant que le client n'est pas monté dans le taxi du joueur, même s'il l'a accepté d'un coup de klaxon ; non une fois à bord. Un taxi concurrent, lui, ne prend pas le client accepté par le joueur (choix de Claude, à confirmer). Mototaxi : 2 places, montée en 3 s.
 3. **Peut-on renverser un piéton** (et avec quelles conséquences), ou le jeu l'empêche-t-il ? → *provisoire* : les piétons ne traversent jamais juste devant le joueur ; s'il les heurte quand même, rien ne se passe encore (pas de conséquence avant la réponse).
 4. *(nouvelle)* Les **taxis concurrents** s'arrêtent pour un client sur deux qui attend dans leur sens : est-ce le bon niveau de concurrence ?

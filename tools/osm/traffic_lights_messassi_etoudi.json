@@ -1,0 +1,8 @@
+{
+    "_note": "Feux tricolores du tronçon, faits main (OpenStreetMap n'en a aucun ici, vérifié le 2026-11-14). routeDistanceMeters = distance le long de l'itinéraire du joueur depuis le dispensaire. PROVISOIRE : placés aux grands carrefours (route secondaire qui croise l'axe), à confirmer ou corriger par Kevin.",
+    "lights": [
+        { "id": 1, "name": "Carrefour de Messassi", "routeDistanceMeters": 631, "provisional": true },
+        { "id": 2, "name": "Carrefour rue 5.760", "routeDistanceMeters": 3545, "provisional": true },
+        { "id": 3, "name": "Carrefour rue 5.769 / rue Albert Ateba Ebe", "routeDistanceMeters": 3780, "provisional": true }
+    ]
+}

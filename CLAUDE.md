@@ -59,7 +59,7 @@ Q=$(python3 -c "import sys;sys.path.insert(0,'tools/osm');import osm_roads;print
 curl -s -f -A taxi-kmer-osm-import --data-urlencode "data=$Q" https://overpass-api.de/api/interpreter -o build/osm/messassi_etoudi.osm.json
 python3 tools/osm/osm_roads.py convert build/osm/messassi_etoudi.osm.json -o build/osm/roads_full.json
 python3 tools/osm/osm_route.py build/osm/roads_full.json tools/osm/landmarks_messassi_etoudi.json --stops Assets/Resources/Data/stops_messassi_etoudi.json --world Assets/Resources/Data/world_messassi_etoudi.json --corridor 250
-python3 tools/osm/osm_traffic.py Assets/Resources/Data/world_messassi_etoudi.json   # trajectoires du trafic par sens (à relancer après osm_route.py)
+python3 tools/osm/osm_traffic.py Assets/Resources/Data/world_messassi_etoudi.json --lights tools/osm/traffic_lights_messassi_etoudi.json   # trafic par sens, carrefours, feux (à relancer après osm_route.py)
 $U -batchmode -projectPath . -executeMethod TaxiKmer.EditorTools.WorldSnapshots.Run -quit -logFile Logs/snap.log   # captures dans build/snapshots (sans -nographics)
 ```
 

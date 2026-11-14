@@ -28,6 +28,25 @@ namespace TaxiKmer.Core.World
         public TrafficPathData forward = new TrafficPathData();
         /// <summary>De la fin de l'itinéraire à son début.</summary>
         public TrafficPathData backward = new TrafficPathData();
+        /// <summary>Feux tricolores (position dans le monde), faits main : tools/osm/traffic_lights_*.json.</summary>
+        public TrafficLightData[] lights = Array.Empty<TrafficLightData>();
+    }
+
+    [Serializable]
+    public class TrafficLightData
+    {
+        public int id;
+        public string name = "";
+        public float x;
+        public float z;
+    }
+
+    [Serializable]
+    public class PathLightData
+    {
+        public int id;
+        /// <summary>Position du feu le long de la trajectoire (m).</summary>
+        public float along;
     }
 
     [Serializable]
@@ -39,6 +58,8 @@ namespace TaxiKmer.Core.World
         public int[] twoWay = Array.Empty<int>();
         /// <summary>Carrefours avec une rue latérale à droite (on y entre et on en sort en tournant à droite).</summary>
         public JunctionData[] junctions = Array.Empty<JunctionData>();
+        /// <summary>Feux tricolores rencontrés dans ce sens.</summary>
+        public PathLightData[] lights = Array.Empty<PathLightData>();
     }
 
     [Serializable]

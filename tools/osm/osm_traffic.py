@@ -14,8 +14,12 @@ peut en sortir (entrer sur l'axe) ou y entrer (quitter l'axe) selon son sens uni
 route est à double sens (le trafic d'en face roule sur la même chaussée), 0 si elle est à sens unique. Quand la
 chaussée d'en face manque dans les données, le trafic remonte la route à sens unique (surcoût) en la partageant.
 
+Avec --lights (fichier fait main : feux repérés par leur distance le long de l'itinéraire du joueur), il place aussi
+les feux tricolores : position dans le monde (traffic.lights) et, pour chaque sens, distance le long de sa trajectoire.
+
 Exemple :
-  python3 tools/osm/osm_traffic.py Assets/Resources/Data/world_messassi_etoudi.json
+  python3 tools/osm/osm_traffic.py Assets/Resources/Data/world_messassi_etoudi.json \
+      --lights tools/osm/traffic_lights_messassi_etoudi.json
 """
 from __future__ import annotations
 
@@ -234,20 +238,59 @@ def traffic_paths(world: dict, near: float = 40.0, radius: float = 30.0) -> dict
     return out
 
 
+def place_lights(world: dict, paths: dict, lights: list[dict]) -> list[dict]:
+    """Feux : point de l'itinéraire → position dans le monde, et distance le long de chaque trajectoire (paths[...]["lights"])."""
+    route = _points(world["route"]["xz"])
+    cum = [0.0]
+    for a, b in zip(route, route[1:]):
+        cum.append(cum[-1] + _dist(a, b))
+    placed = []
+    for name in paths:
+        paths[name]["lights"] = []
+    for lt in lights:
+        d = max(0.0, min(cum[-1], float(lt["routeDistanceMeters"])))
+        i = next((k for k in range(1, len(cum)) if cum[k] >= d), len(cum) - 1)
+        seg = cum[i] - cum[i - 1]
+        t = (d - cum[i - 1]) / seg if seg > 0 else 0.0
+        a, b = route[i - 1], route[i]
+        point = (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+        placed.append({"id": int(lt["id"]), "name": lt.get("name", ""), "x": round(point[0], 2), "z": round(point[1], 2)})
+        for name, path in paths.items():
+            pts = _points(path["xz"])
+            pcum = [0.0]
+            for p, q in zip(pts, pts[1:]):
+                pcum.append(pcum[-1] + _dist(p, q))
+            dist, along, _ = _project(pts, pcum, point)
+            if dist <= 25.0:
+                path["lights"].append({"id": int(lt["id"]), "along": round(along, 1)})
+        for path in paths.values():
+            path["lights"].sort(key=lambda x: x["along"])
+    return placed
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("world", help="monde découpé (sortie de osm_route.py), complété sur place")
     p.add_argument("--near", type=float, default=40.0, help="au-delà de cet écart à l'itinéraire (m), fort surcoût")
+    p.add_argument("--lights", help="feux tricolores faits main (id, name, routeDistanceMeters)")
     args = p.parse_args(argv)
     with open(args.world, encoding="utf-8") as f:
         world = json.load(f)
     world["traffic"] = traffic_paths(world, args.near)
+    lights = []
+    if args.lights:
+        with open(args.lights, encoding="utf-8") as f:
+            lights = json.load(f)["lights"]
+    world["traffic"]["lights"] = place_lights(world, {k: world["traffic"][k] for k in ("forward", "backward")}, lights)
     with open(args.world, "w", encoding="utf-8") as f:
         json.dump(world, f, ensure_ascii=False, separators=(",", ":"))
-    for name, path in world["traffic"].items():
+    for name, path in ((k, world["traffic"][k]) for k in ("forward", "backward")):
         one = path["twoWay"].count(0)
         print(f"{name:8} {path['lengthMeters']:>6} m, {len(path['twoWay'])} segments dont {one} à sens unique, "
               f"{len(path['junctions'])} carrefours à droite")
+    for lt in world["traffic"]["lights"]:
+        alongs = {k: [x["along"] for x in world["traffic"][k]["lights"] if x["id"] == lt["id"]] for k in ("forward", "backward")}
+        print(f"feu {lt['id']} {lt['name']} : {alongs}")
     print(f"Itinéraire du joueur : {world['route']['lengthMeters']} m")
     return 0
 

@@ -24,6 +24,21 @@ namespace TaxiKmer.Driving
         private readonly Dictionary<Color, Material> _materials = new Dictionary<Color, Material>();
         private readonly HashSet<int> _seen = new HashSet<int>();
         private readonly List<int> _gone = new List<int>();
+        private readonly List<LightHead> _lights = new List<LightHead>();
+        private bool _lightsBuilt;
+
+        /// <summary>Tête de feu tricolore : trois lampes, allumées selon la couleur pour l'axe.</summary>
+        private sealed class LightHead
+        {
+            public int Id;
+            public Renderer Red, Amber, Green;
+            public LightColor? Shown;
+        }
+
+        private static readonly Color RedOn = new Color(1f, 0.08f, 0.05f);
+        private static readonly Color AmberOn = new Color(1f, 0.65f, 0.05f);
+        private static readonly Color GreenOn = new Color(0.1f, 1f, 0.3f);
+        private static readonly Color LampOff = new Color(0.12f, 0.12f, 0.12f);
 
         private sealed class Body
         {
@@ -57,8 +72,53 @@ namespace TaxiKmer.Driving
         private void LateUpdate()
         {
             if (City == null) return;
+            if (!_lightsBuilt) BuildLights();
+            SyncLights();
             SyncVehicles();
             SyncPeople();
+        }
+
+        // ---------- Feux tricolores ----------
+
+        /// <summary>Un poteau par sens et par feu, à droite de la chaussée, à la ligne d'arrêt, tourné vers le trafic.</summary>
+        private void BuildLights()
+        {
+            _lightsBuilt = true;
+            var paths = City.Traffic.Paths;
+            for (var p = 0; p < paths.Count; p++)
+                foreach (var l in paths[p].Lights)
+                {
+                    var along = City.Traffic.StopLine(p, l) + 1f;
+                    paths[p].Sample(along, 4.6f, out var x, out var z, out var dx, out var dz);
+                    var root = new GameObject($"Feu {l.Id}");
+                    root.transform.SetParent(transform, false);
+                    root.transform.SetPositionAndRotation(new Vector3(x, 0f, z), Quaternion.LookRotation(new Vector3(-dx, 0f, -dz), Vector3.up));
+                    Part(root.transform, PrimitiveType.Cylinder, new Vector3(0f, 1.6f, 0f), new Vector3(0.14f, 1.6f, 0.14f), new Color(0.2f, 0.2f, 0.2f));
+                    Part(root.transform, PrimitiveType.Cube, new Vector3(0f, 3.6f, 0f), new Vector3(0.4f, 1.15f, 0.3f), new Color(0.05f, 0.05f, 0.05f));
+                    var head = new LightHead
+                    {
+                        Id = l.Id,
+                        Red = Part(root.transform, PrimitiveType.Sphere, new Vector3(0f, 4.0f, 0.16f), Vector3.one * 0.26f, LampOff),
+                        Amber = Part(root.transform, PrimitiveType.Sphere, new Vector3(0f, 3.6f, 0.16f), Vector3.one * 0.26f, LampOff),
+                        Green = Part(root.transform, PrimitiveType.Sphere, new Vector3(0f, 3.2f, 0.16f), Vector3.one * 0.26f, LampOff),
+                    };
+                    foreach (var r in new[] { head.Red, head.Amber, head.Green })
+                        r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    _lights.Add(head);
+                }
+        }
+
+        private void SyncLights()
+        {
+            foreach (var h in _lights)
+            {
+                var c = City.Traffic.LightFor(h.Id);
+                if (h.Shown == c) continue;
+                h.Shown = c;
+                h.Red.sharedMaterial = MaterialFor(c == LightColor.Red ? RedOn : LampOff);
+                h.Amber.sharedMaterial = MaterialFor(c == LightColor.Amber ? AmberOn : LampOff);
+                h.Green.sharedMaterial = MaterialFor(c == LightColor.Green ? GreenOn : LampOff);
+            }
         }
 
         // ---------- Véhicules ----------

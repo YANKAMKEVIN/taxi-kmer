@@ -36,6 +36,7 @@ namespace TaxiKmer.Core.DotnetTests
             city.Populate(hour, Player(0f));
             var stuck = new Dictionary<int, float>();
             var worst = 0f;
+            var worstWhat = "";
             var maxVehicles = 0;
             var maxPeople = 0;
             var watch = Stopwatch.StartNew();
@@ -47,14 +48,14 @@ namespace TaxiKmer.Core.DotnetTests
                 {
                     var t = v.Speed < 0.5f && v.State != VehicleState.Boarding ? (stuck.TryGetValue(v.Id, out var s) ? s : 0f) + dt : 0f;
                     stuck[v.Id] = t;
-                    worst = Math.Max(worst, t);
+                    if (t > worst) { worst = t; worstWhat = $"{v.Kind} {v.State} sens {v.PathIndex} à {v.Along:F0} m"; }
                 }
                 maxVehicles = Math.Max(maxVehicles, city.Traffic.Vehicles.Count);
                 maxPeople = Math.Max(maxPeople, city.Pedestrians.People.Count);
             }
             watch.Stop();
             var msPerStep = watch.Elapsed.TotalMilliseconds / steps;
-            TestContext.WriteLine($"{steps} pas, {msPerStep:F3} ms par pas, jusqu'à {maxVehicles} véhicules et {maxPeople} piétons ; plus long arrêt : {worst:F1} s");
+            TestContext.WriteLine($"{steps} pas, {msPerStep:F3} ms par pas, jusqu'à {maxVehicles} véhicules et {maxPeople} piétons ; plus long arrêt : {worst:F1} s ({worstWhat})");
             Assert.Greater(maxVehicles, 15, "Heure de pointe : du monde sur la route.");
             Assert.Greater(maxPeople, 5);
             Assert.Less(worst, 60f, "Aucun véhicule bloqué plus d'une minute.");

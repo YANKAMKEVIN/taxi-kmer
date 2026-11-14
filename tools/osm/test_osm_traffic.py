@@ -75,5 +75,15 @@ class TrafficPathsTests(unittest.TestCase):
         self.assertEqual([j["along"] for j in back], [500.0], "vers le sud, seule la rue de l'ouest est à droite")
 
 
+    def test_lights_placed_on_both_directions(self):
+        world = {"roads": [road(1, False, [0, 0, 0, 1000], "secondary")],
+                 "route": {"xz": [0, 0, 0, 1000], "lengthMeters": 1000}}
+        paths = osm_traffic.traffic_paths(world)
+        placed = osm_traffic.place_lights(world, paths, [{"id": 7, "name": "Carrefour", "routeDistanceMeters": 300}])
+        self.assertEqual(placed, [{"id": 7, "name": "Carrefour", "x": 0.0, "z": 300.0}])
+        self.assertEqual(paths["forward"]["lights"], [{"id": 7, "along": 300.0}])
+        self.assertEqual(paths["backward"]["lights"], [{"id": 7, "along": 700.0}])
+
+
 if __name__ == "__main__":
     unittest.main()

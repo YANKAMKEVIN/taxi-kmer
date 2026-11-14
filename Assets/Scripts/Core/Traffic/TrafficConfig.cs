@@ -105,6 +105,19 @@ namespace TaxiKmer.Core.Traffic
         /// <summary>Véhicules en attente au plus par rue latérale.</summary>
         public int maxQueuePerJunction = 2;
 
+        /// <summary>Feux tricolores : durée du vert pour l'axe (s).</summary>
+        public float lightGreenSeconds = 25f;
+        /// <summary>Durée de l'orange (s).</summary>
+        public float lightAmberSeconds = 3f;
+        /// <summary>Durée du rouge pour l'axe, pendant que les rues latérales passent (s).</summary>
+        public float lightRedSeconds = 20f;
+        /// <summary>Ligne d'arrêt à … m avant le feu.</summary>
+        public float lightStopLineMeters = 6f;
+        /// <summary>Une rue latérale à moins de … m d'un feu attend que l'axe soit au rouge pour entrer.</summary>
+        public float lightJunctionRadiusMeters = 25f;
+        /// <summary>Chance qu'un mototaxi grille un feu rouge (décidée à chaque feu).</summary>
+        public float motoRunsRedChance = 0.3f;
+
         public static float[] DefaultVehicleDensity()
         {
             // 0 h … 23 h. La journée de jeu va de 6 h à 20 h ; pointes à 7-8 h et 17-18 h.

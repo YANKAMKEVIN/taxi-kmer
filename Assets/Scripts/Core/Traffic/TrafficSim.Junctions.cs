@@ -130,6 +130,7 @@ namespace TaxiKmer.Core.Traffic
         private bool CanEnter(TrafficVehicle v)
         {
             if (v.SideDistance > _config.stopLineMeters + v.Length / 2f + 3f) return false; // pas encore à la ligne
+            if (JunctionHeldByLight(v)) return false;
             var j = v.Junction;
             var lane = _config.laneOffsetMeters;
             // Après une longue attente, il force un peu le passage (le suivant freine) : personne ne reste coincé.
