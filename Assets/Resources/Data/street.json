@@ -1,5 +1,5 @@
 {
-    "_note": "Clients au bord de la route (tâche 1.5, valeurs par défaut). Distances en m le long de l'itinéraire, durées en secondes réelles, vitesse en km/h.",
+    "_note": "Clients au bord de la route (tâche 1.5, valeurs par défaut). Distances en m le long de l'itinéraire, durées en secondes réelles, vitesse en km/h. acceptedPatienceSeconds : un client accepté attend le taxi au plus ce temps (jalon 2) ; curbSideMinMeters : pour monter, le taxi doit être de son côté de la route.",
     "maxWaitingPerStop": 3,
     "spawnIntervalSeconds": 20,
     "clientSpacingMeters": 4,
@@ -8,5 +8,7 @@
     "missedDistanceMeters": 25,
     "stopRadiusMeters": 30,
     "maxLateralMeters": 15,
-    "stoppedKmh": 3
+    "stoppedKmh": 3,
+    "acceptedPatienceSeconds": 30,
+    "curbSideMinMeters": 0
 }

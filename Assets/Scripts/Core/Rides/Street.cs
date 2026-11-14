@@ -26,6 +26,13 @@ namespace TaxiKmer.Core.Rides
         public float maxLateralMeters = 15f;
         /// <summary>En dessous de cette vitesse (km/h), le taxi est arrêté : montée et descente possibles.</summary>
         public float stoppedKmh = 3f;
+        /// <summary>Un client accepté attend le taxi au plus … s ; ensuite il refait signe aux autres (jalon 2).</summary>
+        public float acceptedPatienceSeconds = 30f;
+        /// <summary>
+        /// Pour faire monter, le taxi doit être arrêté du côté du client : écart à l'axe d'au moins … m de son côté
+        /// (0 = au moins sur sa moitié de chaussée ; un client ne traverse pas la route pour monter).
+        /// </summary>
+        public float curbSideMinMeters = 0f;
     }
 
     /// <summary>Position du taxi par rapport à l'itinéraire.</summary>
@@ -35,7 +42,7 @@ namespace TaxiKmer.Core.Rides
         public float Along;
         /// <summary>+1 en direction d'Étoudi (fin de l'itinéraire), -1 vers le dispensaire.</summary>
         public int Direction;
-        /// <summary>Écart à l'axe de l'itinéraire (m).</summary>
+        /// <summary>Écart à l'axe de l'itinéraire (m), positif à droite dans le sens vers Étoudi, négatif à gauche.</summary>
         public float Lateral;
         public float SpeedKmh;
     }
@@ -59,6 +66,8 @@ namespace TaxiKmer.Core.Rides
         public RoadsideState State { get; internal set; }
         /// <summary>Il annonce sa destination et son prix au taxi qui arrive (« Étoudi, 500 ! »).</summary>
         public bool Calling { get; internal set; }
+        /// <summary>Depuis combien de secondes il attend le taxi du joueur qui l'a accepté.</summary>
+        public float AcceptedSeconds { get; internal set; }
 
         internal RoadsideClient(Client client, Stop pickup, float along, int direction, int slot)
         {
@@ -104,6 +113,23 @@ namespace TaxiKmer.Core.Rides
         public int Count;
     }
 
+    /// <summary>Pourquoi un client n'attend plus le joueur (pour le message à l'écran).</summary>
+    public enum ClientLostReason
+    {
+        /// <summary>Accepté, mais le taxi a mis trop de temps : il refait signe aux autres.</summary>
+        GaveUp,
+        /// <summary>Il est monté dans un taxi concurrent.</summary>
+        TookOtherTaxi,
+    }
+
+    public struct ClientLost
+    {
+        public RoadsideClient Client;
+        public ClientLostReason Reason;
+        /// <summary>C'était le client accepté par le joueur.</summary>
+        public bool WasAccepted;
+    }
+
     public struct StreetOutcome
     {
         public StreetActionKind Kind;
@@ -128,8 +154,11 @@ namespace TaxiKmer.Core.Rides
         private readonly float _routeLength;
         private readonly List<RoadsideClient> _waiting = new List<RoadsideClient>();
         private readonly float[] _spawnTimers;
+        private readonly List<ClientLost> _lost = new List<ClientLost>();
 
         public IReadOnlyList<RoadsideClient> Waiting => _waiting;
+        /// <summary>Clients perdus depuis le dernier <see cref="Update"/> (abandon, autre taxi).</summary>
+        public IReadOnlyList<ClientLost> Lost => _lost;
         public Shift Shift => _shift;
 
         /// <summary>
@@ -155,6 +184,7 @@ namespace TaxiKmer.Core.Rides
 
         public void Update(float dt, TaxiOnRoute taxi)
         {
+            _lost.Clear();
             if (DayFinished) return;
             if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
             if (!_shift.Clock.IsOver)
@@ -172,12 +202,21 @@ namespace TaxiKmer.Core.Rides
                 }
             }
 
-            var onRoute = taxi.Lateral <= _config.maxLateralMeters;
+            var onRoute = Math.Abs(taxi.Lateral) <= _config.maxLateralMeters;
             foreach (var c in _waiting)
             {
                 var ahead = (c.Along - taxi.Along) * c.Direction;
                 if (c.State == RoadsideState.Accepted && (!onRoute || -ahead > _config.missedDistanceMeters))
                     c.State = RoadsideState.Waiting; // le taxi est passé sans s'arrêter
+                if (c.State == RoadsideState.Accepted)
+                {
+                    c.AcceptedSeconds += dt;
+                    if (c.AcceptedSeconds > _config.acceptedPatienceSeconds)
+                    {
+                        c.State = RoadsideState.Waiting;
+                        _lost.Add(new ClientLost { Client = c, Reason = ClientLostReason.GaveUp, WasAccepted = true });
+                    }
+                }
                 c.Calling = c.State == RoadsideState.Waiting && onRoute && !_shift.Clock.IsOver
                     && taxi.Direction == c.Direction
                     && ahead > -_config.boardDistanceMeters && ahead < _config.announceDistanceMeters;
@@ -197,17 +236,38 @@ namespace TaxiKmer.Core.Rides
             }
             if (client == null) return HonkResult.NobodyCalling;
             var cabin = _shift.Cabin;
-            if (cabin.CanBoard(client.Client)) { client.State = RoadsideState.Accepted; return HonkResult.Accepted; }
-            if (cabin.FindMoveToFit(client.Client) != null) { client.State = RoadsideState.Accepted; return HonkResult.AcceptedNeedsMove; }
+            if (cabin.CanBoard(client.Client)) { Accept(client); return HonkResult.Accepted; }
+            if (cabin.FindMoveToFit(client.Client) != null) { Accept(client); return HonkResult.AcceptedNeedsMove; }
             return HonkResult.NoRoom;
         }
+
+        private static void Accept(RoadsideClient c)
+        {
+            c.State = RoadsideState.Accepted;
+            c.AcceptedSeconds = 0f;
+        }
+
+        /// <summary>
+        /// Un taxi concurrent prend ce client (jalon 2). Refusé si le joueur l'a accepté (il l'attend) ou s'il n'est
+        /// plus là. Le client quitte le bord de la route ; un autre arrivera plus tard.
+        /// </summary>
+        public bool TakeByOther(RoadsideClient client)
+        {
+            if (client == null || client.State != RoadsideState.Waiting || !_waiting.Remove(client)) return false;
+            client.Calling = false;
+            _lost.Add(new ClientLost { Client = client, Reason = ClientLostReason.TookOtherTaxi });
+            return true;
+        }
+
+        /// <summary>Le taxi est arrêté du côté de ce client (il ne traverse pas la route pour monter).</summary>
+        public bool OnClientSide(RoadsideClient c, TaxiOnRoute taxi) => c.Direction * taxi.Lateral >= _config.curbSideMinMeters;
 
         /// <summary>Ce que propose le bouton contextuel à cet instant (descente prioritaire sur la montée).</summary>
         public StreetAction AvailableAction(TaxiOnRoute taxi)
         {
             var none = new StreetAction { Kind = StreetActionKind.None };
             if (DayFinished) return none;
-            if (Math.Abs(taxi.SpeedKmh) > _config.stoppedKmh || taxi.Lateral > _config.maxLateralMeters) return none;
+            if (Math.Abs(taxi.SpeedKmh) > _config.stoppedKmh || Math.Abs(taxi.Lateral) > _config.maxLateralMeters) return none;
 
             foreach (var stop in _stops.stops)
             {
@@ -225,7 +285,7 @@ namespace TaxiKmer.Core.Rides
             var best = float.MaxValue;
             foreach (var c in _waiting)
             {
-                if (c.State != RoadsideState.Accepted) continue;
+                if (c.State != RoadsideState.Accepted || !OnClientSide(c, taxi)) continue;
                 var d = Math.Abs(c.Along - taxi.Along);
                 if (d <= _config.boardDistanceMeters && d < best) { best = d; nearest = c; }
             }

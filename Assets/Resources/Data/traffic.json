@@ -1,0 +1,36 @@
+{
+    "_note": "Trafic et piétons (jalon 2, valeurs par défaut à régler avec Kevin). vehiclesPerKmByHour et perKmBySideByHour : 24 valeurs, de 0 h à 23 h (la journée de jeu va de 6 h à 20 h). Distances en m, vitesses en km/h, durées en secondes réelles ; latéral = écart à droite de l'axe de la chaussée. motoTakesClients : question 2 du jalon 2 pour Kevin.",
+    "vehicles": {
+        "vehiclesPerKmByHour": [3, 2, 2, 2, 3, 6, 12, 20, 22, 15, 11, 10, 11, 11, 10, 11, 15, 21, 22, 16, 10, 7, 5, 4],
+        "car": { "share": 0.45, "desiredKmh": 50, "desiredKmhSpread": 8, "length": 4.3, "width": 1.75, "maxAccel": 1.6, "comfortDecel": 2.5, "timeHeadway": 1.2, "minGap": 2 },
+        "taxi": { "share": 0.35, "desiredKmh": 45, "desiredKmhSpread": 6, "length": 4.4, "width": 1.72, "maxAccel": 1.8, "comfortDecel": 2.5, "timeHeadway": 1.2, "minGap": 2 },
+        "moto": { "share": 0.2, "desiredKmh": 50, "desiredKmhSpread": 10, "length": 2, "width": 0.8, "maxAccel": 2.5, "comfortDecel": 3, "timeHeadway": 0.8, "minGap": 1 },
+        "laneOffsetMeters": 1.7,
+        "motoOffsetMeters": 3.1,
+        "overtakeOffsetMeters": -1.7,
+        "motoPassingDeltaKmh": 15,
+        "activeRadiusMeters": 380,
+        "minSpawnDistanceMeters": 160,
+        "minSpawnGapMeters": 18,
+        "maxSpawnsPerUpdate": 2,
+        "overtakeWaitSeconds": 3,
+        "overtakeClearMeters": 90,
+        "lateralSpeed": 2,
+        "competitorPickupChance": 0.5,
+        "competitorStopSeconds": 6,
+        "competitorCapacity": 5,
+        "motoTakesClients": false
+    },
+    "pedestrians": {
+        "perKmBySideByHour": [1, 0, 0, 0, 1, 4, 10, 14, 14, 10, 9, 9, 10, 10, 9, 9, 11, 14, 14, 11, 7, 4, 2, 1],
+        "sidewalkOffsetMeters": 5,
+        "walkSpeedMin": 1,
+        "walkSpeedMax": 1.5,
+        "crossChancePerMinute": 0.6,
+        "crossSafetySeconds": 2,
+        "crossMinClearMeters": 20,
+        "activeRadiusMeters": 220,
+        "minSpawnDistanceMeters": 90,
+        "maxSpawnsPerUpdate": 2
+    }
+}

@@ -17,6 +17,26 @@ namespace TaxiKmer.Core.World
         public BuildingData[] buildings = Array.Empty<BuildingData>();
         public IntersectionData[] intersections = Array.Empty<IntersectionData>();
         public RouteData route = new RouteData();
+        /// <summary>Trajectoires du trafic, une par sens (tools/osm/osm_traffic.py) ; vides dans un monde plus ancien.</summary>
+        public TrafficPathsData traffic = new TrafficPathsData();
+    }
+
+    [Serializable]
+    public class TrafficPathsData
+    {
+        /// <summary>Du début de l'itinéraire (dispensaire) à sa fin (Étoudi).</summary>
+        public TrafficPathData forward = new TrafficPathData();
+        /// <summary>De la fin de l'itinéraire à son début.</summary>
+        public TrafficPathData backward = new TrafficPathData();
+    }
+
+    [Serializable]
+    public class TrafficPathData
+    {
+        public int lengthMeters;
+        public float[] xz = Array.Empty<float>();
+        /// <summary>Par segment : 1 si la route est à double sens (trafic d'en face sur la même chaussée), 0 sinon.</summary>
+        public int[] twoWay = Array.Empty<int>();
     }
 
     [Serializable]
