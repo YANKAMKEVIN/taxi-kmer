@@ -130,5 +130,27 @@ namespace TaxiKmer.PlayModeTests
             Assert.AreEqual("Haut", Object.FindFirstObjectByType<QualityView>().Current.name);
             PlayerPrefs.DeleteKey(QualityView.PrefKey);
         }
+
+        [UnityTest]
+        public IEnumerator Monde_CityIsAlive_TrafficAndPedestriansShown()
+        {
+            SceneManager.LoadScene("Monde");
+            yield return null;
+            yield return new WaitForSeconds(2f);
+            var view = Object.FindFirstObjectByType<StreetView>();
+            Assert.IsNotNull(view.City, "La ville est créée");
+            var traffic = view.City.Traffic.Vehicles;
+            Assert.Greater(traffic.Count, 4, "Du trafic autour du taxi au départ (6 h)");
+            Assert.Greater(view.City.Pedestrians.People.Count, 0, "Des piétons");
+            var shown = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)
+                .Count(t => t.gameObject.activeInHierarchy && (t.name == "Voiture" || t.name == "Taxi concurrent" || t.name == "Mototaxi"));
+            // L'affichage suit en LateUpdate : à 2 apparitions près (celles de l'image en cours).
+            Assert.That(shown, Is.InRange(traffic.Count - 2, traffic.Count + 2), "Un objet affiché par véhicule");
+
+            // Les véhicules avancent.
+            var before = traffic.ToDictionary(v => v.Id, v => v.Along);
+            yield return new WaitForSeconds(1f);
+            Assert.IsTrue(view.City.Traffic.Vehicles.Any(v => before.TryGetValue(v.Id, out var a) && v.Along > a + 1f));
+        }
     }
 }

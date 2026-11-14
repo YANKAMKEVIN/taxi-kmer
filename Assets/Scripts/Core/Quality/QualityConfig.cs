@@ -20,6 +20,8 @@ namespace TaxiKmer.Core.Quality
         public float fogStart = 150f;
         /// <summary>Fin du brouillard (tout est couleur brouillard), en mètres ; au plus la distance d'affichage.</summary>
         public float fogEnd = 450f;
+        /// <summary>Part du trafic et des piétons affichés (1 = densité des données ; moins au réglage bas).</summary>
+        public float trafficScale = 1f;
     }
 
     /// <summary>Réglages de qualité (données : Assets/Resources/Data/quality.json).</summary>
@@ -38,7 +40,7 @@ namespace TaxiKmer.Core.Quality
         {
             return new[]
             {
-                new QualityLevel { name = "Bas", targetFrameRate = 30, drawDistance = 300f, fogStart = 100f, fogEnd = 300f },
+                new QualityLevel { name = "Bas", targetFrameRate = 30, drawDistance = 300f, fogStart = 100f, fogEnd = 300f, trafficScale = 0.6f },
                 new QualityLevel { name = "Moyen", targetFrameRate = 30, drawDistance = 450f, fogStart = 150f, fogEnd = 450f },
                 new QualityLevel { name = "Haut", targetFrameRate = 60, drawDistance = 600f, fogStart = 150f, fogEnd = 600f },
             };

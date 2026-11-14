@@ -11,14 +11,14 @@
 - **Trafic sur l'axe principal d'abord** : le joueur fait l'aller-retour Messassi ↔ Étoudi ; c'est là que le trafic se voit. Les rues latérales (véhicules qui entrent et sortent aux carrefours) viennent ensuite (tâche 2.6).
 - **Une trajectoire par sens** (`world.traffic.forward` / `backward`), calculée par `tools/osm/osm_traffic.py` sur le graphe orienté des routes OSM : sur la double voie (deux chaussées à sens unique à ~11 m), chaque sens roule sur sa chaussée. L'itinéraire du joueur, lui, ignore les sens uniques (calcul du jalon 1). Là où la chaussée retour manque dans les données du couloir (vers Étoudi), le trafic partage la chaussée à sens unique, traitée comme à double sens.
 - **Simulation en C# pur** (`Core/Traffic`), testée sans Unity : position = distance le long de la trajectoire + écart latéral (on roule à droite). Suivi IDM (chacun adapte sa vitesse au véhicule de devant, freine pour un obstacle). Le trafic n'existe que dans un rayon de 380 m autour du joueur (piétons : 220 m) ; il apparaît au-delà de 160 m, caché par le brouillard.
-- **Unity ne fait qu'afficher** (`TrafficView`) : véhicules en blocs provisoires (voitures de couleurs variées, taxis jaunes, mototaxis avec leur conducteur), piétons en silhouettes ; objets réutilisés (pas de création à chaque apparition) ; colliders cinématiques pour que le taxi du joueur les heurte.
+- **Unity ne fait qu'afficher** (`TrafficView`, créé par `StreetView`, aucune modification de scène nécessaire) : véhicules en blocs provisoires (voitures de couleurs variées, taxis jaunes, mototaxis avec leur conducteur), piétons en silhouettes ; objets réutilisés (pas de création à chaque apparition) ; colliders cinématiques pour que le taxi du joueur les heurte.
 
 ## Tâches
 
 | Tâche | État |
 |---|---|
 | 2.1 Trajectoires du trafic par sens (outil OSM) | **faite** (2026-11-14) : `osm_traffic.py` + 4 tests ; forward 6 096 m, backward 6 098 m, à moins de 13,5 m de l'itinéraire |
-| 2.2 Trafic : voitures et taxis, deux sens, densité selon l'heure, dépassement | **logique faite et testée** (2026-11-14) ; affichage Unity écrit, à compiler sur le Mac |
+| 2.2 Trafic : voitures et taxis, deux sens, densité selon l'heure, dépassement | **logique faite et testée** (2026-11-14) ; affichage Unity écrit (`TrafficView`, branché dans `StreetView`), compilé hors Unity (`tools/check_unity_compile.sh`), test PlayMode ajouté ; **à lancer dans Unity et à voir sur téléphone** |
 | 2.3 Mototaxis qui se faufilent | **logique faite et testée** : ils roulent au bord, longent les voitures par la droite (au plus 15 km/h plus vite qu'elles) |
 | 2.4 Piétons sur les bas-côtés, traversées | **logique faite et testée** : ils traversent quand le trafic peut freiner, jamais juste devant le joueur ; le trafic s'arrête pour eux |
 | 2.5 Concurrence pour les clients | **logique faite et testée** : les taxis concurrents prennent les clients qui attendent ; un client accepté attend 30 s puis refait signe aux autres ; pour monter, le taxi doit s'arrêter du côté du client |
@@ -26,6 +26,10 @@
 | 2.7 Performance et qualité | à faire sur téléphone : mesurer les 30 images/s en Moyen avec le trafic de pointe ; le réglage Bas réduit la densité |
 
 ## Valeurs par défaut (à régler avec Kevin après essai)
+
+- Réglage de qualité Bas : 60 % du trafic et des piétons (`trafficScale` dans `quality.json`) ; Moyen et Haut : 100 %.
+- Messages : « Un autre taxi a pris le client pour … » si c'était à moins de 120 m du joueur ; « Ton client en a eu marre d'attendre » quand le client accepté abandonne.
+- Piétons sans collider pour l'instant (le taxi les traverse) en attendant la réponse à la question 3 ; véhicules avec collider cinématique (on les heurte, ils ne bougent pas).
 
 Toutes dans `Assets/Resources/Data/traffic.json` et `street.json`.
 

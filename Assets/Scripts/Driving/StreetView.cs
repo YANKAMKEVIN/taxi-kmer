@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Text;
 using TaxiKmer.Core.Day;
 using TaxiKmer.Core.Rides;
+using TaxiKmer.Core.Traffic;
 using TaxiKmer.Core.World;
 using TaxiKmer.World;
 using UnityEngine;
@@ -14,6 +15,8 @@ namespace TaxiKmer.Driving
     /// « Étoudi, 500 ! » quand le taxi arrive dans leur sens, klaxon pour accepter, bouton contextuel pour faire
     /// monter ou descendre, repères des destinations, heure, recette et passagers à l'écran.
     /// La logique est dans <see cref="Street"/> (Core) ; ce composant ne fait que l'afficher et la piloter.
+    /// Jalon 2 : il fait aussi vivre la ville autour (<see cref="CityLife"/> : trafic, mototaxis, piétons, taxis
+    /// concurrents qui prennent les clients), affichée par <see cref="TrafficView"/>.
     /// </summary>
     public sealed class StreetView : MonoBehaviour
     {
@@ -22,12 +25,14 @@ namespace TaxiKmer.Driving
         public DriverControls controls;
         public Material personMaterial;
         public Material markerMaterial;
-        [Tooltip("Distance des clients à l'axe de la route (m), du côté droit de leur sens.")]
+        [Tooltip("Distance des clients à l'axe de la chaussée de leur sens (m), à sa droite.")]
         public float sideOffset = 5.5f;
         [Tooltip("Graine des clients ; 0 = différente à chaque partie.")]
         public int seed;
 
         public Street Street { get; private set; }
+        /// <summary>Trafic, piétons et concurrence (jalon 2).</summary>
+        public CityLife City { get; private set; }
 
         private float[] _xz;
         private float[] _cum;
@@ -42,6 +47,8 @@ namespace TaxiKmer.Driving
         private DaySummaryView _summaryView;
         private MaterialPropertyBlock _block;
         private Camera _camera;
+        private QualityView _quality;
+        private bool _cityPopulated;
 
         private sealed class Person
         {
@@ -72,8 +79,17 @@ namespace TaxiKmer.Driving
             var stops = Load("Data/stops_messassi_etoudi", new StopsConfig());
             var fares = Load("Data/fares", FareConfig.Default());
             var shift = new Shift(Load("Data/day", new DayConfig()), Load("Data/seating", new SeatingConfig()));
-            var factory = new ClientFactory(stops, fares, seed != 0 ? seed : System.Environment.TickCount);
+            var actualSeed = seed != 0 ? seed : System.Environment.TickCount;
+            var factory = new ClientFactory(stops, fares, actualSeed);
             Street = new Street(Load("Data/street", new StreetConfig()), stops, factory, shift, _cum[_cum.Length - 1]);
+
+            // La ville autour : trafic, piétons, taxis concurrents (jalon 2).
+            City = new CityLife(Load("Data/traffic", new CityConfig()), world.Data, Street, actualSeed + 17, sideOffset);
+            _quality = controls.GetComponent<QualityView>();
+            ApplyTrafficScale();
+            var trafficView = gameObject.AddComponent<TrafficView>();
+            trafficView.baseMaterial = personMaterial;
+            trafficView.City = City;
 
             foreach (var stop in stops.stops) _stopMarkers[stop.id] = MakeStopMarker(stop);
             BuildHud();
@@ -87,16 +103,46 @@ namespace TaxiKmer.Driving
             return fallback;
         }
 
+        /// <summary>Heure du jeu (6,5 = 6 h 30).</summary>
+        private float Hour => Street.Shift.Clock.GameMinutes / 60f;
+
+        /// <summary>Le taxi du joueur, pour le trafic (obstacle) et les piétons (ils ne traversent pas devant lui).</summary>
+        private PlayerCar PlayerState()
+        {
+            var t = taxi.transform;
+            var f = t.forward;
+            f.y = 0f;
+            f = f.sqrMagnitude > 1e-6f ? f.normalized : Vector3.forward;
+            return new PlayerCar
+            {
+                X = t.position.x,
+                Z = t.position.z,
+                DirX = f.x,
+                DirZ = f.z,
+                Speed = taxi.ForwardSpeedMs,
+                Length = TaxiFactory.Length,
+                Width = TaxiFactory.Width,
+            };
+        }
+
+        private void ApplyTrafficScale()
+        {
+            var scale = _quality != null ? _quality.Current.trafficScale : 1f;
+            City.Traffic.DensityScale = scale;
+            City.Pedestrians.DensityScale = scale;
+        }
+
         private TaxiOnRoute TaxiState()
         {
             var p = taxi.transform.position;
-            WorldGeometry.Project(_xz, _cum, p.x, p.z, out var along, out var lateral);
-            WorldGeometry.SampleAlong(_xz, _cum, along, out _, out _, out var dx, out var dz);
+            WorldGeometry.Project(_xz, _cum, p.x, p.z, out var along, out _);
+            WorldGeometry.SampleAlong(_xz, _cum, along, out var rx, out var rz, out var dx, out var dz);
             var f = taxi.transform.forward;
             return new TaxiOnRoute
             {
                 Along = along,
-                Lateral = lateral,
+                // Signé : positif à droite dans le sens vers Étoudi, dont la droite est (dz, -dx).
+                Lateral = (p.x - rx) * dz - (p.z - rz) * dx,
                 Direction = f.x * dx + f.z * dz >= 0f ? 1 : -1,
                 SpeedKmh = taxi.SpeedKmh,
             };
@@ -114,6 +160,15 @@ namespace TaxiKmer.Driving
 
             var state = TaxiState();
             Street.Update(dt, state);
+            ApplyTrafficScale();
+            if (!_cityPopulated)
+            {
+                // À la première image : le taxi est alors posé à son départ (TaxiCar.Start).
+                _cityPopulated = true;
+                City.Populate(Hour, PlayerState());
+            }
+            City.Update(dt, Hour, PlayerState());
+            foreach (var lost in Street.Lost) OnClientLost(lost);
 
             if (controls.HornTriggered) OnHonk(state);
             var action = Street.AvailableAction(state);
@@ -155,6 +210,20 @@ namespace TaxiKmer.Driving
                     Toast($"Pas de place pour ce client ({CorpulenceLabel(client.Client)})");
                     break;
             }
+        }
+
+        /// <summary>Un client n'attend plus : on le dit au joueur si c'était le sien, ou s'il était tout près.</summary>
+        private void OnClientLost(ClientLost lost)
+        {
+            if (lost.WasAccepted && lost.Reason == ClientLostReason.GaveUp)
+            {
+                Toast("Ton client en a eu marre d'attendre : il fait signe aux autres taxis");
+                return;
+            }
+            if (lost.Reason != ClientLostReason.TookOtherTaxi) return;
+            var place = City.Place(lost.Client);
+            var d = new Vector2(place.X - taxi.transform.position.x, place.Z - taxi.transform.position.z).magnitude;
+            if (d < 120f) Toast($"Un autre taxi a pris le client pour {ShortName(lost.Client.Client.DestinationStopId)}");
         }
 
         private void OnAction(TaxiOnRoute state)
@@ -229,14 +298,12 @@ namespace TaxiKmer.Driving
 
         private Person MakePerson(RoadsideClient c)
         {
-            WorldGeometry.SampleAlong(_xz, _cum, c.Along, out var x, out var z, out var dx, out var dz);
-            dx *= c.Direction;
-            dz *= c.Direction;
-            var right = new Vector3(dz, 0f, -dx);
-            var pos = new Vector3(x, 0f, z) + right * sideOffset;
+            // Sur le trottoir de la chaussée de son sens (CityLife), tourné vers les taxis qui arrivent.
+            var place = City.Place(c);
+            var pos = new Vector3(place.X, 0f, place.Z);
             var root = new GameObject("Client " + c.Client.Id);
             root.transform.SetParent(transform, false);
-            root.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(-right, Vector3.up));
+            root.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(new Vector3(place.FaceX, 0f, place.FaceZ), Vector3.up));
 
             var width = c.Client.Corpulence switch
             {

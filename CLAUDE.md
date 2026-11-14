@@ -48,6 +48,7 @@ docs/tech/               état du projet, plans de jalons
 
 ```bash
 tools/test_core.sh                     # tests de la logique hors Unity (dotnet 8 + NUnit), aussi lancés par la CI
+tools/check_unity_compile.sh           # compile le code Unity hors Unity (références UnityEngine 2021.3 + stubs) : pour les sessions cloud
 U=/Applications/Unity/Hub/Editor/6000.3.28f1/Unity.app/Contents/MacOS/Unity
 $U -batchmode -nographics -projectPath . -runTests -testPlatform EditMode -testResults Logs/editmode.xml -logFile Logs/tests.log
 $U -batchmode -nographics -projectPath . -buildTarget Android -executeMethod TaxiKmer.EditorTools.BuildAndroid.Run -quit -logFile Logs/build.log   # → build/android/TaxiKmer.apk

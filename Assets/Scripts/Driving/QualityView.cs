@@ -23,7 +23,7 @@ namespace TaxiKmer.Driving
         private Camera _camera;
 
         public int Level => _level;
-        public QualityLevel Current => _config.Level(_level);
+        public TaxiKmer.Core.Quality.QualityLevel Current => _config.Level(_level);
         public float FramesPerSecond => _meter.FramesPerSecond;
 
         public static QualityConfig LoadConfig()
