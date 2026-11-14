@@ -161,7 +161,7 @@ namespace TaxiKmer.Core.Tests
         public void Default_EachZoneCenter_MapsToItsControl()
         {
             var layout = ControlLayout.Default();
-            Assert.AreEqual(6, layout.zones.Length);
+            Assert.AreEqual(7, layout.zones.Length);
             foreach (var z in layout.zones)
             {
                 var (x, y) = Center(z);
@@ -179,6 +179,7 @@ namespace TaxiKmer.Core.Tests
             Assert.AreEqual(DriveControl.None, layout.ControlAt(W / 2f, H / 2f, W, H), "Le centre sert à tourner la caméra.");
             Assert.AreEqual(DriveControl.Action, layout.ControlAt(W / 2f, H * 0.85f, W, H), "Bouton contextuel en haut au centre.");
             Assert.AreEqual(DriveControl.None, layout.ControlAt(W / 2f, H * 0.85f, W, H, actionVisible: false), "Caché : on peut y glisser pour la caméra.");
+            Assert.AreEqual(DriveControl.Quality, layout.ControlAt(0.2f * H, H - 0.4f * H, W, H), "Qualité à gauche, sous le texte d'état.");
         }
 
         [Test]

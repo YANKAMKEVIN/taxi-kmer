@@ -59,6 +59,13 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void Quality_MatchesDefaults()
+        {
+            var q = Load<TaxiKmer.Core.Quality.QualityConfig>("quality.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Quality.QualityConfig(), Opts), JsonSerializer.Serialize(q, Opts));
+        }
+
+        [Test]
         public void World_MessassiEtoudi_IsUsable()
         {
             var w = Load<TaxiKmer.Core.World.WorldData>("world_messassi_etoudi.json");

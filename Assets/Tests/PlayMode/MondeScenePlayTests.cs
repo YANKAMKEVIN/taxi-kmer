@@ -101,5 +101,34 @@ namespace TaxiKmer.PlayModeTests
             Assert.AreEqual(0, fresh.Street.Shift.Ledger.Revenue);
             Assert.AreEqual("06:00", fresh.Street.Shift.Clock.Display);
         }
+
+        [UnityTest]
+        public IEnumerator Monde_QualityButton_CyclesLevels_AndKeepsChoice()
+        {
+            PlayerPrefs.DeleteKey(QualityView.PrefKey);
+            SceneManager.LoadScene("Monde");
+            yield return null;
+            yield return null;
+            var quality = Object.FindFirstObjectByType<QualityView>();
+            Assert.IsNotNull(quality, "QualityView ajouté par les commandes");
+            Assert.AreEqual("Moyen", quality.Current.name, "Moyen par défaut");
+            Assert.AreEqual("Moyen", QualitySettings.names[QualitySettings.GetQualityLevel()]);
+            Assert.AreEqual(quality.Current.drawDistance, Camera.main.farClipPlane, 0.01f);
+            Assert.AreEqual(30, Application.targetFrameRate);
+
+            quality.Apply(2, save: true);
+            yield return null;
+            Assert.AreEqual("Haut", QualitySettings.names[QualitySettings.GetQualityLevel()]);
+            Assert.AreEqual(60, Application.targetFrameRate);
+            Assert.AreEqual(600f, Camera.main.farClipPlane, 0.01f);
+            StringAssert.StartsWith("Qualité : Haut", Object.FindFirstObjectByType<DriverControls>().QualityLabel);
+
+            // Nouvelle partie : le choix est gardé.
+            SceneManager.LoadScene("Monde");
+            yield return null;
+            yield return null;
+            Assert.AreEqual("Haut", Object.FindFirstObjectByType<QualityView>().Current.name);
+            PlayerPrefs.DeleteKey(QualityView.PrefKey);
+        }
     }
 }

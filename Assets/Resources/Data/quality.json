@@ -1,0 +1,11 @@
+{
+    "_note": "Réglages de qualité côté jeu (tâche 1.7, valeurs par défaut à ajuster sur téléphone). Ombres, résolution de rendu, HDR et anticrénelage : assets URP-{Bas,Moyen,Haut} (ProjectSetup). defaultLevel 0 = Bas, 1 = Moyen, 2 = Haut ; distances en mètres ; targetFrameRate = images par seconde visées.",
+    "defaultLevel": 1,
+    "showFrameRate": true,
+    "frameRateWindowSeconds": 1,
+    "levels": [
+        { "name": "Bas", "targetFrameRate": 30, "drawDistance": 300, "fogStart": 100, "fogEnd": 300 },
+        { "name": "Moyen", "targetFrameRate": 30, "drawDistance": 450, "fogStart": 150, "fogEnd": 450 },
+        { "name": "Haut", "targetFrameRate": 60, "drawDistance": 600, "fogStart": 150, "fogEnd": 600 }
+    ]
+}

@@ -1,5 +1,5 @@
 {
-    "_note": "Réglages de conduite (tâche 1.3, valeurs par défaut). Vitesses en km/h, angles en degrés, durées en s. layout : control 1 = ←, 2 = →, 3 = accélérateur, 4 = frein / marche arrière, 5 = klaxon, 6 = bouton contextuel (faire monter / descendre) ; corner 0 = bas gauche, 1 = bas droite, 2 = haut gauche, 3 = haut droite, 4 = haut centre, 5 = bas centre ; side, edge, width, height en fractions de la hauteur d'écran.",
+    "_note": "Réglages de conduite (tâche 1.3, valeurs par défaut). Vitesses en km/h, angles en degrés, durées en s. layout : control 1 = ←, 2 = →, 3 = accélérateur, 4 = frein / marche arrière, 5 = klaxon, 6 = bouton contextuel (faire monter / descendre), 7 = qualité graphique ; corner 0 = bas gauche, 1 = bas droite, 2 = haut gauche, 3 = haut droite, 4 = haut centre, 5 = bas centre ; side, edge, width, height en fractions de la hauteur d'écran.",
     "steering": {
         "maxAngleDeg": 35,
         "highSpeedAngleDeg": 10,
@@ -49,7 +49,8 @@
             { "control": 3, "corner": 1, "side": 0.04, "edge": 0.05, "width": 0.22, "height": 0.48, "label": "Accélérer" },
             { "control": 4, "corner": 1, "side": 0.30, "edge": 0.05, "width": 0.22, "height": 0.28, "label": "Frein\nArrière" },
             { "control": 5, "corner": 3, "side": 0.04, "edge": 0.05, "width": 0.24, "height": 0.24, "label": "Klaxon" },
-            { "control": 6, "corner": 4, "side": 0, "edge": 0.05, "width": 0.5, "height": 0.16, "label": "" }
+            { "control": 6, "corner": 4, "side": 0, "edge": 0.05, "width": 0.5, "height": 0.16, "label": "" },
+            { "control": 7, "corner": 2, "side": 0.04, "edge": 0.36, "width": 0.42, "height": 0.09, "label": "Qualité" }
         ]
     }
 }

@@ -9,7 +9,7 @@ namespace TaxiKmer.Driving
     /// Commandes du joueur : écran tactile (flèches à gauche, pédales à droite, klaxon en haut à droite, glisser ailleurs
     /// pour tourner la caméra), souris et clavier pour l'éditeur. Dessine les boutons et le compteur de vitesse.
     /// Clavier : ← → / Q D / A (tourner), ↑ / Z / W (accélérer), ↓ / S / espace (frein, marche arrière), H (klaxon),
-    /// E ou Entrée (bouton contextuel), R (remettre sur la route).
+    /// E ou Entrée (bouton contextuel), R (remettre sur la route), G (qualité graphique suivante).
     /// </summary>
     [DefaultExecutionOrder(-10)]
     public sealed class DriverControls : MonoBehaviour
@@ -27,6 +27,7 @@ namespace TaxiKmer.Driving
         private readonly List<(ControlZone zone, Image image, RectTransform rect)> _buttons = new List<(ControlZone, Image, RectTransform)>();
         private Text _speed;
         private Text _actionLabel;
+        private Text _qualityLabel;
         private Vector2Int _laidOutFor;
         private DriveInput _previous;
 
@@ -38,6 +39,10 @@ namespace TaxiKmer.Driving
         public bool ActionTriggered { get; private set; }
         /// <summary>Le klaxon vient d'être pressé (cette image seulement).</summary>
         public bool HornTriggered { get; private set; }
+        /// <summary>Le bouton de qualité vient d'être pressé (cette image seulement) ; lu par <see cref="QualityView"/>.</summary>
+        public bool QualityTriggered { get; private set; }
+        /// <summary>Texte du bouton de qualité (« Qualité : Moyen · 30 i/s »), posé par <see cref="QualityView"/>.</summary>
+        public string QualityLabel { get; set; } = "Qualité";
         /// <summary>Calque d'interface où le jeu peut ajouter ses propres textes.</summary>
         public RectTransform Overlay => _canvas;
         public Font Font { get; private set; }
@@ -54,6 +59,7 @@ namespace TaxiKmer.Driving
             UnityEngine.Input.multiTouchEnabled = true;
             _layout = DriveData.Load().layout;
             BuildView();
+            gameObject.AddComponent<QualityView>().controls = this;
         }
 
         private void Update()
@@ -63,6 +69,7 @@ namespace TaxiKmer.Driving
             if (!ActionVisible) input.Action = false;
             ActionTriggered = input.Action && !_previous.Action;
             HornTriggered = input.Horn && !_previous.Horn;
+            QualityTriggered = input.Quality && !_previous.Quality;
             _previous = input;
             if (taxi != null)
             {
@@ -83,6 +90,7 @@ namespace TaxiKmer.Driving
                 Brake = Key(KeyCode.DownArrow) || Key(KeyCode.S) || Key(KeyCode.Space),
                 Horn = Key(KeyCode.H),
                 Action = Key(KeyCode.E) || Key(KeyCode.Return),
+                Quality = Key(KeyCode.G),
             };
         }
 
@@ -161,6 +169,7 @@ namespace TaxiKmer.Driving
                 lr.offsetMin = lr.offsetMax = Vector2.zero;
                 _buttons.Add((zone, img, rect));
                 if (zone.control == DriveControl.Action) _actionLabel = label;
+                if (zone.control == DriveControl.Quality) _qualityLabel = label;
             }
 
             _speed = NewText(_canvas, font, "", TextAnchor.UpperLeft);
@@ -196,7 +205,9 @@ namespace TaxiKmer.Driving
                     rect.sizeDelta = new Vector2(r.Width, r.Height);
                     var label = rect.GetComponentInChildren<Text>();
                     var big = zone.label.Length > 0 && zone.label.Length <= 2;
-                    label.fontSize = Mathf.RoundToInt(size.y * (big ? 0.12f : zone.control == DriveControl.Action ? 0.05f : 0.04f));
+                    label.fontSize = Mathf.RoundToInt(size.y * (big ? 0.12f
+                        : zone.control == DriveControl.Action ? 0.05f
+                        : zone.control == DriveControl.Quality ? 0.032f : 0.04f));
                 }
                 var sr = (RectTransform)_speed.transform;
                 sr.anchoredPosition = new Vector2(size.y * 0.04f, -size.y * 0.04f);
@@ -215,6 +226,7 @@ namespace TaxiKmer.Driving
                     DriveControl.Brake => input.Brake,
                     DriveControl.Horn => input.Horn,
                     DriveControl.Action => input.Action,
+                    DriveControl.Quality => input.Quality,
                     _ => false,
                 };
                 if (zone.control == DriveControl.Action)
@@ -225,6 +237,7 @@ namespace TaxiKmer.Driving
                     image.color = on ? Pressed : ActionColor;
                     continue;
                 }
+                if (zone.control == DriveControl.Quality && _qualityLabel != null) _qualityLabel.text = QualityLabel;
                 image.color = on ? Pressed : Idle;
             }
 
