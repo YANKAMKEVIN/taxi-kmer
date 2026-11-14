@@ -55,5 +55,25 @@ class TrafficPathsTests(unittest.TestCase):
         self.assertEqual(paths["backward"]["twoWay"], [1, 1])
 
 
+    def test_junctions_only_on_the_right_with_oneway_rules(self):
+        # Axe vers le nord (x = 0) ; rues à l'est (droite) et à l'ouest (gauche) au même carrefour (0, 500),
+        # et une rue à sens unique à droite en (0, 300) qui ne fait que s'éloigner de l'axe.
+        roads = [
+            road(1, False, [0, 0, 0, 300, 0, 500, 0, 1000], "secondary"),
+            road(2, False, [0, 500, 60, 500, 120, 520], "residential"),
+            road(3, False, [-80, 500, 0, 500], "residential"),
+            road(4, True, [0, 300, 50, 300], "residential"),
+        ]
+        world = {"roads": roads, "route": {"xz": [0, 0, 0, 1000], "lengthMeters": 1000}}
+        fwd = osm_traffic.traffic_paths(world)["forward"]["junctions"]
+        self.assertEqual([j["along"] for j in fwd], [300.0, 500.0])
+        one, two = fwd
+        self.assertEqual((one["canExit"], one["canEnter"]), (1, 0), "sens unique qui s'éloigne : sortie seulement")
+        self.assertEqual((two["canExit"], two["canEnter"]), (1, 1))
+        self.assertEqual(two["xz"][:4], [0, 500, 40.0, 500], "décrite depuis le carrefour, tronquée à 40 m")
+        back = osm_traffic.traffic_paths(world)["backward"]["junctions"]
+        self.assertEqual([j["along"] for j in back], [500.0], "vers le sud, seule la rue de l'ouest est à droite")
+
+
 if __name__ == "__main__":
     unittest.main()

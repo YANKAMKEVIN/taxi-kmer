@@ -7,7 +7,10 @@ doit rouler sur la bonne chaussée. Cet outil relit le monde déjà découpé (w
 orienté de ses routes (une route à sens unique ne se parcourt que dans l'ordre de ses points) et calcule :
   - forward  : du début de l'itinéraire (dispensaire) à sa fin (Étoudi) ;
   - backward : de la fin au début.
-Le chemin reste près de l'itinéraire (fort surcoût au-delà de --near mètres). Chaque segment porte twoWay = 1 si la
+Le chemin reste près de l'itinéraire (fort surcoût au-delà de --near mètres).
+Il relève aussi, pour chaque sens, les carrefours avec une rue latérale **à droite** (on entre et on sort en tournant
+à droite, sans couper le trafic d'en face) : position le long de la trajectoire, début de la rue (≤ 40 m), et si l'on
+peut en sortir (entrer sur l'axe) ou y entrer (quitter l'axe) selon son sens unique. Chaque segment porte twoWay = 1 si la
 route est à double sens (le trafic d'en face roule sur la même chaussée), 0 si elle est à sens unique. Quand la
 chaussée d'en face manque dans les données, le trafic remonte la route à sens unique (surcoût) en la partageant.
 
@@ -129,6 +132,87 @@ def shortest(graph, pos, start_point, goal_point, radius: float):
     return keys[::-1], flags[::-1]
 
 
+JUNCTION_TYPES = {"trunk_link", "primary", "primary_link", "secondary", "secondary_link", "tertiary", "tertiary_link",
+                  "unclassified", "residential", "living_street", "service"}
+BRANCH_LENGTH = 40.0     # longueur de rue latérale gardée (m)
+MIN_JUNCTION_SPACING = 25.0
+END_MARGIN = 40.0         # pas de carrefour près des bouts de la trajectoire
+
+
+def _project(line, cum, p):
+    """(distance le long, écart signé à droite) du point p sur la polyligne."""
+    best = (math.inf, 0.0, 0.0)
+    for i, (a, b) in enumerate(zip(line, line[1:])):
+        ex, ez = b[0] - a[0], b[1] - a[1]
+        L2 = ex * ex + ez * ez
+        t = 0.0 if L2 == 0 else max(0.0, min(1.0, ((p[0] - a[0]) * ex + (p[1] - a[1]) * ez) / L2))
+        px, pz = p[0] - (a[0] + ex * t), p[1] - (a[1] + ez * t)
+        d = math.hypot(px, pz)
+        if d < best[0]:
+            L = math.sqrt(L2) or 1.0
+            lateral = -(ex * pz - ez * px) / L  # à droite du sens de marche = positif
+            best = (d, cum[i] + (cum[i + 1] - cum[i]) * t, lateral)
+    return best
+
+
+def _truncate(points, length):
+    out = [points[0]]
+    total = 0.0
+    for a, b in zip(points, points[1:]):
+        d = _dist(a, b)
+        if total + d >= length:
+            t = (length - total) / d if d > 0 else 0.0
+            out.append((a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t))
+            return out
+        out.append(b)
+        total += d
+    return out
+
+
+def junctions(roads, path_points) -> list[dict]:
+    """Carrefours avec une rue latérale à droite de la trajectoire."""
+    cum = [0.0]
+    for a, b in zip(path_points, path_points[1:]):
+        cum.append(cum[-1] + _dist(a, b))
+    on_path = {_key(*p) for p in path_points}
+    found = []
+    for r in roads:
+        if r["highway"] not in JUNCTION_TYPES:
+            continue
+        pts = _points(r["xz"])
+        for i, p in enumerate(pts):
+            if _key(*p) not in on_path:
+                continue
+            # Deux branches possibles depuis le nœud : vers la fin de la route (sortie dans le sens des points)
+            # et vers son début.
+            for branch, forward in ((pts[i:], True), (pts[i::-1], False)):
+                if len(branch) < 2:
+                    continue
+                d1, along, lateral = _project(path_points, cum, branch[1])
+                if d1 < 4.0 or lateral <= 0:  # la branche suit l'axe, ou part à gauche
+                    continue
+                if along < END_MARGIN or along > cum[-1] - END_MARGIN:
+                    continue
+                _, j_along, _ = _project(path_points, cum, p)
+                oneway = r["oneway"]
+                found.append({
+                    "along": round(j_along, 1),
+                    # Rue décrite depuis le carrefour vers l'extérieur.
+                    "xz": [round(v, 2) for q in _truncate(branch, BRANCH_LENGTH) for v in q],
+                    # Sortir de l'axe = rouler dans la rue en s'éloignant ; entrer = rouler vers le carrefour.
+                    "canExit": 1 if (not oneway or forward) else 0,
+                    "canEnter": 1 if (not oneway or not forward) else 0,
+                    "highway": r["highway"],
+                })
+    found.sort(key=lambda j: j["along"])
+    kept = []
+    for j in found:
+        if kept and j["along"] - kept[-1]["along"] < MIN_JUNCTION_SPACING:
+            continue
+        kept.append(j)
+    return kept
+
+
 def traffic_paths(world: dict, near: float = 40.0, radius: float = 30.0) -> dict:
     route = _points(world["route"]["xz"])
     graph, pos = build_directed_graph(world["roads"], route, near)
@@ -145,6 +229,7 @@ def traffic_paths(world: dict, near: float = 40.0, radius: float = 30.0) -> dict
             "xz": [round(v, 2) for p in pts for v in p],
             "twoWay": [1 if f else 0 for f in flags],
             "lengthMeters": int(round(sum(_dist(p, q) for p, q in zip(pts, pts[1:])))),
+            "junctions": junctions(world["roads"], pts),
         }
     return out
 
@@ -161,7 +246,8 @@ def main(argv=None) -> int:
         json.dump(world, f, ensure_ascii=False, separators=(",", ":"))
     for name, path in world["traffic"].items():
         one = path["twoWay"].count(0)
-        print(f"{name:8} {path['lengthMeters']:>6} m, {len(path['twoWay'])} segments dont {one} à sens unique")
+        print(f"{name:8} {path['lengthMeters']:>6} m, {len(path['twoWay'])} segments dont {one} à sens unique, "
+              f"{len(path['junctions'])} carrefours à droite")
     print(f"Itinéraire du joueur : {world['route']['lengthMeters']} m")
     return 0
 

@@ -231,6 +231,119 @@ namespace TaxiKmer.Core.Tests
         }
     }
 
+    public class JunctionTests
+    {
+        // Axe vers le nord (x = 0), rue latérale à l'est (à droite) au carrefour z = 1000.
+        private static TrafficPath NorthWithJunction(bool canEnter = true, bool canExit = true)
+        {
+            var side = new TrafficPath(new float[] { 0, 1000, 40, 1000 });
+            var j = new Junction(1000f, side, canEnter, canExit, "residential");
+            return new TrafficPath(new float[] { 0, 0, 0, 2000 }, null, new[] { j });
+        }
+
+        private static TrafficConfig Config()
+        {
+            return new TrafficConfig
+            {
+                vehiclesPerKmByHour = Enumerable.Repeat(10f, 24).ToArray(),
+                minSpawnDistanceMeters = 5000f, // pas d'apparition sur l'axe pendant ces tests
+                junctionEntriesPerMinuteAtPeak = 0f,
+            };
+        }
+
+        [Test]
+        public void Vehicle_TurnsRight_IntoSideRoad_ThenDisappears()
+        {
+            var cfg = Config();
+            cfg.exitChance = 1f;
+            var sim = new TrafficSim(cfg, NorthWithJunction(), TrafficSimTests.South(), 4);
+            var car = sim.TrySpawn(0, 940f, VehicleKind.Car);
+            var player = TrafficSimTests.PlayerAt(1000f, x: 60f);
+            var sawSideRoad = false;
+            var maxX = 0f;
+            for (var step = 0; step < 400 && sim.Vehicles.Contains(car); step++)
+            {
+                sim.Update(0.1f, 12f, player);
+                if (car.State == VehicleState.LeavingOnSideRoad)
+                {
+                    sawSideRoad = true;
+                    maxX = Math.Max(maxX, car.X);
+                    Assert.AreEqual(1f, car.DirX, 1e-3f, "Roule vers l'est, dans la rue de droite.");
+                    Assert.Less(car.Z, 1000f, "Sur la voie de droite de la rue (côté sud).");
+                }
+                if (car.State == VehicleState.Exiting) Assert.LessOrEqual(car.Speed, car.DesiredSpeed + 0.1f);
+            }
+            Assert.IsTrue(sawSideRoad);
+            Assert.Greater(maxX, 30f, "A parcouru la rue.");
+            CollectionAssert.DoesNotContain(sim.Vehicles.ToList(), car, "Disparu au bout de la rue.");
+        }
+
+        [Test]
+        public void NoExit_IntoOneWayComingTowardsTheAxis()
+        {
+            var cfg = Config();
+            cfg.exitChance = 1f;
+            var sim = new TrafficSim(cfg, NorthWithJunction(canExit: false), TrafficSimTests.South(), 4);
+            var car = sim.TrySpawn(0, 940f, VehicleKind.Car);
+            for (var step = 0; step < 200; step++) sim.Update(0.1f, 12f, TrafficSimTests.PlayerAt(1000f, x: 60f));
+            Assert.Greater(car.Along, 1050f);
+            Assert.AreEqual(VehicleState.Driving, car.State);
+        }
+
+        [Test]
+        public void SideRoadVehicle_WaitsForGap_ThenJoinsTheAxis()
+        {
+            var cfg = Config();
+            cfg.exitChance = 0f;
+            cfg.junctionEntriesPerMinuteAtPeak = 6000f; // apparition immédiate
+            cfg.maxQueuePerJunction = 1;
+            var sim = new TrafficSim(cfg, NorthWithJunction(), TrafficSimTests.South(), 4);
+            // Un flot serré arrive sur l'axe : pas de trou pendant un moment.
+            var cars = new List<TrafficVehicle>();
+            for (var z = 700f; z <= 960f; z += 20f) cars.Add(sim.TrySpawn(0, z, VehicleKind.Car));
+            foreach (var c in cars) { c.DesiredSpeed = 8f; c.Speed = 8f; }
+            var player = TrafficSimTests.PlayerAt(1000f, x: 80f);
+            sim.Update(0.1f, 12f, player);
+            var waiting = sim.Vehicles.Single(v => v.State == VehicleState.EnteringFromSideRoad);
+            Assert.Greater(waiting.X, 10f, "Apparu au bout de la rue latérale.");
+
+            var joined = false;
+            for (var step = 0; step < 900 && !joined; step++)
+            {
+                sim.Update(0.1f, 12f, player);
+                if (waiting.State == VehicleState.EnteringFromSideRoad)
+                {
+                    // Tant que le flot passe, il reste derrière la ligne d'arrêt.
+                    if (cars.Any(c => sim.Vehicles.Contains(c) && c.Along > 985f && c.Along < 1010f))
+                        Assert.GreaterOrEqual(waiting.SideDistance, cfg.stopLineMeters, "Attend à la ligne d'arrêt.");
+                }
+                else joined = true;
+            }
+            Assert.IsTrue(joined, "Finit par entrer.");
+            Assert.AreEqual(cfg.laneOffsetMeters, waiting.Lateral, 1e-3f);
+            Assert.Greater(waiting.Along, 1000f);
+            Assert.Less(waiting.X, 2.6f, "Sur la voie de droite de l'axe.");
+        }
+
+        [Test]
+        public void SideRoadVehicle_YieldsToThePlayer()
+        {
+            var cfg = Config();
+            cfg.junctionEntriesPerMinuteAtPeak = 6000f;
+            cfg.maxQueuePerJunction = 1;
+            var sim = new TrafficSim(cfg, NorthWithJunction(), TrafficSimTests.South(), 4);
+            // Le joueur arrive sur la voie de droite à 40 km/h, à 40 m du carrefour.
+            var player = new PlayerCar { X = 1.7f, Z = 960f, DirX = 0f, DirZ = 1f, Speed = 11f, Length = 4.4f, Width = 1.72f };
+            sim.Update(0.1f, 12f, TrafficSimTests.PlayerAt(1000f, x: 80f)); // apparition loin du joueur
+            var waiting = sim.Vehicles.Single(v => v.State == VehicleState.EnteringFromSideRoad);
+            for (var step = 0; step < 100; step++)
+            {
+                sim.Update(0.1f, 12f, player);
+                Assert.AreEqual(VehicleState.EnteringFromSideRoad, waiting.State, "Ne coupe pas la route du joueur.");
+            }
+        }
+    }
+
     public class PedestrianSimTests
     {
         [Test]

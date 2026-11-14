@@ -79,6 +79,25 @@ namespace TaxiKmer.Core.Traffic
         /// <summary>Les mototaxis prennent-ils aussi des clients ? (question 2 du jalon 2 pour Kevin ; non par défaut.)</summary>
         public bool motoTakesClients;
 
+        /// <summary>Véhicules qui sortent d'une rue latérale pour entrer sur l'axe, par minute et par carrefour, à la densité de pointe.</summary>
+        public float junctionEntriesPerMinuteAtPeak = 2f;
+        /// <summary>Multiplicateur pour les chemins de service (cours, parkings).</summary>
+        public float serviceRoadFactor = 0.3f;
+        /// <summary>Chance qu'un véhicule de l'axe tourne dans une rue latérale à droite qu'il croise.</summary>
+        public float exitChance = 0.12f;
+        /// <summary>Vitesse pour tourner au carrefour (km/h).</summary>
+        public float turnSpeedKmh = 15f;
+        /// <summary>Vitesse dans les rues latérales (km/h).</summary>
+        public float sideRoadSpeedKmh = 20f;
+        /// <summary>Pour entrer sur l'axe, il faut … s d'avance sur le véhicule (ou le joueur) qui arrive.</summary>
+        public float enterGapSeconds = 4f;
+        /// <summary>Après … s d'attente à la ligne d'arrêt, il se contente d'un trou de 1,5 s (le suivant freine).</summary>
+        public float forceInAfterSeconds = 20f;
+        /// <summary>Ligne d'arrêt dans la rue latérale, à … m du carrefour.</summary>
+        public float stopLineMeters = 6f;
+        /// <summary>Véhicules en attente au plus par rue latérale.</summary>
+        public int maxQueuePerJunction = 2;
+
         public static float[] DefaultVehicleDensity()
         {
             // 0 h … 23 h. La journée de jeu va de 6 h à 20 h ; pointes à 7-8 h et 17-18 h.

@@ -12,6 +12,12 @@ namespace TaxiKmer.Core.Traffic
         StoppingForClient,
         /// <summary>Taxi concurrent arrêté : le client monte.</summary>
         Boarding,
+        /// <summary>Ralentit pour tourner à droite dans une rue latérale.</summary>
+        Exiting,
+        /// <summary>Dans la rue latérale, s'éloigne de l'axe (disparaît au bout).</summary>
+        LeavingOnSideRoad,
+        /// <summary>Dans une rue latérale, vient vers l'axe et attend un trou pour y entrer.</summary>
+        EnteringFromSideRoad,
     }
 
     /// <summary>Un véhicule du trafic, repéré sur la trajectoire de son sens.</summary>
@@ -45,6 +51,12 @@ namespace TaxiKmer.Core.Traffic
         internal float StopTimer;
         internal object TargetClient;
         internal readonly HashSet<object> Considered = new HashSet<object>();
+        internal Junction Junction;
+        /// <summary>Dans une rue latérale : distance au carrefour (m).</summary>
+        internal float SideDistance;
+
+        /// <summary>Dans une rue latérale (pas encore ou plus sur l'axe).</summary>
+        public bool OnSideRoad => State == VehicleState.LeavingOnSideRoad || State == VehicleState.EnteringFromSideRoad;
     }
 
     /// <summary>Le taxi du joueur, en coordonnées du monde (pour que le trafic le voie comme un obstacle).</summary>
@@ -91,7 +103,7 @@ namespace TaxiKmer.Core.Traffic
     /// mototaxis qui longent les voitures par la droite, taxis concurrents qui prennent les clients au bord de la route.
     /// Le trafic n'existe qu'autour du joueur et sa densité suit l'heure (embouteillages aux heures de pointe).
     /// </summary>
-    public sealed class TrafficSim
+    public sealed partial class TrafficSim
     {
         private readonly TrafficConfig _config;
         private readonly TrafficPath[] _paths;
@@ -146,6 +158,7 @@ namespace TaxiKmer.Core.Traffic
             LocatePlayer(player);
             BuildObstacles(player, pedestrians);
             DecideClientStops(clients);
+            UpdateJunctions(dt, hour, player);
 
             // Accélérations calculées sur l'état courant, puis appliquées (pas de dépendance à l'ordre).
             var accel = new float[_vehicles.Count];
@@ -196,7 +209,7 @@ namespace TaxiKmer.Core.Traffic
                 // ne gênent que ceux qui doublent ; s'ils doublent eux-mêmes, ils empiètent sur notre voie.
                 foreach (var v in _vehicles)
                 {
-                    if (v.PathIndex == p) continue;
+                    if (v.PathIndex == p || v.OnSideRoad) continue;
                     path.Project(v.X, v.Z, out var a, out var l);
                     if (Math.Abs(l) > 4f) continue;
                     list.Add(new Obstacle { Along = a, Lateral = l, HalfWidth = v.Width / 2f, Length = v.Length, Speed = -v.Speed, Vehicle = v });
@@ -255,14 +268,17 @@ namespace TaxiKmer.Core.Traffic
 
         private float Acceleration(TrafficVehicle v, int index)
         {
+            if (v.OnSideRoad) return SideRoadAcceleration(v);
             var k = _config.Kind(v.Kind);
             var desired = v.DesiredSpeed;
+            if (v.State == VehicleState.Exiting && v.Junction != null && v.Junction.Along - v.Along < 35f)
+                desired = Math.Min(desired, _config.turnSpeedKmh / 3.6f);
 
             // Mototaxi qui longe une voiture : il ne la dépasse pas trop vite.
             if (v.Kind == VehicleKind.Moto)
                 foreach (var o in _vehicles)
                 {
-                    if (o == v || o.PathIndex != v.PathIndex || o.Kind == VehicleKind.Moto) continue;
+                    if (o == v || o.PathIndex != v.PathIndex || o.Kind == VehicleKind.Moto || o.OnSideRoad) continue;
                     if (Math.Abs(o.Along - v.Along) < 8f)
                         desired = Math.Min(desired, o.Speed + _config.motoPassingDeltaKmh / 3.6f);
                 }
@@ -298,7 +314,7 @@ namespace TaxiKmer.Core.Traffic
             pedestrian = false;
             foreach (var o in _vehicles)
             {
-                if (o == v || o.PathIndex != v.PathIndex) continue;
+                if (o == v || o.PathIndex != v.PathIndex || o.OnSideRoad) continue;
                 var d = o.Along - v.Along;
                 if (d <= 0f || !Overlap(v.Lateral, v.Width, o.Lateral, o.Width)) continue;
                 var g = d - (v.Length + o.Length) / 2f;
@@ -318,6 +334,7 @@ namespace TaxiKmer.Core.Traffic
 
         private void Advance(TrafficVehicle v, float accel, float dt, IReadOnlyList<ClientSpot> clients)
         {
+            if (v.OnSideRoad) { AdvanceOnSideRoad(v, accel, dt); return; }
             v.Speed = Math.Max(0f, v.Speed + accel * dt);
             v.Along += v.Speed * dt;
 
@@ -349,6 +366,9 @@ namespace TaxiKmer.Core.Traffic
                     break;
                 case VehicleState.Overtaking:
                     TryEndOvertake(v);
+                    break;
+                case VehicleState.Exiting:
+                    if (v.Along >= v.Junction.Along) TurnIntoSideRoad(v);
                     break;
             }
         }
@@ -384,7 +404,7 @@ namespace TaxiKmer.Core.Traffic
         {
             foreach (var o in _vehicles)
             {
-                if (o == v || o.PathIndex != v.PathIndex) continue;
+                if (o == v || o.PathIndex != v.PathIndex || o.OnSideRoad) continue;
                 var d = o.Along - v.Along;
                 if (d >= from && d <= to && Overlap(lateral, v.Width, o.Lateral, o.Width)) return false;
             }
@@ -402,7 +422,7 @@ namespace TaxiKmer.Core.Traffic
             var clear = _config.overtakeClearMeters;
             foreach (var o in _vehicles)
             {
-                if (o.PathIndex == v.PathIndex) continue;
+                if (o.PathIndex == v.PathIndex || o.OnSideRoad) continue;
                 var dx = o.X - v.X;
                 var dz = o.Z - v.Z;
                 var ahead = dx * v.DirX + dz * v.DirZ;
@@ -458,7 +478,7 @@ namespace TaxiKmer.Core.Traffic
             var len = _paths[path].Length;
             if (along < 5f || along > len - 5f) return null;
             foreach (var o in _vehicles)
-                if (o.PathIndex == path && Math.Abs(o.Along - along) < _config.minSpawnGapMeters) return null;
+                if (o.PathIndex == path && !o.OnSideRoad && Math.Abs(o.Along - along) < _config.minSpawnGapMeters) return null;
 
             var kind = forcedKind ?? PickKind();
             var k = _config.Kind(kind);
@@ -500,6 +520,7 @@ namespace TaxiKmer.Core.Traffic
 
         private void UpdateWorldPosition(TrafficVehicle v)
         {
+            if (v.OnSideRoad) { SideRoadWorldPosition(v); return; }
             _paths[v.PathIndex].Sample(v.Along, v.Lateral, out var x, out var z, out var dx, out var dz);
             v.X = x;
             v.Z = z;

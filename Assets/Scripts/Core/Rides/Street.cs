@@ -23,7 +23,7 @@ namespace TaxiKmer.Core.Rides
         /// <summary>Zone de dépose autour d'un lieu (m, le long de la route).</summary>
         public float stopRadiusMeters = 30f;
         /// <summary>Au-delà de cet écart à l'itinéraire (m), le taxi n'est plus « sur la route » des clients.</summary>
-        public float maxLateralMeters = 15f;
+        public float maxLateralMeters = 20f;
         /// <summary>En dessous de cette vitesse (km/h), le taxi est arrêté : montée et descente possibles.</summary>
         public float stoppedKmh = 3f;
         /// <summary>Un client accepté attend le taxi au plus … s ; ensuite il refait signe aux autres (jalon 2).</summary>

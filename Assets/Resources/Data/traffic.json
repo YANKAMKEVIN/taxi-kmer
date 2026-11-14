@@ -19,7 +19,16 @@
         "competitorPickupChance": 0.5,
         "competitorStopSeconds": 6,
         "competitorCapacity": 5,
-        "motoTakesClients": false
+        "motoTakesClients": false,
+        "junctionEntriesPerMinuteAtPeak": 2,
+        "serviceRoadFactor": 0.3,
+        "exitChance": 0.12,
+        "turnSpeedKmh": 15,
+        "sideRoadSpeedKmh": 20,
+        "enterGapSeconds": 4,
+        "forceInAfterSeconds": 20,
+        "stopLineMeters": 6,
+        "maxQueuePerJunction": 2
     },
     "pedestrians": {
         "perKmBySideByHour": [1, 0, 0, 0, 1, 4, 10, 14, 14, 10, 9, 9, 10, 10, 9, 9, 11, 14, 14, 11, 7, 4, 2, 1],

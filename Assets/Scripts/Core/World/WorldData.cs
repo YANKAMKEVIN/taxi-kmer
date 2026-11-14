@@ -37,6 +37,22 @@ namespace TaxiKmer.Core.World
         public float[] xz = Array.Empty<float>();
         /// <summary>Par segment : 1 si la route est à double sens (trafic d'en face sur la même chaussée), 0 sinon.</summary>
         public int[] twoWay = Array.Empty<int>();
+        /// <summary>Carrefours avec une rue latérale à droite (on y entre et on en sort en tournant à droite).</summary>
+        public JunctionData[] junctions = Array.Empty<JunctionData>();
+    }
+
+    [Serializable]
+    public class JunctionData
+    {
+        /// <summary>Position du carrefour le long de la trajectoire (m).</summary>
+        public float along;
+        /// <summary>Début de la rue latérale, depuis le carrefour vers l'extérieur (≤ 40 m).</summary>
+        public float[] xz = Array.Empty<float>();
+        /// <summary>1 si des véhicules peuvent en sortir pour entrer sur l'axe.</summary>
+        public int canEnter;
+        /// <summary>1 si des véhicules de l'axe peuvent s'y engager.</summary>
+        public int canExit;
+        public string highway = "";
     }
 
     [Serializable]

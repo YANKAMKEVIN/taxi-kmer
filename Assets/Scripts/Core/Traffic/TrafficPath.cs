@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using TaxiKmer.Core.World;
 
 namespace TaxiKmer.Core.Traffic
@@ -14,17 +15,29 @@ namespace TaxiKmer.Core.Traffic
         private readonly int[] _twoWay;
 
         public float Length { get; }
+        /// <summary>Carrefours avec une rue latérale à droite, par distance croissante.</summary>
+        public IReadOnlyList<Junction> Junctions { get; }
 
-        public TrafficPath(float[] xz, int[] twoWay = null)
+        public TrafficPath(float[] xz, int[] twoWay = null, IReadOnlyList<Junction> junctions = null)
         {
             _xz = xz ?? throw new ArgumentNullException(nameof(xz));
             if (xz.Length < 4) throw new ArgumentException("Il faut au moins deux points.", nameof(xz));
             _cum = WorldGeometry.CumulativeLengths(xz);
             _twoWay = twoWay ?? Array.Empty<int>();
             Length = _cum[_cum.Length - 1];
+            Junctions = junctions ?? Array.Empty<Junction>();
         }
 
-        public static TrafficPath From(TrafficPathData data) => new TrafficPath(data.xz, data.twoWay);
+        public static TrafficPath From(TrafficPathData data)
+        {
+            var list = new List<Junction>();
+            if (data.junctions != null)
+                foreach (var j in data.junctions)
+                    if (j.xz != null && j.xz.Length >= 4)
+                        list.Add(new Junction(j.along, new TrafficPath(j.xz), j.canEnter != 0, j.canExit != 0, j.highway));
+            list.Sort((a, b) => a.Along.CompareTo(b.Along));
+            return new TrafficPath(data.xz, data.twoWay, list);
+        }
 
         /// <summary>Point à <paramref name="along"/> m, décalé de <paramref name="lateral"/> m à droite ; direction de marche.</summary>
         public void Sample(float along, float lateral, out float x, out float z, out float dirX, out float dirZ)
@@ -76,5 +89,28 @@ namespace TaxiKmer.Core.Traffic
             var seg = Math.Max(0, Math.Min(_twoWay.Length - 1, i - 1));
             return _twoWay[seg] != 0;
         }
+    }
+
+    /// <summary>Carrefour avec une rue latérale à droite de la trajectoire.</summary>
+    public sealed class Junction
+    {
+        public float Along { get; }
+        /// <summary>La rue, depuis le carrefour vers l'extérieur.</summary>
+        public TrafficPath Side { get; }
+        public bool CanEnter { get; }
+        public bool CanExit { get; }
+        public string Highway { get; }
+
+        public Junction(float along, TrafficPath side, bool canEnter, bool canExit, string highway = "")
+        {
+            Along = along;
+            Side = side ?? throw new ArgumentNullException(nameof(side));
+            CanEnter = canEnter;
+            CanExit = canExit;
+            Highway = highway ?? "";
+        }
+
+        /// <summary>Chemin de service (parking, cour) : bien moins de passage qu'une rue.</summary>
+        public bool IsService => Highway == "service";
     }
 }

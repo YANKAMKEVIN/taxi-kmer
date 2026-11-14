@@ -7,7 +7,7 @@
     "boardDistanceMeters": 12,
     "missedDistanceMeters": 25,
     "stopRadiusMeters": 30,
-    "maxLateralMeters": 15,
+    "maxLateralMeters": 20,
     "stoppedKmh": 3,
     "acceptedPatienceSeconds": 30,
     "curbSideMinMeters": 0
