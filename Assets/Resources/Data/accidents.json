@@ -1,0 +1,13 @@
+{
+    "_note": "Piéton renversé (jalon 2, règle de Kevin du 2026-11-14 ; montants et seuils par défaut, à régler avec Kevin). Vitesses au choc en km/h, montants en FCFA, durées en minutes de jeu. Blessé léger : hôpital et premiers soins. Blessé grave : la gendarmerie peut interpeller (garde à vue, la journée s'arrête) avec risque de saisie du taxi ; sinon soins plus chers et plus de temps perdu.",
+    "minImpactKmh": 4,
+    "seriousImpactKmh": 25,
+    "lightCareMin": 10000,
+    "lightCareMax": 20000,
+    "lightGameMinutes": 60,
+    "seriousArrestChance": 0.6,
+    "seizureChance": 0.3,
+    "seriousCareMin": 40000,
+    "seriousCareMax": 80000,
+    "seriousGameMinutes": 150
+}

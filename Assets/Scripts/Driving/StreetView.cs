@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Text;
 using TaxiKmer.Core.Day;
+using TaxiKmer.Core.Incidents;
 using TaxiKmer.Core.Rides;
 using TaxiKmer.Core.Traffic;
 using TaxiKmer.Core.World;
@@ -49,6 +50,8 @@ namespace TaxiKmer.Driving
         private Camera _camera;
         private QualityView _quality;
         private bool _cityPopulated;
+        private AccidentConfig _accidents;
+        private System.Random _random;
 
         private sealed class Person
         {
@@ -87,6 +90,11 @@ namespace TaxiKmer.Driving
             City = new CityLife(Load("Data/traffic", new CityConfig()), world.Data, Street, actualSeed + 17, sideOffset);
             _quality = controls.GetComponent<QualityView>();
             ApplyTrafficScale();
+            _accidents = Load("Data/accidents", new AccidentConfig());
+            _random = new System.Random(actualSeed + 31);
+            var detector = taxi.gameObject.AddComponent<TaxiHitDetector>();
+            detector.taxi = taxi;
+            detector.PedestrianHit += OnPedestrianHit;
             var trafficView = gameObject.AddComponent<TrafficView>();
             trafficView.baseMaterial = personMaterial;
             trafficView.City = City;
@@ -210,6 +218,19 @@ namespace TaxiKmer.Driving
                     Toast($"Pas de place pour ce client ({CorpulenceLabel(client.Client)})");
                     break;
             }
+        }
+
+        /// <summary>Le taxi a touché un piéton : règle de Kevin (hôpital et soins, ou gendarmerie).</summary>
+        private void OnPedestrianHit(int pedestrianId, float impactKmh)
+        {
+            if (Street == null || Street.DayFinished) return;
+            var outcome = Street.PedestrianHit(_accidents, impactKmh, _random);
+            if (outcome.Severity == InjurySeverity.None) return; // simple bousculade
+            City.Pedestrians.Remove(pedestrianId);
+            if (outcome.Arrested) return; // garde à vue : le bilan s'affiche (journée terminée)
+            var who = outcome.Severity == InjurySeverity.Light ? "blessé léger" : "blessé grave";
+            var hours = outcome.LostGameMinutes >= 60 ? $"{outcome.LostGameMinutes / 60} h {outcome.LostGameMinutes % 60:00}" : $"{outcome.LostGameMinutes} min";
+            Toast($"Piéton renversé ({who}) : hôpital et soins -{Money(outcome.CareCost)}, {hours} perdues, tes passagers sont partis sans payer", 9f);
         }
 
         /// <summary>Un client n'attend plus : on le dit au joueur si c'était le sien, ou s'il était tout près.</summary>

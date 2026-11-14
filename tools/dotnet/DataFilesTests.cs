@@ -94,6 +94,13 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void Accidents_MatchDefaults()
+        {
+            var a = Load<TaxiKmer.Core.Incidents.AccidentConfig>("accidents.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Incidents.AccidentConfig(), Opts), JsonSerializer.Serialize(a, Opts));
+        }
+
+        [Test]
         public void World_MessassiEtoudi_IsUsable()
         {
             var w = Load<TaxiKmer.Core.World.WorldData>("world_messassi_etoudi.json");

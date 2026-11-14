@@ -8,7 +8,8 @@ namespace TaxiKmer.Driving
     /// Affichage du trafic et des piétons (jalon 2) : blocs provisoires (voitures de couleurs variées, taxis jaunes,
     /// mototaxis avec leur conducteur, piétons en silhouettes), placés chaque image d'après <see cref="CityLife"/>.
     /// Les objets sont réutilisés (réserve par type) ; les véhicules ont un collider cinématique pour que le taxi du
-    /// joueur les heurte. Les piétons n'en ont pas encore (question 3 du jalon 2 pour Kevin : peut-on les renverser ?).
+    /// joueur les heurte. Les piétons ont une zone de contact (déclencheur) : le taxi qui les touche les renverse
+    /// (voir <see cref="TaxiHitDetector"/> et la règle de Kevin dans Core/Incidents).
     /// </summary>
     public sealed class TrafficView : MonoBehaviour
     {
@@ -229,6 +230,7 @@ namespace TaxiKmer.Driving
                 {
                     body = TakePerson();
                     _people[p.Id] = body;
+                    body.Root.GetComponent<PedestrianMarker>().Id = p.Id;
                     body.Shirt.sharedMaterial = MaterialFor(Shirts[p.Look % Shirts.Length]);
                     var width = 0.42f + (p.Look % 7) * 0.05f;
                     body.Shirt.transform.localScale = new Vector3(width, 0.8f, width * 0.75f);
@@ -258,6 +260,12 @@ namespace TaxiKmer.Driving
             }
             var root = new GameObject("Piéton");
             root.transform.SetParent(transform, false);
+            root.AddComponent<PedestrianMarker>();
+            var contact = root.AddComponent<CapsuleCollider>();
+            contact.isTrigger = true;
+            contact.center = new Vector3(0f, 0.9f, 0f);
+            contact.radius = 0.3f;
+            contact.height = 1.8f;
             var shirt = Part(root.transform, PrimitiveType.Capsule, new Vector3(0f, 0.8f, 0f), new Vector3(0.56f, 0.8f, 0.42f), Color.white);
             Part(root.transform, PrimitiveType.Sphere, new Vector3(0f, 1.78f, 0f), Vector3.one * 0.26f, Skin);
             return new Body { Root = root, Shirt = shirt };

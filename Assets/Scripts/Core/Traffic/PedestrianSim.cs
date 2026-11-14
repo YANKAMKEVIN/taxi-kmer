@@ -175,6 +175,19 @@ namespace TaxiKmer.Core.Traffic
             return n;
         }
 
+        /// <summary>Retire un piéton (renversé : emmené à l'hôpital). False s'il n'existe plus.</summary>
+        public bool Remove(int id)
+        {
+            for (var i = 0; i < _people.Count; i++)
+            {
+                if (_people[i].Id != id) continue;
+                _people.RemoveAt(i);
+                UpdateWorld();
+                return true;
+            }
+            return false;
+        }
+
         public Pedestrian Spawn(int path, float along)
         {
             if (along < 2f || along > _paths[path].Length - 2f) return null;

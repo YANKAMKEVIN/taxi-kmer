@@ -30,6 +30,14 @@ namespace TaxiKmer.Core.Day
 
         public string Display => $"{GameMinutes / 60:00}:{GameMinutes % 60:00}";
 
+        /// <summary>Fait passer <paramref name="minutes"/> minutes de jeu d'un coup (temps perdu : hôpital…).</summary>
+        public void AdvanceGameMinutes(int minutes)
+        {
+            if (minutes <= 0) return;
+            var span = (_config.endHour - _config.startHour) * 60f;
+            Advance(minutes / span * _config.dayLengthRealSeconds);
+        }
+
         public void Advance(float realSeconds)
         {
             if (realSeconds < 0f) throw new ArgumentOutOfRangeException(nameof(realSeconds));

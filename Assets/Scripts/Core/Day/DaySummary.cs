@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace TaxiKmer.Core.Day
@@ -20,17 +21,29 @@ namespace TaxiKmer.Core.Day
         public int UnpaidPassengers { get; private set; }
         /// <summary>Ce que ces passagers auraient payé.</summary>
         public int UnpaidFares { get; private set; }
+        /// <summary>Dépenses imprévues (soins d'un piéton renversé…).</summary>
+        public IReadOnlyList<Expense> Expenses { get; private set; } = Array.Empty<Expense>();
+        public int ExpensesTotal { get; private set; }
+        /// <summary>La journée s'est terminée par une interpellation de la gendarmerie (garde à vue).</summary>
+        public bool Arrested { get; private set; }
+        /// <summary>Le taxi a été saisi par la gendarmerie.</summary>
+        public bool VehicleSeized { get; private set; }
 
         /// <summary>Le versement est couvert par les recettes.</summary>
         public bool VersementReached => Revenue >= Versement;
         /// <summary>Ce qui manque aux recettes pour couvrir le versement (0 s'il est couvert).</summary>
         public int VersementShortfall => Math.Max(0, Versement - Revenue);
 
-        public static DaySummary From(DayLedger ledger, int unpaidPassengers = 0, int unpaidFares = 0)
+        public static DaySummary From(DayLedger ledger, int unpaidPassengers = 0, int unpaidFares = 0,
+            bool arrested = false, bool vehicleSeized = false)
         {
             if (ledger == null) throw new ArgumentNullException(nameof(ledger));
             return new DaySummary
             {
+                Expenses = new List<Expense>(ledger.Expenses),
+                ExpensesTotal = ledger.ExpensesTotal,
+                Arrested = arrested,
+                VehicleSeized = vehicleSeized,
                 Revenue = ledger.Revenue,
                 RideCount = ledger.RideCount,
                 Versement = ledger.Versement,

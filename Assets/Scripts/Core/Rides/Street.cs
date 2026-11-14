@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using TaxiKmer.Core.Day;
+using TaxiKmer.Core.Incidents;
 
 namespace TaxiKmer.Core.Rides
 {
@@ -157,6 +158,8 @@ namespace TaxiKmer.Core.Rides
         private readonly List<RoadsideClient> _waiting = new List<RoadsideClient>();
         private readonly float[] _spawnTimers;
         private readonly List<ClientLost> _lost = new List<ClientLost>();
+        private int _leftUnpaid;
+        private int _leftUnpaidFares;
 
         public IReadOnlyList<RoadsideClient> Waiting => _waiting;
         /// <summary>Clients perdus depuis le dernier <see cref="Update"/> (abandon, autre taxi).</summary>
@@ -331,12 +334,42 @@ namespace TaxiKmer.Core.Rides
             return outcome;
         }
 
-        private void Finish()
+        private void Finish(bool arrested = false, bool seized = false)
         {
-            var unpaid = 0;
+            var unpaid = _leftUnpaidFares;
             foreach (var p in _shift.Cabin.Passengers) unpaid += p.ProposedFare;
-            Summary = DaySummary.From(_shift.Ledger, _shift.Cabin.PassengerCount, unpaid);
+            Summary = DaySummary.From(_shift.Ledger, _shift.Cabin.PassengerCount + _leftUnpaid, unpaid, arrested, seized);
             foreach (var c in _waiting) c.Calling = false;
+        }
+
+        /// <summary>
+        /// Le taxi du joueur a renversé un piéton à <paramref name="impactKmh"/> km/h (règle de Kevin) : blessé léger →
+        /// hôpital, premiers soins payés et temps perdu ; blessé grave → garde à vue possible (la journée s'arrête,
+        /// risque de saisie du taxi), sinon soins plus chers. Les passagers descendent sans payer.
+        /// </summary>
+        public AccidentOutcome PedestrianHit(AccidentConfig config, float impactKmh, Random random)
+        {
+            if (DayFinished) return new AccidentOutcome { Severity = InjurySeverity.None };
+            var outcome = PedestrianAccident.Resolve(config, impactKmh, random);
+            if (outcome.Severity == InjurySeverity.None) return outcome;
+
+            if (outcome.PassengersLeave)
+            {
+                var passengers = new List<Client>(_shift.Cabin.Passengers);
+                foreach (var p in passengers)
+                {
+                    _leftUnpaid++;
+                    _leftUnpaidFares += p.ProposedFare;
+                    _shift.Cabin.Remove(p);
+                }
+            }
+            foreach (var c in _waiting) { c.State = RoadsideState.Waiting; c.Calling = false; }
+            _shift.Ledger.AddExpense(outcome.Severity == InjurySeverity.Serious ? "Soins d'un piéton grièvement blessé" : "Premiers soins d'un piéton renversé", outcome.CareCost);
+            _shift.Clock.AdvanceGameMinutes(outcome.LostGameMinutes);
+
+            if (outcome.Arrested) Finish(arrested: true, seized: outcome.VehicleSeized);
+            else if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
+            return outcome;
         }
 
         public Stop FindStop(string id) => _factory.FindStop(id);

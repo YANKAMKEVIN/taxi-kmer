@@ -32,14 +32,24 @@ namespace TaxiKmer.Driving
 
             _title.text = $"Bilan du jour — {clock}";
             var courses = s.RideCount == 1 ? "1 course" : $"{s.RideCount} courses";
-            _labels.text = $"Recettes ({courses})\nVersement au propriétaire\nCarburant ({DaySummary.OneDecimal(s.FuelLitres)} L, {DaySummary.OneDecimal(s.Kilometres)} km)";
-            _amounts.text = $"+ {DaySummary.Money(s.Revenue)}\n- {DaySummary.Money(s.Versement)}\n- {DaySummary.Money(s.FuelCost)}";
+            var labels = $"Recettes ({courses})\nVersement au propriétaire\nCarburant ({DaySummary.OneDecimal(s.FuelLitres)} L, {DaySummary.OneDecimal(s.Kilometres)} km)";
+            var amounts = $"+ {DaySummary.Money(s.Revenue)}\n- {DaySummary.Money(s.Versement)}\n- {DaySummary.Money(s.FuelCost)}";
+            foreach (var e in s.Expenses)
+            {
+                labels += "\n" + e.Label;
+                amounts += $"\n- {DaySummary.Money(e.Amount)}";
+            }
+            _labels.text = labels;
+            _amounts.text = amounts;
             _total.text = $"Reste : {(s.Remaining >= 0 ? "+ " : "- ")}{DaySummary.Money(Mathf.Abs(s.Remaining))}";
             _total.color = s.Remaining >= 0 ? Positive : Negative;
 
             var note = s.VersementReached
                 ? "Versement couvert."
                 : $"Versement non atteint : il manque {DaySummary.Money(s.VersementShortfall)}.";
+            if (s.Arrested)
+                note = "Garde à vue : la gendarmerie t'a interpellé après l'accident."
+                    + (s.VehicleSeized ? " Le taxi a été saisi." : "") + "\n" + note;
             if (s.UnpaidPassengers > 0)
             {
                 var who = s.UnpaidPassengers == 1 ? "1 passager descendu sans payer" : $"{s.UnpaidPassengers} passagers descendus sans payer";
@@ -108,8 +118,11 @@ namespace TaxiKmer.Driving
             var pad = h * 0.05f;
 
             Place(_title, pad, h * 0.04f, w - 2 * pad, h * 0.09f, h * 0.065f);
-            Place(_labels, pad, h * 0.16f, w * 0.62f, h * 0.27f, h * 0.05f);
-            Place(_amounts, w * 0.55f, h * 0.16f, w * 0.45f - pad, h * 0.27f, h * 0.05f);
+            // Plus de trois lignes (dépenses imprévues) : texte plus petit pour rester dans la même hauteur.
+            var lines = Mathf.Max(3, _labels.text.Split('\n').Length);
+            var lineFont = Mathf.Min(0.05f, 0.27f / (lines * 1.25f));
+            Place(_labels, pad, h * 0.16f, w * 0.62f, h * 0.27f, h * lineFont);
+            Place(_amounts, w * 0.55f, h * 0.16f, w * 0.45f - pad, h * 0.27f, h * lineFont);
             _labels.lineSpacing = _amounts.lineSpacing = 1.25f;
             Place(_total, pad, h * 0.45f, w - 2 * pad, h * 0.09f, h * 0.07f);
             Place(_note, pad, h * 0.55f, w - 2 * pad, h * 0.12f, h * 0.04f);
