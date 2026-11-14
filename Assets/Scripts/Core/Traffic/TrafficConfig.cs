@@ -76,8 +76,15 @@ namespace TaxiKmer.Core.Traffic
         public float competitorStopSeconds = 6f;
         /// <summary>Places d'un taxi concurrent ; il apparaît avec 0 à places - 1 passagers.</summary>
         public int competitorCapacity = 5;
-        /// <summary>Les mototaxis prennent-ils aussi des clients ? (question 2 du jalon 2 pour Kevin ; non par défaut.)</summary>
-        public bool motoTakesClients;
+        /// <summary>
+        /// Les mototaxis prennent aussi des clients (décision de Kevin, 2026-11-14) : tant que le client n'est pas monté
+        /// dans le taxi du joueur, même s'il l'a accepté d'un coup de klaxon.
+        /// </summary>
+        public bool motoTakesClients = true;
+        /// <summary>Passagers d'un mototaxi ; il apparaît avec 0 à places - 1 passagers.</summary>
+        public int motoCapacity = 2;
+        /// <summary>Durée de la montée d'un client sur un mototaxi (s).</summary>
+        public float motoStopSeconds = 3f;
 
         /// <summary>Véhicules qui sortent d'une rue latérale pour entrer sur l'axe, par minute et par carrefour, à la densité de pointe.</summary>
         public float junctionEntriesPerMinuteAtPeak = 2f;

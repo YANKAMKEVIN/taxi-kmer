@@ -63,15 +63,20 @@ namespace TaxiKmer.Core.Traffic
             _spots.Clear();
             if (_street != null && !_street.DayFinished)
                 foreach (var c in _street.Waiting)
-                    if (c.State == RoadsideState.Waiting)
-                        _spots.Add(new ClientSpot { Key = c, PathIndex = PathIndexFor(c), Along = Place(c).PathAlong });
+                    _spots.Add(new ClientSpot
+                    {
+                        Key = c,
+                        PathIndex = PathIndexFor(c),
+                        Along = Place(c).PathAlong,
+                        AcceptedByPlayer = c.State == RoadsideState.Accepted,
+                    });
 
             Pedestrians.Update(dt, hour, player, Traffic.Vehicles);
             Traffic.Update(dt, hour, player, _spots, Pedestrians.OnRoad);
 
             if (_street != null)
-                foreach (var key in Traffic.TakenClients)
-                    if (key is RoadsideClient c) _street.TakeByOther(c);
+                foreach (var taken in Traffic.TakenClients)
+                    if (taken.Key is RoadsideClient c) _street.TakeByOther(c, taken.ByMoto);
 
             // Oublie les places des clients partis.
             _gone.Clear();

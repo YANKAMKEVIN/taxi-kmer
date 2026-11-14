@@ -1,5 +1,5 @@
 {
-    "_note": "Trafic et piétons (jalon 2, valeurs par défaut à régler avec Kevin). vehiclesPerKmByHour et perKmBySideByHour : 24 valeurs, de 0 h à 23 h (la journée de jeu va de 6 h à 20 h). Distances en m, vitesses en km/h, durées en secondes réelles ; latéral = écart à droite de l'axe de la chaussée. motoTakesClients : question 2 du jalon 2 pour Kevin.",
+    "_note": "Trafic et piétons (jalon 2, valeurs par défaut à régler avec Kevin). vehiclesPerKmByHour et perKmBySideByHour : 24 valeurs, de 0 h à 23 h (la journée de jeu va de 6 h à 20 h). Distances en m, vitesses en km/h, durées en secondes réelles ; latéral = écart à droite de l'axe de la chaussée. motoTakesClients : les mototaxis prennent les clients qui ne sont pas encore montés dans le taxi du joueur, même acceptés (décision de Kevin, 2026-11-14).",
     "vehicles": {
         "vehiclesPerKmByHour": [3, 2, 2, 2, 3, 6, 12, 20, 22, 15, 11, 10, 11, 11, 10, 11, 15, 21, 22, 16, 10, 7, 5, 4],
         "car": { "share": 0.45, "desiredKmh": 50, "desiredKmhSpread": 8, "length": 4.3, "width": 1.75, "maxAccel": 1.6, "comfortDecel": 2.5, "timeHeadway": 1.2, "minGap": 2 },
@@ -19,7 +19,9 @@
         "competitorPickupChance": 0.5,
         "competitorStopSeconds": 6,
         "competitorCapacity": 5,
-        "motoTakesClients": false,
+        "motoTakesClients": true,
+        "motoCapacity": 2,
+        "motoStopSeconds": 3,
         "junctionEntriesPerMinuteAtPeak": 2,
         "serviceRoadFactor": 0.3,
         "exitChance": 0.12,

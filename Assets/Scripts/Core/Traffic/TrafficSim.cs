@@ -81,6 +81,16 @@ namespace TaxiKmer.Core.Traffic
         /// <summary>Trajectoire de son sens (0 ou 1).</summary>
         public int PathIndex;
         public float Along;
+        /// <summary>Accepté par le joueur (il l'attend) : seul un mototaxi peut encore le prendre.</summary>
+        public bool AcceptedByPlayer;
+    }
+
+    /// <summary>Client pris par un véhicule du trafic pendant le dernier pas.</summary>
+    public struct TakenClient
+    {
+        public object Key;
+        /// <summary>Pris par un mototaxi (sinon par un taxi).</summary>
+        public bool ByMoto;
     }
 
     /// <summary>Obstacle ponctuel sur une trajectoire (joueur, piéton qui traverse, véhicule qui double en face).</summary>
@@ -112,13 +122,13 @@ namespace TaxiKmer.Core.Traffic
         private readonly List<Obstacle>[] _obstacles;
         private readonly float[] _playerAlong;
         private readonly bool[] _playerNear;
-        private readonly List<object> _taken = new List<object>();
+        private readonly List<TakenClient> _taken = new List<TakenClient>();
         private int _nextId = 1;
 
         public IReadOnlyList<TrafficVehicle> Vehicles => _vehicles;
         public IReadOnlyList<TrafficPath> Paths => _paths;
         /// <summary>Clients pris par un taxi concurrent pendant le dernier pas (clés des <see cref="ClientSpot"/>).</summary>
-        public IReadOnlyList<object> TakenClients => _taken;
+        public IReadOnlyList<TakenClient> TakenClients => _taken;
         /// <summary>Multiplicateur de densité (réglage de qualité, 1 par défaut).</summary>
         public float DensityScale { get; set; } = 1f;
 
@@ -230,10 +240,11 @@ namespace TaxiKmer.Core.Traffic
                     if (!Contains(clients, v.TargetClient)) Resume(v); // le joueur l'a pris, ou il est parti
                     continue;
                 }
-                if (v.State != VehicleState.Driving || v.Passengers >= _config.competitorCapacity) continue;
+                if (v.State != VehicleState.Driving || v.Passengers >= Capacity(v)) continue;
                 foreach (var c in clients)
                 {
                     if (c.PathIndex != v.PathIndex || v.Considered.Contains(c.Key)) continue;
+                    if (c.AcceptedByPlayer && v.Kind != VehicleKind.Moto) continue; // un taxi ne vole pas le client du joueur
                     var ahead = c.Along - v.Along;
                     if (ahead < 15f || ahead > 70f) continue;
                     v.Considered.Add(c.Key);
@@ -249,6 +260,8 @@ namespace TaxiKmer.Core.Traffic
 
         private bool TakesClients(TrafficVehicle v) =>
             v.Kind == VehicleKind.Taxi || (v.Kind == VehicleKind.Moto && _config.motoTakesClients);
+
+        private int Capacity(TrafficVehicle v) => v.Kind == VehicleKind.Moto ? _config.motoCapacity : _config.competitorCapacity;
 
         private static bool Contains(IReadOnlyList<ClientSpot> clients, object key)
         {
@@ -351,11 +364,11 @@ namespace TaxiKmer.Core.Traffic
                     break;
                 case VehicleState.Boarding:
                     v.StopTimer += dt;
-                    if (v.StopTimer >= _config.competitorStopSeconds)
+                    if (v.StopTimer >= (v.Kind == VehicleKind.Moto ? _config.motoStopSeconds : _config.competitorStopSeconds))
                     {
                         if (clients != null && Contains(clients, v.TargetClient))
                         {
-                            _taken.Add(v.TargetClient);
+                            _taken.Add(new TakenClient { Key = v.TargetClient, ByMoto = v.Kind == VehicleKind.Moto });
                             v.Passengers++;
                         }
                         Resume(v);
@@ -496,13 +509,20 @@ namespace TaxiKmer.Core.Traffic
                 DesiredSpeed = Math.Max(2f, (k.desiredKmh + spread) / 3.6f),
                 Length = k.length,
                 Width = k.width,
-                Passengers = kind == VehicleKind.Taxi ? _random.Next(0, Math.Max(1, _config.competitorCapacity)) : 0,
+                Passengers = InitialPassengers(kind),
             };
             v.Speed = v.DesiredSpeed * 0.7f;
             _vehicles.Add(v);
             UpdateWorldPosition(v);
             return v;
         }
+
+        private int InitialPassengers(VehicleKind kind) => kind switch
+        {
+            VehicleKind.Taxi => _random.Next(0, Math.Max(1, _config.competitorCapacity)),
+            VehicleKind.Moto => _random.Next(0, Math.Max(1, _config.motoCapacity)),
+            _ => 0,
+        };
 
         private VehicleKind PickKind()
         {

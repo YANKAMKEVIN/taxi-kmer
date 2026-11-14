@@ -174,7 +174,7 @@ namespace TaxiKmer.Core.Tests
             for (var step = 0; step < 400 && !taken; step++)
             {
                 sim.Update(0.1f, 12f, player, clients);
-                taken = sim.TakenClients.Contains(key);
+                taken = sim.TakenClients.Any(t => t.Key == key && !t.ByMoto);
             }
             Assert.IsTrue(taken);
             Assert.AreEqual(1, taxi.Passengers);
@@ -198,11 +198,37 @@ namespace TaxiKmer.Core.Tests
         }
 
         [Test]
-        public void Motos_DoNotTakeClients_ByDefault()
+        public void Moto_TakesEvenTheClientAcceptedByPlayer_TaxiDoesNot()
+        {
+            foreach (var kind in new[] { VehicleKind.Moto, VehicleKind.Taxi })
+            {
+                var cfg = Quiet();
+                var sim = new TrafficSim(cfg, North(), South(), 5);
+                var v = sim.TrySpawn(0, 900f, kind);
+                v.Passengers = 0;
+                var clients = new List<ClientSpot> { new ClientSpot { Key = "c", PathIndex = 0, Along = 960f, AcceptedByPlayer = true } };
+                var taken = false;
+                for (var step = 0; step < 300 && !taken; step++)
+                {
+                    sim.Update(0.1f, 12f, PlayerAt(800f, x: 40f), clients);
+                    taken = sim.TakenClients.Any(t => (string)t.Key == "c");
+                }
+                if (kind == VehicleKind.Moto)
+                {
+                    Assert.IsTrue(taken, "Le mototaxi prend le client avant qu'il monte chez le joueur.");
+                    Assert.IsTrue(sim.TakenClients.Single().ByMoto);
+                }
+                else Assert.IsFalse(taken, "Un taxi concurrent ne prend pas le client accepté par le joueur.");
+            }
+        }
+
+        [Test]
+        public void FullMoto_DoesNotStop()
         {
             var cfg = Quiet();
             var sim = new TrafficSim(cfg, North(), South(), 5);
             var moto = sim.TrySpawn(0, 900f, VehicleKind.Moto);
+            moto.Passengers = cfg.motoCapacity;
             var clients = new List<ClientSpot> { new ClientSpot { Key = "c", PathIndex = 0, Along = 960f } };
             for (var step = 0; step < 200; step++) sim.Update(0.1f, 12f, PlayerAt(800f, x: 40f), clients);
             Assert.IsEmpty(sim.TakenClients);
@@ -482,6 +508,19 @@ namespace TaxiKmer.Core.Tests
             var c = AcceptOne(street, out _);
             Assert.IsFalse(street.TakeByOther(c));
             Assert.Contains(c, street.Waiting.ToList());
+        }
+
+        [Test]
+        public void Mototaxi_TakesAcceptedClient_BeforeHeBoards()
+        {
+            var street = NewStreet(out _);
+            var c = AcceptOne(street, out var at);
+            street.Update(0.1f, at);
+            Assert.IsTrue(street.TakeByOther(c, byMoto: true));
+            CollectionAssert.DoesNotContain(street.Waiting.ToList(), c);
+            var lost = street.Lost.Single(l => l.Client == c);
+            Assert.IsTrue(lost.WasAccepted);
+            Assert.IsTrue(lost.ByMoto);
         }
 
         [Test]

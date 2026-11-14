@@ -48,6 +48,6 @@ Toutes dans `Assets/Resources/Data/traffic.json` et `street.json`.
 ## Questions pour Kevin (réponses provisoires en place)
 
 1. **Feux tricolores** sur cette portion, ou seulement des carrefours sans feux ? → *provisoire* : pas de feux.
-2. **Les mototaxis peuvent-ils « voler » des clients au joueur ?** → *provisoire* : non (`motoTakesClients: false`), seuls les taxis concurrents prennent des clients.
+2. ~~Les mototaxis peuvent-ils « voler » des clients au joueur ?~~ → **Tranché** (Kevin, 2026-11-14) : oui tant que le client n'est pas monté dans le taxi du joueur, même s'il l'a accepté d'un coup de klaxon ; non une fois à bord. Un taxi concurrent, lui, ne prend pas le client accepté par le joueur (choix de Claude, à confirmer). Mototaxi : 2 places, montée en 3 s.
 3. **Peut-on renverser un piéton** (et avec quelles conséquences), ou le jeu l'empêche-t-il ? → *provisoire* : les piétons ne traversent jamais juste devant le joueur ; s'il les heurte quand même, rien ne se passe encore (pas de conséquence avant la réponse).
 4. *(nouvelle)* Les **taxis concurrents** s'arrêtent pour un client sur deux qui attend dans leur sens : est-ce le bon niveau de concurrence ?

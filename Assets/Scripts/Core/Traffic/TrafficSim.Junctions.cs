@@ -208,7 +208,7 @@ namespace TaxiKmer.Core.Traffic
                 DesiredSpeed = Math.Max(2f, (k.desiredKmh + spread) / 3.6f),
                 Length = k.length,
                 Width = k.width,
-                Passengers = kind == VehicleKind.Taxi ? _random.Next(0, Math.Max(1, _config.competitorCapacity)) : 0,
+                Passengers = InitialPassengers(kind),
             };
             _vehicles.Add(v);
             return v;

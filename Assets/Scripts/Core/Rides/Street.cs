@@ -128,6 +128,8 @@ namespace TaxiKmer.Core.Rides
         public ClientLostReason Reason;
         /// <summary>C'était le client accepté par le joueur.</summary>
         public bool WasAccepted;
+        /// <summary>TookOtherTaxi : parti sur un mototaxi.</summary>
+        public bool ByMoto;
     }
 
     public struct StreetOutcome
@@ -248,14 +250,19 @@ namespace TaxiKmer.Core.Rides
         }
 
         /// <summary>
-        /// Un taxi concurrent prend ce client (jalon 2). Refusé si le joueur l'a accepté (il l'attend) ou s'il n'est
-        /// plus là. Le client quitte le bord de la route ; un autre arrivera plus tard.
+        /// Un véhicule du trafic prend ce client (jalon 2). Un taxi ne prend pas le client que le joueur a accepté ;
+        /// un mototaxi, si (<paramref name="byMoto"/>) : tant qu'il n'est pas monté, il peut partir (décision de Kevin).
+        /// Le client quitte le bord de la route ; un autre arrivera plus tard.
         /// </summary>
-        public bool TakeByOther(RoadsideClient client)
+        public bool TakeByOther(RoadsideClient client, bool byMoto = false)
         {
-            if (client == null || client.State != RoadsideState.Waiting || !_waiting.Remove(client)) return false;
+            if (client == null) return false;
+            if (client.State == RoadsideState.Accepted && !byMoto) return false;
+            if (!_waiting.Remove(client)) return false;
+            var wasAccepted = client.State == RoadsideState.Accepted;
             client.Calling = false;
-            _lost.Add(new ClientLost { Client = client, Reason = ClientLostReason.TookOtherTaxi });
+            client.State = RoadsideState.Waiting;
+            _lost.Add(new ClientLost { Client = client, Reason = ClientLostReason.TookOtherTaxi, WasAccepted = wasAccepted, ByMoto = byMoto });
             return true;
         }
 

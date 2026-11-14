@@ -221,9 +221,15 @@ namespace TaxiKmer.Driving
                 return;
             }
             if (lost.Reason != ClientLostReason.TookOtherTaxi) return;
+            if (lost.WasAccepted)
+            {
+                Toast("Un bendskin a pris ton client avant que tu arrives !");
+                return;
+            }
             var place = City.Place(lost.Client);
             var d = new Vector2(place.X - taxi.transform.position.x, place.Z - taxi.transform.position.z).magnitude;
-            if (d < 120f) Toast($"Un autre taxi a pris le client pour {ShortName(lost.Client.Client.DestinationStopId)}");
+            var who = lost.ByMoto ? "Un bendskin" : "Un autre taxi";
+            if (d < 120f) Toast($"{who} a pris le client pour {ShortName(lost.Client.Client.DestinationStopId)}");
         }
 
         private void OnAction(TaxiOnRoute state)
