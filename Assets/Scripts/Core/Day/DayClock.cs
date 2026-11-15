@@ -17,6 +17,13 @@ namespace TaxiKmer.Core.Day
 
         public bool IsOver => _elapsedReal >= _config.dayLengthRealSeconds;
 
+        /// <summary>Temps réel écoulé depuis le début de la journée (s), pour la sauvegarde.</summary>
+        public float ElapsedRealSeconds => _elapsedReal;
+
+        /// <summary>Reprend la journée à ce point (sauvegarde), borné à la durée de la journée.</summary>
+        internal void Restore(float elapsedRealSeconds) =>
+            _elapsedReal = Math.Max(0f, Math.Min(elapsedRealSeconds, _config.dayLengthRealSeconds));
+
         /// <summary>Minutes de jeu écoulées depuis minuit.</summary>
         public int GameMinutes
         {

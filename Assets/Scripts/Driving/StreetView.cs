@@ -34,6 +34,8 @@ namespace TaxiKmer.Driving
         public Street Street { get; private set; }
         /// <summary>Trafic, piétons et concurrence (jalon 2).</summary>
         public CityLife City { get; private set; }
+        /// <summary>Sauvegarde (jalon 3, partie technique).</summary>
+        public SaveService Save { get; private set; }
 
         private float[] _xz;
         private float[] _cum;
@@ -95,6 +97,10 @@ namespace TaxiKmer.Driving
             var detector = taxi.gameObject.AddComponent<TaxiHitDetector>();
             detector.taxi = taxi;
             detector.PedestrianHit += OnPedestrianHit;
+            Save = gameObject.AddComponent<SaveService>();
+            Save.street = this;
+            Save.taxi = taxi;
+            Save.Initialize(actualSeed, Load("Data/save", new SaveConfig()));
             var trafficView = gameObject.AddComponent<TrafficView>();
             trafficView.baseMaterial = personMaterial;
             trafficView.City = City;
@@ -140,6 +146,9 @@ namespace TaxiKmer.Driving
             City.Pedestrians.DensityScale = scale;
         }
 
+        /// <summary>Position du taxi par rapport à l'itinéraire, maintenant (pour la sauvegarde).</summary>
+        public TaxiOnRoute TaxiOnRouteNow() => TaxiState();
+
         private TaxiOnRoute TaxiState()
         {
             var p = taxi.transform.position;
@@ -171,8 +180,13 @@ namespace TaxiKmer.Driving
             ApplyTrafficScale();
             if (!_cityPopulated)
             {
-                // À la première image : le taxi est alors posé à son départ (TaxiCar.Start).
+                // À la première image : le taxi est alors posé à son départ (TaxiCar.Start), ou repris de la sauvegarde.
                 _cityPopulated = true;
+                if (Save.TryResume())
+                {
+                    state = TaxiState();
+                    Toast($"Journée reprise : {Street.Shift.Clock.Display}", 4f);
+                }
                 City.Populate(Hour, PlayerState());
             }
             City.Update(dt, Hour, PlayerState());

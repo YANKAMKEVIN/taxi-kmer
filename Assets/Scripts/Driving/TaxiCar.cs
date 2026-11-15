@@ -55,12 +55,16 @@ namespace TaxiKmer.Driving
             if (world != null && world.Data != null && world.Data.route.xz.Length >= 4) PlaceOnRoute(startDistance);
         }
 
-        /// <summary>Pose le taxi à l'arrêt sur la voie de droite, à la distance d de l'itinéraire, tourné dans son sens.</summary>
-        public void PlaceOnRoute(float d)
+        /// <summary>
+        /// Pose le taxi à l'arrêt sur la voie de droite, à la distance d de l'itinéraire, tourné dans son sens
+        /// (<paramref name="direction"/> : +1 vers Étoudi, -1 vers le dispensaire).
+        /// </summary>
+        public void PlaceOnRoute(float d, int direction = 1)
         {
             var xz = world.Data.route.xz;
             var cum = WorldGeometry.CumulativeLengths(xz);
             WorldGeometry.SampleAlong(xz, cum, d, out var x, out var z, out var dx, out var dz);
+            if (direction < 0) { dx = -dx; dz = -dz; }
             var right = new Vector3(dz, 0f, -dx);
             var pos = new Vector3(x, 0.15f, z) + right * laneOffset;
             var rot = Quaternion.LookRotation(new Vector3(dx, 0f, dz), Vector3.up);

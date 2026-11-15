@@ -334,6 +334,16 @@ namespace TaxiKmer.Core.Rides
             return outcome;
         }
 
+        /// <summary>Passagers descendus sans payer plus tôt dans la journée (pour la sauvegarde).</summary>
+        public int LeftUnpaid => _leftUnpaid;
+        public int LeftUnpaidFares => _leftUnpaidFares;
+
+        internal void RestoreLeftUnpaid(int count, int fares)
+        {
+            _leftUnpaid = Math.Max(0, count);
+            _leftUnpaidFares = Math.Max(0, fares);
+        }
+
         private void Finish(bool arrested = false, bool seized = false)
         {
             var unpaid = _leftUnpaidFares;

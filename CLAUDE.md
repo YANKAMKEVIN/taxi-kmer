@@ -31,7 +31,7 @@ Android : identifiant `com.yankamkevin.taxikmer`, Android 8 minimum (API 26), IL
 ## Arborescence
 
 ```
-Assets/Scripts/Core/     logique pure C# (asmdef sans moteur Unity), testable hors Unity ; Core/World = géométrie du monde, Core/Traffic = trafic et piétons
+Assets/Scripts/Core/     logique pure C# (asmdef sans moteur Unity), testable hors Unity ; Core/World = géométrie du monde, Core/Traffic = trafic et piétons, Core/Save = sauvegarde
 Assets/Scripts/World/    construction du monde OSM dans Unity (WorldBuilder), caméra provisoire, crédit OSM
 Assets/Editor/           outils d'éditeur (configuration du projet, build Android)
 Assets/Settings/         assets URP par niveau de qualité

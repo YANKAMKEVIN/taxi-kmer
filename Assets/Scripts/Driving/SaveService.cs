@@ -1,0 +1,178 @@
+using System;
+using System.IO;
+using TaxiKmer.Core.Rides;
+using TaxiKmer.Core.Save;
+using UnityEngine;
+
+namespace TaxiKmer.Driving
+{
+    /// <summary>Réglages de la sauvegarde (Assets/Resources/Data/save.json).</summary>
+    [Serializable]
+    public class SaveConfig
+    {
+        /// <summary>Sauvegarde automatique de la journée en cours toutes les … s (0 = jamais).</summary>
+        public float autosaveSeconds = 30f;
+        /// <summary>Sauvegarde quand l'appli passe en arrière-plan ou se ferme.</summary>
+        public bool saveOnPause = true;
+        /// <summary>
+        /// Au lancement, reprendre la journée sauvegardée. Coupé tant que le jalon 3 n'est pas validé (système
+        /// risqué, validé seul) : les sauvegardes s'écrivent, mais ne se relisent pas encore au lancement.
+        /// </summary>
+        public bool resumeOnStart;
+    }
+
+    /// <summary>JsonUtility pour la sauvegarde.</summary>
+    public sealed class JsonUtilitySaveSerializer : ISaveSerializer
+    {
+        public string ToJson(object value) => JsonUtility.ToJson(value);
+        public T FromJson<T>(string json) where T : class => JsonUtility.FromJson<T>(json);
+    }
+
+    /// <summary>Fichiers de sauvegarde dans un dossier (Application.persistentDataPath/sauvegarde sur le téléphone).</summary>
+    public sealed class FileSaveStorage : ISaveStorage
+    {
+        private readonly string _dir;
+
+        public FileSaveStorage(string directory)
+        {
+            _dir = directory;
+            Directory.CreateDirectory(_dir);
+        }
+
+        private string P(string name) => Path.Combine(_dir, name);
+        public bool Exists(string name) => File.Exists(P(name));
+        public string Read(string name) => File.ReadAllText(P(name));
+
+        public void Write(string name, string text)
+        {
+            var bytes = System.Text.Encoding.UTF8.GetBytes(text);
+            using (var fs = new FileStream(P(name), FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                fs.Write(bytes, 0, bytes.Length);
+                fs.Flush(true); // jusqu'au disque, pas seulement au cache
+            }
+        }
+
+        public void Copy(string source, string destination) => File.Copy(P(source), P(destination), true);
+        public void Move(string source, string destination) => File.Move(P(source), P(destination));
+        public void Delete(string name) => File.Delete(P(name));
+    }
+
+    /// <summary>
+    /// Sauvegarde dans le jeu (jalon 3, partie technique) : charge au lancement, sauvegarde la journée en cours
+    /// régulièrement et quand l'appli passe en arrière-plan, enregistre le bilan à la fin de la journée.
+    /// La reprise au lancement est derrière <see cref="SaveConfig.resumeOnStart"/> (coupée par défaut).
+    /// </summary>
+    public sealed class SaveService : MonoBehaviour
+    {
+        public StreetView street;
+        public TaxiCar taxi;
+        /// <summary>Dossier des fichiers (vide : Application.persistentDataPath/sauvegarde).</summary>
+        public string directoryOverride = "";
+
+        /// <summary>Tests : dossier et réglages imposés à toutes les sauvegardes créées ensuite (null : normal).</summary>
+        public static string DirectoryForTests;
+        public static SaveConfig ConfigForTests;
+
+        public SaveConfig Config { get; private set; }
+        public SaveStore Store { get; private set; }
+        public SaveData Data { get; private set; }
+        public LoadResult LastLoad { get; private set; }
+        /// <summary>La journée a été reprise d'une sauvegarde au lancement.</summary>
+        public bool Resumed { get; private set; }
+
+        private float _sinceSave;
+        private bool _dayRecorded;
+        private int _seed;
+
+        public string Directory => !string.IsNullOrEmpty(DirectoryForTests) ? DirectoryForTests
+            : string.IsNullOrEmpty(directoryOverride) ? Path.Combine(Application.persistentDataPath, "sauvegarde")
+            : directoryOverride;
+
+        /// <summary>Appelé par StreetView quand la rue est créée : lit la sauvegarde (sans encore rien reprendre).</summary>
+        public void Initialize(int seed, SaveConfig config)
+        {
+            _seed = seed;
+            Config = ConfigForTests ?? config ?? new SaveConfig();
+            try
+            {
+                Store = new SaveStore(new FileSaveStorage(Directory), new JsonUtilitySaveSerializer());
+                LastLoad = Store.Load();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[TaxiKmer] Sauvegarde inaccessible ({Directory}) : {e.Message}");
+                LastLoad = new LoadResult { Status = LoadStatus.Corrupted, Detail = e.Message };
+            }
+            Data = LastLoad.Data ?? new SaveData();
+            switch (LastLoad.Status)
+            {
+                case LoadStatus.Loaded: Debug.Log($"[TaxiKmer] Sauvegarde chargée : jour {Data.career.dayNumber}."); break;
+                case LoadStatus.RecoveredFromBackup: Debug.LogWarning($"[TaxiKmer] Sauvegarde réparée : {LastLoad.Detail}."); break;
+                case LoadStatus.Corrupted: Debug.LogWarning($"[TaxiKmer] Sauvegarde illisible, nouvelle partie : {LastLoad.Detail}."); break;
+                case LoadStatus.TooNew: Debug.LogWarning($"[TaxiKmer] Sauvegarde d'une version plus récente, laissée intacte : {LastLoad.Detail}."); break;
+            }
+        }
+
+        /// <summary>À la première image (le taxi est posé) : reprend la journée sauvegardée si c'est permis. Rend true si repris.</summary>
+        public bool TryResume()
+        {
+            if (Config == null || !Config.resumeOnStart || !Data.hasDayInProgress || street == null || street.Street == null) return false;
+            var lost = SaveSnapshot.RestoreDay(Data.day, street.Street);
+            if (lost > 0) Debug.LogWarning($"[TaxiKmer] {lost} passager(s) de la sauvegarde n'ont pas pu être remis à bord.");
+            if (taxi != null) taxi.PlaceOnRoute(Data.day.taxiAlong, Data.day.taxiDirection);
+            Resumed = true;
+            return true;
+        }
+
+        private void Update()
+        {
+            if (Store == null || street == null || street.Street == null) return;
+            if (street.Street.DayFinished)
+            {
+                if (_dayRecorded) return;
+                _dayRecorded = true;
+                SaveSnapshot.RecordDay(Data, street.Street.Summary);
+                Write();
+                return;
+            }
+            if (Config.autosaveSeconds <= 0f) return;
+            _sinceSave += Time.unscaledDeltaTime;
+            if (_sinceSave >= Config.autosaveSeconds) SaveDayNow();
+        }
+
+        /// <summary>Sauvegarde la journée en cours maintenant.</summary>
+        public void SaveDayNow()
+        {
+            _sinceSave = 0f;
+            if (Store == null || street == null || street.Street == null || street.Street.DayFinished) return;
+            var state = street.TaxiOnRouteNow();
+            SaveSnapshot.CaptureDay(Data, street.Street, state.Along, state.Direction, _seed);
+            Write();
+        }
+
+        private void Write()
+        {
+            Data.gameVersion = Application.version;
+            try
+            {
+                if (!Store.Save(Data, DateTime.UtcNow.ToString("o")))
+                    Debug.LogWarning("[TaxiKmer] Sauvegarde non écrite : une sauvegarde plus récente est sur le téléphone.");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[TaxiKmer] Échec de la sauvegarde : {e.Message}");
+            }
+        }
+
+        private void OnApplicationPause(bool paused)
+        {
+            if (paused && Config != null && Config.saveOnPause) SaveDayNow();
+        }
+
+        private void OnApplicationQuit()
+        {
+            if (Config != null && Config.saveOnPause) SaveDayNow();
+        }
+    }
+}

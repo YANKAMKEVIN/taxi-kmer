@@ -106,5 +106,14 @@ namespace TaxiKmer.Core.Rides
         }
 
         internal bool Remove(Client client) => Back.Remove(client) || Front.Remove(client);
+
+        /// <summary>Remet un passager sur sa banquette (sauvegarde) ; sur l'autre si elle est pleine ; false s'il ne rentre plus.</summary>
+        internal bool Restore(Client client, BenchSide side)
+        {
+            if (Contains(client.Id)) return false;
+            var bench = side == BenchSide.Front ? Front : Back;
+            if (bench.CanSeat(client)) { bench.Seat(client); return true; }
+            return TryBoard(client, out _);
+        }
     }
 }

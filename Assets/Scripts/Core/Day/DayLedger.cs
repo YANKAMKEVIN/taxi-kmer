@@ -43,6 +43,18 @@ namespace TaxiKmer.Core.Day
         /// <summary>Ce qui reste au chauffeur ; peut être négatif (versement non atteint, dépenses imprévues).</summary>
         public int Remaining => Revenue - Versement - FuelCost - ExpensesTotal;
 
+        /// <summary>Reprend les comptes d'une journée sauvegardée.</summary>
+        internal void Restore(int revenue, int rideCount, float metersDriven, IEnumerable<Expense> expenses)
+        {
+            Revenue = Math.Max(0, revenue);
+            RideCount = Math.Max(0, rideCount);
+            MetersDriven = Math.Max(0f, metersDriven);
+            _expenses.Clear();
+            if (expenses != null)
+                foreach (var e in expenses)
+                    if (e.Amount > 0) _expenses.Add(e);
+        }
+
         public void AddExpense(string label, int amount)
         {
             if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));

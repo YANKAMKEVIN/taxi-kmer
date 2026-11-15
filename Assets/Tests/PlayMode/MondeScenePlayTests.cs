@@ -15,6 +15,24 @@ namespace TaxiKmer.PlayModeTests
     /// </summary>
     public class MondeScenePlayTests
     {
+        private string _saveDir;
+
+        [SetUp]
+        public void IsolateSaves()
+        {
+            // Les tests n'écrivent jamais dans la vraie sauvegarde de l'éditeur.
+            _saveDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "taxikmer-tests-" + System.Guid.NewGuid());
+            SaveService.DirectoryForTests = _saveDir;
+        }
+
+        [TearDown]
+        public void CleanSaves()
+        {
+            SaveService.DirectoryForTests = null;
+            SaveService.ConfigForTests = null;
+            if (System.IO.Directory.Exists(_saveDir)) System.IO.Directory.Delete(_saveDir, true);
+        }
+
         [UnityTearDown]
         public IEnumerator UnloadMonde()
         {
@@ -151,6 +169,43 @@ namespace TaxiKmer.PlayModeTests
             var before = traffic.ToDictionary(v => v.Id, v => v.Along);
             yield return new WaitForSeconds(1f);
             Assert.IsTrue(view.City.Traffic.Vehicles.Any(v => before.TryGetValue(v.Id, out var a) && v.Along > a + 1f));
+        }
+
+        [UnityTest]
+        public IEnumerator Monde_SaveDay_ThenRelaunch_ResumesIt()
+        {
+            var dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "taxikmer-test-" + System.Guid.NewGuid());
+            SaveService.DirectoryForTests = dir;
+            SaveService.ConfigForTests = new SaveConfig { autosaveSeconds = 0f, saveOnPause = false, resumeOnStart = true };
+            try
+            {
+                SceneManager.LoadScene("Monde");
+                yield return null;
+                yield return new WaitForSeconds(0.5f);
+                var view = Object.FindFirstObjectByType<StreetView>();
+                Assert.IsFalse(view.Save.Resumed, "Rien à reprendre au premier lancement");
+                view.Street.Shift.Clock.Advance(120f);
+                view.Street.Shift.Ledger.AddFare(700);
+                var minutes = view.Street.Shift.Clock.GameMinutes;
+                view.Save.SaveDayNow();
+                Assert.IsTrue(System.IO.File.Exists(System.IO.Path.Combine(dir, TaxiKmer.Core.Save.SaveStore.MainFile)));
+
+                // « Relance » : on recharge la scène, la journée reprend.
+                SceneManager.LoadScene("Monde");
+                yield return null;
+                yield return new WaitForSeconds(0.5f);
+                view = Object.FindFirstObjectByType<StreetView>();
+                Assert.AreEqual(TaxiKmer.Core.Save.LoadStatus.Loaded, view.Save.LastLoad.Status);
+                Assert.IsTrue(view.Save.Resumed);
+                Assert.AreEqual(700, view.Street.Shift.Ledger.Revenue);
+                Assert.That(view.Street.Shift.Clock.GameMinutes, Is.InRange(minutes, minutes + 2));
+            }
+            finally
+            {
+                SaveService.DirectoryForTests = null;
+                SaveService.ConfigForTests = null;
+                if (System.IO.Directory.Exists(dir)) System.IO.Directory.Delete(dir, true);
+            }
         }
     }
 }
