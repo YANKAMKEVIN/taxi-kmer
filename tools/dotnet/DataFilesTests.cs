@@ -101,6 +101,13 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void Owner_MatchesDefaults()
+        {
+            var o = Load<TaxiKmer.Core.Career.OwnerConfig>("owner.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Career.OwnerConfig(), Opts), JsonSerializer.Serialize(o, Opts));
+        }
+
+        [Test]
         public void World_MessassiEtoudi_IsUsable()
         {
             var w = Load<TaxiKmer.Core.World.WorldData>("world_messassi_etoudi.json");

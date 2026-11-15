@@ -1,3 +1,4 @@
+using TaxiKmer.Core.Career;
 using TaxiKmer.Core.Day;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -19,21 +20,30 @@ namespace TaxiKmer.Driving
         private Font _font;
 
         public bool Visible { get; private set; }
+        /// <summary>Le propriétaire a renvoyé le chauffeur : le bouton commence une nouvelle carrière.</summary>
+        public bool Fired { get; private set; }
+        /// <summary>Le joueur demande une nouvelle carrière (après un renvoi), avant le rechargement de la scène.</summary>
+        public event System.Action NewCareerRequested;
 
         private static readonly Color Positive = new Color(0.45f, 0.9f, 0.45f);
         private static readonly Color Negative = new Color(1f, 0.45f, 0.4f);
 
-        public void Show(DaySummary s, string clock, Font font)
+        public void Show(DaySummary s, DayClosure c, string clock, Font font)
         {
             if (Visible) return;
             Visible = true;
+            Fired = c.Mood == OwnerMood.Fired;
             _font = font;
             Build();
+            _buttonLabel.text = Fired ? "Nouvelle carrière" : "Jour suivant";
 
-            _title.text = $"Bilan du jour — {clock}";
+            _title.text = $"Bilan du jour {c.DayNumber} — {clock}";
             var courses = s.RideCount == 1 ? "1 course" : $"{s.RideCount} courses";
-            var labels = $"Recettes ({courses})\nVersement au propriétaire\nCarburant ({DaySummary.OneDecimal(s.FuelLitres)} L, {DaySummary.OneDecimal(s.Kilometres)} km)";
-            var amounts = $"+ {DaySummary.Money(s.Revenue)}\n- {DaySummary.Money(s.Versement)}\n- {DaySummary.Money(s.FuelCost)}";
+            var versementLabel = c.TakenFromSavings > 0
+                ? $"Versement au propriétaire (dont {DaySummary.Money(c.TakenFromSavings)} d'épargne)"
+                : c.VersementMissing > 0 ? "Versement remis (incomplet)" : "Versement au propriétaire";
+            var labels = $"Recettes ({courses})\n{versementLabel}\nCarburant ({DaySummary.OneDecimal(s.FuelLitres)} L, {DaySummary.OneDecimal(s.Kilometres)} km)";
+            var amounts = $"+ {DaySummary.Money(s.Revenue)}\n- {DaySummary.Money(c.VersementPaid)}\n- {DaySummary.Money(s.FuelCost)}";
             foreach (var e in s.Expenses)
             {
                 labels += "\n" + e.Label;
@@ -41,12 +51,27 @@ namespace TaxiKmer.Driving
             }
             _labels.text = labels;
             _amounts.text = amounts;
-            _total.text = $"Reste : {(s.Remaining >= 0 ? "+ " : "- ")}{DaySummary.Money(Mathf.Abs(s.Remaining))}";
-            _total.color = s.Remaining >= 0 ? Positive : Negative;
+            var change = c.SavingsAfter - c.SavingsBefore;
+            _total.text = $"Épargne : {DaySummary.Money(c.SavingsAfter)} ({(change >= 0 ? "+ " : "- ")}{DaySummary.Money(Mathf.Abs(change))})";
+            _total.color = change >= 0 ? Positive : Negative;
 
-            var note = s.VersementReached
-                ? "Versement couvert."
-                : $"Versement non atteint : il manque {DaySummary.Money(s.VersementShortfall)}.";
+            string note;
+            switch (c.Mood)
+            {
+                case OwnerMood.Fired:
+                    note = s.VehicleSeized
+                        ? "Le propriétaire t'a repris son taxi : il est à la fourrière par ta faute."
+                        : $"Le propriétaire t'a repris son taxi : {c.RecentMisses} versements manqués en une semaine.";
+                    break;
+                case OwnerMood.Threatens:
+                    var left = c.MissesBeforeFired - c.RecentMisses;
+                    note = $"Il manque {DaySummary.Money(c.VersementMissing)} au versement. Le propriétaire menace : "
+                        + (left <= 1 ? "encore un manque cette semaine et il te reprend le taxi." : $"encore {left} manques cette semaine et il te reprend le taxi.");
+                    break;
+                default:
+                    note = "Le propriétaire a son versement.";
+                    break;
+            }
             if (s.Arrested)
                 note = "Garde à vue : la gendarmerie t'a interpellé après l'accident."
                     + (s.VehicleSeized ? " Le taxi a été saisi." : "") + "\n" + note;
@@ -74,8 +99,12 @@ namespace TaxiKmer.Driving
             if (pressed) NewDay();
         }
 
-        /// <summary>Nouvelle journée : on recharge la scène (pas encore de progression d'un jour à l'autre).</summary>
-        public void NewDay() => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        /// <summary>Jour suivant (la carrière est déjà sauvegardée) ou nouvelle carrière après un renvoi : on recharge la scène.</summary>
+        public void NewDay()
+        {
+            if (Fired) NewCareerRequested?.Invoke();
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        }
 
         private void Build()
         {

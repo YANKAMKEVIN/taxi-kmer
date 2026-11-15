@@ -168,9 +168,26 @@ namespace TaxiKmer.Core.Tests
             Assert.AreEqual(LoadStatus.Loaded, r.Status);
             Assert.AreEqual(SaveMigrations.CurrentVersion, r.Data.version);
             Assert.AreEqual(1, r.Data.career.dayNumber);
+            Assert.IsNotNull(r.Data.career.missedVersementDays);
             Assert.IsNotNull(r.Data.career.history);
             Assert.IsNotNull(r.Data.day.passengers);
             Assert.IsFalse(r.Data.hasDayInProgress);
+        }
+
+        [Test]
+        public void Version1File_UpgradesToVersion2()
+        {
+            // Sauvegarde écrite par la version 1 : un bilan, pas encore d'épargne ni de versements manqués.
+            var payload = "{\"version\":1,\"career\":{\"dayNumber\":2,\"history\":[{\"dayNumber\":1,\"revenue\":12000,\"versement\":10000,\"remaining\":1500}]}}";
+            var storage = new MemoryStorage();
+            storage.Files[SaveStore.MainFile] = Serializer.ToJson(new SaveEnvelope { version = 1, checksum = SaveStore.Checksum(payload), payload = payload });
+            var r = new SaveStore(storage, Serializer).Load();
+            Assert.AreEqual(LoadStatus.Loaded, r.Status);
+            Assert.AreEqual(2, r.Data.version);
+            Assert.AreEqual(2, r.Data.career.dayNumber);
+            Assert.AreEqual(0, r.Data.career.savings, "L'argent ne passait pas d'un jour à l'autre en version 1.");
+            Assert.AreEqual(10000, r.Data.career.history.Single().versementPaid, "Ancien bilan : versement compté comme payé.");
+            Assert.IsEmpty(r.Data.career.missedVersementDays);
         }
 
         [Test]
@@ -288,8 +305,11 @@ namespace TaxiKmer.Core.Tests
             Assert.IsTrue(street.DayFinished);
             var data = new SaveData();
             data.career.dayNumber = 4;
+            data.career.savings = 20000;
             data.hasDayInProgress = true;
-            SaveSnapshot.RecordDay(data, street.Summary);
+            var career = SaveSnapshot.LoadCareer(data, new TaxiKmer.Core.Career.OwnerConfig());
+            var closure = career.CloseDay(street.Summary);
+            SaveSnapshot.RecordDay(data, street.Summary, closure, career);
             Assert.AreEqual(5, data.career.dayNumber);
             Assert.IsFalse(data.hasDayInProgress);
             var rec = data.career.history.Single();
@@ -297,6 +317,9 @@ namespace TaxiKmer.Core.Tests
             Assert.AreEqual(800, rec.revenue);
             Assert.IsTrue(rec.arrested);
             Assert.IsTrue(rec.vehicleSeized);
+            Assert.AreEqual(closure.SavingsAfter, data.career.savings);
+            Assert.AreEqual(rec.savingsAfter, data.career.savings);
+            Assert.IsTrue(data.career.fired, "Taxi saisi : le propriétaire le renvoie (choix provisoire).");
         }
     }
 }

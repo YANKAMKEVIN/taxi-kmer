@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TaxiKmer.Core.Career;
 using TaxiKmer.Core.Day;
 using TaxiKmer.Core.Rides;
 
@@ -78,14 +79,26 @@ namespace TaxiKmer.Core.Save
             return lost;
         }
 
-        /// <summary>Ajoute le bilan d'une journée terminée à la carrière et passe au jour suivant ; plus de journée en cours.</summary>
-        public static void RecordDay(SaveData data, DaySummary summary)
+        /// <summary>La carrière sauvegardée (jour, épargne, manques, renvoi).</summary>
+        public static DriverCareer LoadCareer(SaveData data, OwnerConfig owner) =>
+            DriverCareer.Restore(owner, data.career.dayNumber, data.career.savings, data.career.missedVersementDays, data.career.fired);
+
+        /// <summary>
+        /// Ajoute le bilan d'une journée terminée et l'état de la carrière après sa clôture (<paramref name="career"/>
+        /// est déjà passé au jour suivant) ; plus de journée en cours.
+        /// </summary>
+        public static void RecordDay(SaveData data, DaySummary summary, DayClosure closure, DriverCareer career)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
             if (summary == null) throw new ArgumentNullException(nameof(summary));
+            if (career == null) throw new ArgumentNullException(nameof(career));
             var record = new DayRecordData
             {
-                dayNumber = data.career.dayNumber,
+                dayNumber = closure.DayNumber,
+                versementPaid = closure.VersementPaid,
+                versementMissing = closure.VersementMissing,
+                savingsAfter = closure.SavingsAfter,
+                ownerMood = (int)closure.Mood,
                 revenue = summary.Revenue,
                 rideCount = summary.RideCount,
                 versement = summary.Versement,
@@ -101,7 +114,10 @@ namespace TaxiKmer.Core.Save
             };
             var history = new List<DayRecordData>(data.career.history ?? Array.Empty<DayRecordData>()) { record };
             data.career.history = history.ToArray();
-            data.career.dayNumber++;
+            data.career.dayNumber = career.DayNumber;
+            data.career.savings = career.Savings;
+            data.career.missedVersementDays = new List<int>(career.MissedDays).ToArray();
+            data.career.fired = career.Fired;
             data.hasDayInProgress = false;
             data.day = new DayProgressData();
         }

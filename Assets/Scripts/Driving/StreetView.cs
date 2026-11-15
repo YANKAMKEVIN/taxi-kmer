@@ -100,7 +100,7 @@ namespace TaxiKmer.Driving
             Save = gameObject.AddComponent<SaveService>();
             Save.street = this;
             Save.taxi = taxi;
-            Save.Initialize(actualSeed, Load("Data/save", new SaveConfig()));
+            Save.Initialize(actualSeed, Load("Data/save", new SaveConfig()), Load("Data/owner", new Core.Career.OwnerConfig()));
             var trafficView = gameObject.AddComponent<TrafficView>();
             trafficView.baseMaterial = personMaterial;
             trafficView.City = City;
@@ -185,7 +185,13 @@ namespace TaxiKmer.Driving
                 if (Save.TryResume())
                 {
                     state = TaxiState();
-                    Toast($"Journée reprise : {Street.Shift.Clock.Display}", 4f);
+                    Toast($"Jour {Save.Career.DayNumber} repris à {Street.Shift.Clock.Display}", 4f);
+                }
+                else
+                {
+                    var start = Load("Data/day", new DayConfig());
+                    var career = Save.StartedNewCareer ? "Nouvelle carrière. " : "";
+                    Toast($"{career}Jour {Save.Career.DayNumber} : le patron te veut sur la route de {start.startHour} h à {start.endHour} h", 6f);
                 }
                 City.Populate(Hour, PlayerState());
             }
@@ -295,8 +301,10 @@ namespace TaxiKmer.Driving
             controls.ActionVisible = false;
             _toast.enabled = false;
             _toastUntil = 0f;
+            var closure = Save.CloseDay();
             _summaryView = gameObject.AddComponent<DaySummaryView>();
-            _summaryView.Show(Street.Summary, Street.Shift.Clock.Display, controls.Font);
+            _summaryView.Show(Street.Summary, closure, Street.Shift.Clock.Display, controls.Font);
+            _summaryView.NewCareerRequested += Save.StartNewCareer;
         }
 
         /// <summary>L'écran de bilan (null tant que la journée n'est pas terminée).</summary>
@@ -473,7 +481,8 @@ namespace TaxiKmer.Driving
             var h = Screen.height;
             var shift = Street.Shift;
             var sb = new StringBuilder();
-            sb.Append(shift.Clock.Display).Append("   ").Append(Money(shift.Ledger.Revenue)).Append('\n');
+            sb.Append("Jour ").Append(Save.Career.DayNumber).Append("   ").Append(shift.Clock.Display).Append("   ")
+              .Append(Money(shift.Ledger.Revenue)).Append('\n');
             var versement = shift.Ledger.Versement;
             sb.Append("Versement ").Append(Thousands(System.Math.Min(shift.Ledger.Revenue, versement)))
               .Append(" / ").Append(Thousands(versement))

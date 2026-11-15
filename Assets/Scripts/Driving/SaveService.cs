@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using TaxiKmer.Core.Career;
 using TaxiKmer.Core.Rides;
 using TaxiKmer.Core.Save;
 using UnityEngine;
@@ -80,19 +81,29 @@ namespace TaxiKmer.Driving
         public LoadResult LastLoad { get; private set; }
         /// <summary>La journée a été reprise d'une sauvegarde au lancement.</summary>
         public bool Resumed { get; private set; }
+        /// <summary>La carrière (jour, épargne, propriétaire), toujours chargée : l'argent passe d'un jour à l'autre.</summary>
+        public DriverCareer Career { get; private set; }
+        /// <summary>Clôture de la journée, une fois terminée (null avant).</summary>
+        public DayClosure? Closure { get; private set; }
+        /// <summary>Le joueur avait été renvoyé : une nouvelle carrière a commencé à ce lancement.</summary>
+        public bool StartedNewCareer { get; private set; }
+
+        /// <summary>Dernières données de la session : si le disque est inaccessible, la carrière continue en mémoire.</summary>
+        private static SaveData s_lastData;
 
         private float _sinceSave;
-        private bool _dayRecorded;
         private int _seed;
+        private OwnerConfig _owner;
 
         public string Directory => !string.IsNullOrEmpty(DirectoryForTests) ? DirectoryForTests
             : string.IsNullOrEmpty(directoryOverride) ? Path.Combine(Application.persistentDataPath, "sauvegarde")
             : directoryOverride;
 
         /// <summary>Appelé par StreetView quand la rue est créée : lit la sauvegarde (sans encore rien reprendre).</summary>
-        public void Initialize(int seed, SaveConfig config)
+        public void Initialize(int seed, SaveConfig config, OwnerConfig owner = null)
         {
             _seed = seed;
+            _owner = owner ?? new OwnerConfig();
             Config = ConfigForTests ?? config ?? new SaveConfig();
             try
             {
@@ -104,7 +115,14 @@ namespace TaxiKmer.Driving
                 Debug.LogError($"[TaxiKmer] Sauvegarde inaccessible ({Directory}) : {e.Message}");
                 LastLoad = new LoadResult { Status = LoadStatus.Corrupted, Detail = e.Message };
             }
-            Data = LastLoad.Data ?? new SaveData();
+            Data = LastLoad.Data ?? (DirectoryForTests == null ? s_lastData : null) ?? new SaveData();
+            if (Data.career.fired)
+            {
+                // Renvoyé à la dernière partie : nouvelle carrière (le bilan de la précédente reste dans l'historique du fichier abandonné).
+                Data = new SaveData();
+                StartedNewCareer = true;
+            }
+            Career = SaveSnapshot.LoadCareer(Data, _owner);
             switch (LastLoad.Status)
             {
                 case LoadStatus.Loaded: Debug.Log($"[TaxiKmer] Sauvegarde chargée : jour {Data.career.dayNumber}."); break;
@@ -125,17 +143,30 @@ namespace TaxiKmer.Driving
             return true;
         }
 
+        /// <summary>
+        /// Clôt la journée terminée (une seule fois) : versement, épargne, humeur du propriétaire ; enregistre le bilan.
+        /// </summary>
+        public DayClosure CloseDay()
+        {
+            if (Closure.HasValue) return Closure.Value;
+            var closure = Career.CloseDay(street.Street.Summary);
+            Closure = closure;
+            SaveSnapshot.RecordDay(Data, street.Street.Summary, closure, Career);
+            Write();
+            return closure;
+        }
+
+        /// <summary>Nouvelle carrière après un renvoi : la sauvegarde repart de zéro (l'ancienne reste en copie de secours).</summary>
+        public void StartNewCareer()
+        {
+            Data = new SaveData();
+            Career = SaveSnapshot.LoadCareer(Data, _owner);
+            Write();
+        }
+
         private void Update()
         {
-            if (Store == null || street == null || street.Street == null) return;
-            if (street.Street.DayFinished)
-            {
-                if (_dayRecorded) return;
-                _dayRecorded = true;
-                SaveSnapshot.RecordDay(Data, street.Street.Summary);
-                Write();
-                return;
-            }
+            if (street == null || street.Street == null || street.Street.DayFinished) return;
             if (Config.autosaveSeconds <= 0f) return;
             _sinceSave += Time.unscaledDeltaTime;
             if (_sinceSave >= Config.autosaveSeconds) SaveDayNow();
@@ -145,7 +176,7 @@ namespace TaxiKmer.Driving
         public void SaveDayNow()
         {
             _sinceSave = 0f;
-            if (Store == null || street == null || street.Street == null || street.Street.DayFinished) return;
+            if (street == null || street.Street == null || street.Street.DayFinished) return;
             var state = street.TaxiOnRouteNow();
             SaveSnapshot.CaptureDay(Data, street.Street, state.Along, state.Direction, _seed);
             Write();
@@ -154,6 +185,8 @@ namespace TaxiKmer.Driving
         private void Write()
         {
             Data.gameVersion = Application.version;
+            if (DirectoryForTests == null) s_lastData = Data;
+            if (Store == null) return;
             try
             {
                 if (!Store.Save(Data, DateTime.UtcNow.ToString("o")))

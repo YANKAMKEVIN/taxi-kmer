@@ -10,7 +10,7 @@ namespace TaxiKmer.Core.Save
     public static class SaveMigrations
     {
         /// <summary>Version écrite par ce jeu. À augmenter à chaque changement du contenu, avec son étape ci-dessous.</summary>
-        public const int CurrentVersion = 1;
+        public const int CurrentVersion = 2;
 
         public static void Upgrade(SaveData data, int fromVersion)
         {
@@ -29,6 +29,13 @@ namespace TaxiKmer.Core.Save
             {
                 case 0:
                     break; // version 1 : premier format, rien à transformer
+                case 1:
+                    // Version 2 : épargne, versements manqués, renvoi. Les anciens bilans comptaient le versement
+                    // comme payé : on le reporte, et l'épargne repart de zéro (l'argent ne passait pas d'un jour à l'autre).
+                    if (data.career?.history != null)
+                        foreach (var r in data.career.history)
+                            if (r.versementPaid == 0 && r.versementMissing == 0) r.versementPaid = r.versement;
+                    break;
             }
         }
 
@@ -37,6 +44,7 @@ namespace TaxiKmer.Core.Save
         {
             if (data.career == null) data.career = new CareerData();
             if (data.career.history == null) data.career.history = Array.Empty<DayRecordData>();
+            if (data.career.missedVersementDays == null) data.career.missedVersementDays = Array.Empty<int>();
             if (data.career.dayNumber < 1) data.career.dayNumber = 1;
             if (data.day == null) { data.day = new DayProgressData(); data.hasDayInProgress = false; }
             if (data.day.expenses == null) data.day.expenses = Array.Empty<ExpenseData>();

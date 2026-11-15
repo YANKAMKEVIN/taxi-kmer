@@ -30,6 +30,12 @@ namespace TaxiKmer.Core.Save
     {
         /// <summary>Numéro du jour en cours ou du prochain (1 au départ).</summary>
         public int dayNumber = 1;
+        /// <summary>Argent du chauffeur, reporté d'un jour à l'autre (version 2).</summary>
+        public int savings;
+        /// <summary>Jours où le versement a manqué (version 2).</summary>
+        public int[] missedVersementDays = Array.Empty<int>();
+        /// <summary>Renvoyé par le propriétaire : la carrière est finie (version 2).</summary>
+        public bool fired;
         public DayRecordData[] history = Array.Empty<DayRecordData>();
     }
 
@@ -50,6 +56,11 @@ namespace TaxiKmer.Core.Save
         public int unpaidFares;
         public bool arrested;
         public bool vehicleSeized;
+        /// <summary>Version 2 : versement remis, ce qui manquait, épargne après la journée, humeur du propriétaire (valeur de OwnerMood).</summary>
+        public int versementPaid;
+        public int versementMissing;
+        public int savingsAfter;
+        public int ownerMood;
     }
 
     /// <summary>État d'une journée en cours, pour la reprendre là où on l'a laissée.</summary>

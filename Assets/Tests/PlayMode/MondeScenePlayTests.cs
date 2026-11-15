@@ -106,6 +106,9 @@ namespace TaxiKmer.PlayModeTests
             var s = view.Street.Summary;
             Assert.AreEqual(500, s.Revenue);
             Assert.AreEqual(s.Revenue - s.Versement - s.FuelCost, s.Remaining);
+            var closure = view.Save.Closure.Value;
+            Assert.AreEqual(TaxiKmer.Core.Career.OwnerMood.Threatens, closure.Mood, "500 FCFA : versement manqué, le propriétaire menace");
+            Assert.AreEqual(1, closure.DayNumber);
             var meters = ledger.MetersDriven;
             yield return new WaitForSeconds(0.3f);
             Assert.AreEqual(meters, ledger.MetersDriven, "Plus de distance comptée après le bilan");
@@ -118,6 +121,8 @@ namespace TaxiKmer.PlayModeTests
             Assert.IsFalse(fresh.Street.DayFinished, "Nouvelle journée");
             Assert.AreEqual(0, fresh.Street.Shift.Ledger.Revenue);
             Assert.AreEqual("06:00", fresh.Street.Shift.Clock.Display);
+            Assert.AreEqual(2, fresh.Save.Career.DayNumber, "Jour suivant (carrière sauvegardée)");
+            Assert.AreEqual(1, fresh.Save.Career.MissesInWindow(1), "Le versement manqué est retenu");
         }
 
         [UnityTest]
