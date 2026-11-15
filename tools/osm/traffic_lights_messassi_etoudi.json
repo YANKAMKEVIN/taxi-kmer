@@ -1,7 +1,8 @@
 {
-    "_note": "Feux tricolores du tronçon, faits main (OpenStreetMap n'en a aucun ici, vérifié le 2026-11-14). routeDistanceMeters = distance le long de l'itinéraire du joueur depuis le dispensaire. PROVISOIRE : placés aux grands carrefours (route secondaire qui croise l'axe), à confirmer ou corriger par Kevin.",
+    "_note": "Feux tricolores du tronçon, faits main (OpenStreetMap n'en a aucun ici, vérifié le 2026-11-14). Kevin (2026-11-15) : les feux sont « au niveau des carrefours ». routeDistanceMeters = distance le long de l'itinéraire du joueur depuis le dispensaire. Carrefours nommés d'après les références photo (vidéo Nkozoa-Étoudi, docs/references/photos sur main) ; les feux eux-mêmes n'y sont pas lisibles (images 320 x 180) : provisional = à confirmer par Kevin.",
     "lights": [
-        { "id": 1, "name": "Carrefour de Messassi", "routeDistanceMeters": 631, "provisional": true },
+        { "id": 1, "name": "Carrefour du marché de Messassi", "routeDistanceMeters": 631, "provisional": false },
+        { "id": 4, "name": "Carrefour Borne Fontaine Emana", "routeDistanceMeters": 2932, "provisional": false },
         { "id": 2, "name": "Carrefour rue 5.760", "routeDistanceMeters": 3545, "provisional": true },
         { "id": 3, "name": "Carrefour rue 5.769 / rue Albert Ateba Ebe", "routeDistanceMeters": 3780, "provisional": true }
     ]
