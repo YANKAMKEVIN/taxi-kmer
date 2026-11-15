@@ -13,6 +13,9 @@ namespace TaxiKmer.Core.Traffic
         private readonly float[] _xz;
         private readonly float[] _cum;
         private readonly int[] _twoWay;
+        /// <summary>Grille de <see cref="Cell"/> m : cellule → segments qui la traversent (projection rapide).</summary>
+        private readonly Dictionary<long, List<int>> _grid = new Dictionary<long, List<int>>();
+        private const float Cell = 40f;
 
         public float Length { get; }
         /// <summary>Carrefours avec une rue latérale à droite, par distance croissante.</summary>
@@ -30,6 +33,25 @@ namespace TaxiKmer.Core.Traffic
             Length = _cum[_cum.Length - 1];
             Junctions = junctions ?? Array.Empty<Junction>();
             Lights = lights ?? Array.Empty<PathLight>();
+            BuildGrid();
+        }
+
+        private static long CellKey(int cx, int cz) => ((long)cx << 32) ^ (uint)cz;
+
+        private void BuildGrid()
+        {
+            for (var i = 1; i < _cum.Length; i++)
+            {
+                float ax = _xz[i * 2 - 2], az = _xz[i * 2 - 1], bx = _xz[i * 2], bz = _xz[i * 2 + 1];
+                var steps = Math.Max(1, (int)Math.Ceiling((_cum[i] - _cum[i - 1]) / (Cell * 0.5f)));
+                for (var k = 0; k <= steps; k++)
+                {
+                    var t = k / (float)steps;
+                    var key = CellKey((int)Math.Floor((ax + (bx - ax) * t) / Cell), (int)Math.Floor((az + (bz - az) * t) / Cell));
+                    if (!_grid.TryGetValue(key, out var list)) _grid[key] = list = new List<int>();
+                    if (list.Count == 0 || list[list.Count - 1] != i) list.Add(i);
+                }
+            }
         }
 
         public static TrafficPath From(TrafficPathData data)
@@ -59,11 +81,31 @@ namespace TaxiKmer.Core.Traffic
         /// <summary>Projette (x, z) : distance le long de la trajectoire et écart latéral signé (positif à droite).</summary>
         public void Project(float x, float z, out float along, out float lateral)
         {
-            var n = _cum.Length;
             along = 0f;
             lateral = 0f;
             var best = float.MaxValue;
-            for (var i = 1; i < n; i++)
+            // D'abord les segments des cellules voisines : exact dès que la trajectoire passe à moins d'une cellule (40 m).
+            var cx = (int)Math.Floor(x / Cell);
+            var cz = (int)Math.Floor(z / Cell);
+            for (var dx = -1; dx <= 1; dx++)
+            for (var dz = -1; dz <= 1; dz++)
+                if (_grid.TryGetValue(CellKey(cx + dx, cz + dz), out var segs))
+                    foreach (var i in segs) Consider(i, x, z, ref best, ref along, ref lateral);
+            if (best <= Cell * Cell) return;
+            for (var i = 1; i < _cum.Length; i++) Consider(i, x, z, ref best, ref along, ref lateral);
+        }
+
+        /// <summary>Projection exhaustive (référence pour les tests).</summary>
+        public void ProjectExhaustive(float x, float z, out float along, out float lateral)
+        {
+            along = 0f;
+            lateral = 0f;
+            var best = float.MaxValue;
+            for (var i = 1; i < _cum.Length; i++) Consider(i, x, z, ref best, ref along, ref lateral);
+        }
+
+        private void Consider(int i, float x, float z, ref float best, ref float along, ref float lateral)
+        {
             {
                 float ax = _xz[i * 2 - 2], az = _xz[i * 2 - 1], bx = _xz[i * 2], bz = _xz[i * 2 + 1];
                 float ex = bx - ax, ez = bz - az;
@@ -72,7 +114,7 @@ namespace TaxiKmer.Core.Traffic
                 t = Math.Max(0f, Math.Min(1f, t));
                 float px = x - (ax + ex * t), pz = z - (az + ez * t);
                 var d2 = px * px + pz * pz;
-                if (d2 >= best) continue;
+                if (d2 >= best) return;
                 best = d2;
                 along = _cum[i - 1] + (_cum[i] - _cum[i - 1]) * t;
                 var len = (float)Math.Sqrt(len2);

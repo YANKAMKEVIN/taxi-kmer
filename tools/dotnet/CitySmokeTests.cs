@@ -95,5 +95,30 @@ namespace TaxiKmer.Core.DotnetTests
             Assert.Less(worst, 90f, "Personne ne reste bloqué derrière le joueur.");
             Assert.Greater(crossings, 0, "Des piétons traversent.");
         }
+
+        [Test]
+        public void FastProjection_MatchesExhaustive_OnRealPaths()
+        {
+            var world = Load<WorldData>("world_messassi_etoudi.json");
+            var rng = new Random(5);
+            foreach (var data in new[] { world.traffic.forward, world.traffic.backward })
+            {
+                var path = TrafficPath.From(data);
+                for (var k = 0; k < 5000; k++)
+                {
+                    // Points autour de la trajectoire (jusqu'à 200 m de côté).
+                    path.Sample((float)rng.NextDouble() * path.Length, (float)(rng.NextDouble() * 400 - 200), out var x, out var z, out _, out _);
+                    path.Project(x, z, out var a1, out var l1);
+                    path.ProjectExhaustive(x, z, out var a2, out var l2);
+                    // Près de la trajectoire (là où le jeu s'en sert), même résultat. Plus loin, à un sommet, deux segments
+                    // peuvent être à égale distance avec un latéral différent : seul l'ordre de parcours change.
+                    if (Math.Abs(l2) < 30f)
+                    {
+                        Assert.AreEqual(l2, l1, 0.05f, $"point {x}, {z}");
+                        Assert.AreEqual(a2, a1, 0.5f);
+                    }
+                }
+            }
+        }
     }
 }
