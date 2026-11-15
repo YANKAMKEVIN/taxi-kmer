@@ -26,6 +26,10 @@
 | 2.8 Feux tricolores | **logique faite et testée** (2026-11-14) : cycle vert 25 s, orange 3 s, rouge 20 s (l'axe, les deux sens ensemble ; feux décalés entre eux) ; le trafic s'arrête au rouge (à l'orange s'il peut freiner sans brusquer), ne double pas devant un feu, ligne d'arrêt 6 m avant le carrefour ; les rues latérales du carrefour entrent quand l'axe est au rouge ; 3 mototaxis sur 10 grillent le rouge ; poteaux affichés dans Unity. Le joueur qui grille un feu : aucune conséquence avant le jalon 4 (police) |
 | 2.7 Performance et qualité | à faire sur téléphone : mesurer les 30 images/s en Moyen avec le trafic de pointe ; le réglage Bas réduit la densité |
 
+## Aperçu sans Unity
+
+`dotnet test tools/dotnet --filter PreviewExport` exporte 2 min 30 de simulation (heure de pointe, autour du carrefour de Messassi) dans `build/preview/replay.json`, rejoué vu du ciel dans une page web (artefact « Messassi à l'heure de pointe »). Sert à juger le comportement du trafic avant l'essai sur téléphone.
+
 ## Valeurs par défaut (à régler avec Kevin après essai)
 
 - Réglage de qualité Bas : 60 % du trafic et des piétons (`trafficScale` dans `quality.json`) ; Moyen et Haut : 100 %.
