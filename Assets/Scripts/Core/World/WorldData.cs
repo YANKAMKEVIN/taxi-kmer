@@ -30,6 +30,14 @@ namespace TaxiKmer.Core.World
         public TrafficPathData backward = new TrafficPathData();
         /// <summary>Feux tricolores (position dans le monde), faits main : tools/osm/traffic_lights_*.json.</summary>
         public TrafficLightData[] lights = Array.Empty<TrafficLightData>();
+        /// <summary>Murets centraux de la double voie (avec lampadaires), ouverts aux carrefours.</summary>
+        public MedianData[] medians = Array.Empty<MedianData>();
+    }
+
+    [Serializable]
+    public class MedianData
+    {
+        public float[] xz = Array.Empty<float>();
     }
 
     [Serializable]

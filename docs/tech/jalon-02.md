@@ -26,6 +26,13 @@
 | 2.8 Feux tricolores | **logique faite et testée** (2026-11-14) : cycle vert 25 s, orange 3 s, rouge 20 s (l'axe, les deux sens ensemble ; feux décalés entre eux) ; le trafic s'arrête au rouge (à l'orange s'il peut freiner sans brusquer), ne double pas devant un feu, ligne d'arrêt 6 m avant le carrefour ; les rues latérales du carrefour entrent quand l'axe est au rouge ; 3 mototaxis sur 10 grillent le rouge ; poteaux affichés dans Unity. Le joueur qui grille un feu : aucune conséquence avant le jalon 4 (police) |
 | 2.7 Performance et qualité | à faire sur téléphone : mesurer les 30 images/s en Moyen avec le trafic de pointe ; le réglage Bas réduit la densité |
 
+## Références photo utilisées (2026-11-15)
+
+Lots de Kevin dans `docs/references/photos` (sur `main`) :
+- **Départ confirmé** : notre point de départ est à 7 m du « Centre Médical d'Arrondissement Yaoundé I Olembe » et à 26 m de la « Gendarmerie – Brigade de Nkolondom » dans OpenStreetMap ; la note de Kevin dit que le dispensaire est à côté de la gendarmerie. Le dispensaire de Messassi est donc ce centre médical.
+- **Muret central et lampadaires** (photo libre RN1 Émana, Pierre Geitner, CC BY-SA 4.0) : muret en béton de 0,8 m de haut et 0,5 m de large au milieu de la double voie, ouvert à 14 m de part et d'autre des carrefours et des feux (`osm_traffic.py` : 31 tronçons, 2,2 km) ; lampadaire double (mât de 10 m, deux bras courbés vers les chaussées) tous les 38 m ; le muret a une collision (on ne le traverse pas).
+- **Taxis** (photos libres de Minette Lontsie et Simbanematick, CC BY-SA 4.0, lot 07) : jaune, pas d'enseigne sur le toit (retirée des taxis concurrents), baguette sombre sur les flancs, pastille bleu et blanc sur les portières avant, plaques orange (toutes les voitures). Ajoutés au lancement, sur le taxi du joueur aussi.
+
 ## Aperçu sans Unity
 
 `dotnet test tools/dotnet --filter PreviewExport` exporte 2 min 30 de simulation (heure de pointe, autour du carrefour de Messassi) dans `build/preview/replay.json`, rejoué vu du ciel dans une page web (artefact « Messassi à l'heure de pointe »). Sert à juger le comportement du trafic avant l'essai sur téléphone.

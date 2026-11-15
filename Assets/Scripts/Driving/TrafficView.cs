@@ -26,6 +26,11 @@ namespace TaxiKmer.Driving
         private readonly HashSet<int> _seen = new HashSet<int>();
         private readonly List<int> _gone = new List<int>();
         private readonly List<LightHead> _lights = new List<LightHead>();
+        private int _decorated;
+        private static readonly Color PlateOrange = new Color(0.95f, 0.52f, 0.08f);
+        private static readonly Color Trim = new Color(0.12f, 0.12f, 0.13f);
+        private static readonly Color RoundelBlue = new Color(0.1f, 0.25f, 0.6f);
+        private static readonly Color RoundelWhite = new Color(0.95f, 0.95f, 0.95f);
         private bool _lightsBuilt;
 
         /// <summary>Tête de feu tricolore : trois lampes, allumées selon la couleur pour l'axe.</summary>
@@ -180,8 +185,8 @@ namespace TaxiKmer.Driving
             var paint = Part(root.transform, PrimitiveType.Cube, new Vector3(0f, 0.72f, 0f), new Vector3(1.74f, 0.6f, 4.3f), Color.white);
             Part(root.transform, PrimitiveType.Cube, new Vector3(0f, 1.22f, -0.2f), new Vector3(1.58f, 0.44f, 2.1f), Glass);
             Part(root.transform, PrimitiveType.Cube, new Vector3(0f, 0.3f, 0f), new Vector3(1.66f, 0.3f, 3.9f), Rubber);
-            if (kind == VehicleKind.Taxi)
-                Part(root.transform, PrimitiveType.Cube, new Vector3(0f, 1.5f, -0.25f), new Vector3(1.6f, 0.07f, 1.85f), TaxiYellow);
+            // Taxis de Yaoundé (photos de référence) : pas d'enseigne sur le toit, mais baguette sombre et pastille numérotée.
+            Decorate(root.transform, 4.3f, 1.74f, kind == VehicleKind.Taxi, _decorated++);
             AddKinematicBox(root, new Vector3(0f, 0.75f, 0f), new Vector3(1.74f, 1.3f, 4.3f));
             return new Body { Root = root, Paint = paint, Kind = kind };
         }
@@ -216,6 +221,32 @@ namespace TaxiKmer.Driving
             var rb = root.AddComponent<Rigidbody>();
             rb.isKinematic = true;
             rb.interpolation = RigidbodyInterpolation.None;
+        }
+
+        /// <summary>
+        /// Détails d'après les photos de référence (taxis de Yaoundé, CC BY-SA, docs/references/photos/Lot07) : plaques
+        /// orange devant et derrière pour toutes les voitures ; pour un taxi, baguette sombre sur les flancs et pastille
+        /// bleu et blanc (son numéro) sur les portières avant. Origine du véhicule au sol, avant = +z.
+        /// </summary>
+        public void Decorate(Transform root, float length, float width, bool taxi, int seed)
+        {
+            foreach (var end in new[] { -1f, 1f })
+                Part(root, PrimitiveType.Cube, new Vector3(0f, 0.62f, end * (length / 2f + 0.012f)), new Vector3(0.36f, 0.11f, 0.02f), PlateOrange)
+                    .shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            if (!taxi) return;
+            foreach (var side in new[] { -1f, 1f })
+            {
+                var x = side * (width / 2f + 0.006f);
+                Part(root, PrimitiveType.Cube, new Vector3(x, 0.62f, -0.1f), new Vector3(0.012f, 0.05f, length * 0.78f), Trim)
+                    .shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                // Pastille : disque bleu, cœur blanc (un cylindre aplati, tourné vers le côté).
+                var outer = Part(root, PrimitiveType.Cylinder, new Vector3(x + side * 0.004f, 0.86f, 0.45f), new Vector3(0.3f, 0.004f, 0.3f), RoundelBlue);
+                outer.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+                outer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                var inner = Part(root, PrimitiveType.Cylinder, new Vector3(x + side * 0.009f, 0.86f, 0.45f), new Vector3(0.2f, 0.004f, 0.2f), RoundelWhite);
+                inner.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+                inner.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
         }
 
         // ---------- Piétons ----------

@@ -43,6 +43,90 @@ namespace TaxiKmer.Core.World
             }
         }
 
+        /// <summary>
+        /// Muret le long d'une polyligne : deux flancs et un dessus, de largeur <paramref name="width"/> et hauteur
+        /// <paramref name="height"/>, avec les deux bouts fermés (séparateur central en béton).
+        /// </summary>
+        public static void AddWallStrip(MeshData mesh, float[] xz, float width, float height)
+        {
+            var n = xz.Length / 2;
+            if (n < 2) return;
+            var half = width / 2f;
+            var left = new Vec3[n];
+            var right = new Vec3[n];
+            for (var i = 0; i < n; i++)
+            {
+                var prev = Math.Max(0, i - 1);
+                var next = Math.Min(n - 1, i + 1);
+                var dx = xz[next * 2] - xz[prev * 2];
+                var dz = xz[next * 2 + 1] - xz[prev * 2 + 1];
+                var len = (float)Math.Sqrt(dx * dx + dz * dz);
+                if (len < 1e-4f) { dx = 1; dz = 0; len = 1; }
+                var px = -dz / len * half;
+                var pz = dx / len * half;
+                left[i] = new Vec3(xz[i * 2] + px, 0, xz[i * 2 + 1] + pz);
+                right[i] = new Vec3(xz[i * 2] - px, 0, xz[i * 2 + 1] - pz);
+            }
+            for (var i = 0; i < n - 1; i++)
+            {
+                Quad(mesh, left[i], left[i + 1], height, left[i] - right[i]);   // flanc gauche, tourné vers la gauche
+                Quad(mesh, right[i], right[i + 1], height, right[i] - left[i]); // flanc droit
+                var a = mesh.AddVertex(new Vec3(left[i].X, height, left[i].Z));
+                var b = mesh.AddVertex(new Vec3(left[i + 1].X, height, left[i + 1].Z));
+                var c = mesh.AddVertex(new Vec3(right[i + 1].X, height, right[i + 1].Z));
+                var d = mesh.AddVertex(new Vec3(right[i].X, height, right[i].Z));
+                mesh.AddTriangle(a, b, c, Up);
+                mesh.AddTriangle(a, c, d, Up);
+            }
+            Quad(mesh, right[0], left[0], height, left[0] - left[1]);             // bout de départ
+            Quad(mesh, left[n - 1], right[n - 1], height, left[n - 1] - left[n - 2]); // bout d'arrivée
+        }
+
+        /// <summary>Paroi verticale de a à b, de 0 à <paramref name="height"/>, tournée vers <paramref name="outward"/>.</summary>
+        private static void Quad(MeshData mesh, Vec3 a, Vec3 b, float height, Vec3 outward)
+        {
+            var a0 = mesh.AddVertex(a);
+            var b0 = mesh.AddVertex(b);
+            var a1 = mesh.AddVertex(new Vec3(a.X, height, a.Z));
+            var b1 = mesh.AddVertex(new Vec3(b.X, height, b.Z));
+            mesh.AddTriangle(a0, b0, b1, outward);
+            mesh.AddTriangle(a0, b1, a1, outward);
+        }
+
+        /// <summary>
+        /// Pavé centré en (<paramref name="cx"/>, <paramref name="cy"/>, <paramref name="cz"/>), de dimensions
+        /// (largeur, hauteur, longueur), sa longueur orientée selon (<paramref name="dirX"/>, <paramref name="dirZ"/>).
+        /// </summary>
+        public static void AddBox(MeshData mesh, float cx, float cy, float cz, float width, float height, float length,
+            float dirX, float dirZ)
+        {
+            var len = (float)Math.Sqrt(dirX * dirX + dirZ * dirZ);
+            if (len < 1e-6f) { dirX = 0; dirZ = 1; len = 1; }
+            dirX /= len; dirZ /= len;
+            float rx = dirZ, rz = -dirX; // à droite de la direction
+            float hw = width / 2f, hl = length / 2f, y0 = cy - height / 2f, y1 = cy + height / 2f;
+            Vec3 P(float s, float t, float y) => new Vec3(cx + rx * s + dirX * t, y, cz + rz * s + dirZ * t);
+            var c = new[] { P(-hw, -hl, 0), P(hw, -hl, 0), P(hw, hl, 0), P(-hw, hl, 0) };
+            for (var i = 0; i < 4; i++)
+            {
+                var a = c[i];
+                var b = c[(i + 1) % 4];
+                var normal = new Vec3((a.X + b.X) / 2f - cx, 0, (a.Z + b.Z) / 2f - cz); // du centre vers la face
+                var a0 = mesh.AddVertex(new Vec3(a.X, y0, a.Z));
+                var b0 = mesh.AddVertex(new Vec3(b.X, y0, b.Z));
+                var a1 = mesh.AddVertex(new Vec3(a.X, y1, a.Z));
+                var b1 = mesh.AddVertex(new Vec3(b.X, y1, b.Z));
+                mesh.AddTriangle(a0, b0, b1, normal);
+                mesh.AddTriangle(a0, b1, a1, normal);
+            }
+            var t0 = mesh.AddVertex(new Vec3(c[0].X, y1, c[0].Z));
+            var t1 = mesh.AddVertex(new Vec3(c[1].X, y1, c[1].Z));
+            var t2 = mesh.AddVertex(new Vec3(c[2].X, y1, c[2].Z));
+            var t3 = mesh.AddVertex(new Vec3(c[3].X, y1, c[3].Z));
+            mesh.AddTriangle(t0, t1, t2, Up);
+            mesh.AddTriangle(t0, t2, t3, Up);
+        }
+
         /// <summary>Bloc : murs verticaux et toit plat, à partir de l'emprise (polygone fermé implicite).</summary>
         public static void AddBuilding(MeshData mesh, float[] xz, float height)
         {

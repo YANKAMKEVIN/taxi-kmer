@@ -268,6 +268,68 @@ def place_lights(world: dict, paths: dict, lights: list[dict]) -> list[dict]:
     return placed
 
 
+MEDIAN_MIN_GAP = 6.0     # écart entre les axes des deux chaussées pour qu'il y ait un muret (m)
+MEDIAN_MAX_GAP = 20.0
+MEDIAN_STEP = 5.0        # pas d'échantillonnage du muret (m)
+MEDIAN_OPENING = 14.0    # ouverture du muret de part et d'autre d'un carrefour ou d'un feu (m)
+
+
+def medians(paths: dict) -> list[dict]:
+    """
+    Murets centraux de la double voie (références photo de Kevin : RN1 en 2 × 2 voies, séparateur béton) : au milieu
+    des deux chaussées là où elles sont à sens unique et à 6-20 m l'une de l'autre, ouverts aux carrefours et aux feux.
+    """
+    fwd = _points(paths["forward"]["xz"])
+    back = _points(paths["backward"]["xz"])
+    if len(fwd) < 2 or len(back) < 2:
+        return []
+    fcum = [0.0]
+    for a, b in zip(fwd, fwd[1:]):
+        fcum.append(fcum[-1] + _dist(a, b))
+    bcum = [0.0]
+    for a, b in zip(back, back[1:]):
+        bcum.append(bcum[-1] + _dist(a, b))
+    f_one = paths["forward"].get("twoWay", [])
+    b_one = paths["backward"].get("twoWay", [])
+    openings_f = [j["along"] for j in paths["forward"].get("junctions", [])] + [l["along"] for l in paths["forward"].get("lights", [])]
+    openings_b = [j["along"] for j in paths["backward"].get("junctions", [])] + [l["along"] for l in paths["backward"].get("lights", [])]
+
+    def seg_index(cum, d):
+        for i in range(1, len(cum)):
+            if cum[i] >= d:
+                return i - 1
+        return len(cum) - 2
+
+    def sample(line, cum, d):
+        i = seg_index(cum, d)
+        a, b = line[i], line[i + 1]
+        seg = cum[i + 1] - cum[i]
+        t = (d - cum[i]) / seg if seg > 0 else 0.0
+        return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t), i
+
+    runs, current = [], []
+    d = 0.0
+    while d <= fcum[-1]:
+        p, fi = sample(fwd, fcum, d)
+        ok = fi < len(f_one) and f_one[fi] == 0
+        if ok:
+            dist, b_along, _ = _project(back, bcum, p)
+            bi = seg_index(bcum, b_along)
+            ok = (MEDIAN_MIN_GAP <= dist <= MEDIAN_MAX_GAP and bi < len(b_one) and b_one[bi] == 0
+                  and all(abs(d - o) > MEDIAN_OPENING for o in openings_f)
+                  and all(abs(b_along - o) > MEDIAN_OPENING for o in openings_b))
+            if ok:
+                q, _ = sample(back, bcum, b_along)
+                current.append(((p[0] + q[0]) / 2, (p[1] + q[1]) / 2))
+        if not ok and current:
+            runs.append(current)
+            current = []
+        d += MEDIAN_STEP
+    if current:
+        runs.append(current)
+    return [{"xz": [round(v, 2) for p in run for v in p]} for run in runs if len(run) >= 3]
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("world", help="monde découpé (sortie de osm_route.py), complété sur place")
@@ -282,6 +344,7 @@ def main(argv=None) -> int:
         with open(args.lights, encoding="utf-8") as f:
             lights = json.load(f)["lights"]
     world["traffic"]["lights"] = place_lights(world, {k: world["traffic"][k] for k in ("forward", "backward")}, lights)
+    world["traffic"]["medians"] = medians(world["traffic"])
     with open(args.world, "w", encoding="utf-8") as f:
         json.dump(world, f, ensure_ascii=False, separators=(",", ":"))
     for name, path in ((k, world["traffic"][k]) for k in ("forward", "backward")):
@@ -291,6 +354,8 @@ def main(argv=None) -> int:
     for lt in world["traffic"]["lights"]:
         alongs = {k: [x["along"] for x in world["traffic"][k]["lights"] if x["id"] == lt["id"]] for k in ("forward", "backward")}
         print(f"feu {lt['id']} {lt['name']} : {alongs}")
+    total = sum(sum(_dist(a, b) for a, b in zip(_points(m["xz"]), _points(m["xz"])[1:])) for m in world["traffic"]["medians"])
+    print(f"murets centraux : {len(world['traffic']['medians'])} tronçons, {total:.0f} m")
     print(f"Itinéraire du joueur : {world['route']['lengthMeters']} m")
     return 0
 

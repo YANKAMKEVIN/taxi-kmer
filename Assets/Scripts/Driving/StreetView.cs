@@ -104,6 +104,8 @@ namespace TaxiKmer.Driving
             var trafficView = gameObject.AddComponent<TrafficView>();
             trafficView.baseMaterial = personMaterial;
             trafficView.City = City;
+            // Le taxi du joueur prend les mêmes détails que ceux de Yaoundé (plaques, baguette, pastille).
+            trafficView.Decorate(taxi.transform, TaxiFactory.Length, TaxiFactory.Width, true, 0);
 
             foreach (var stop in stops.stops) _stopMarkers[stop.id] = MakeStopMarker(stop);
             BuildHud();

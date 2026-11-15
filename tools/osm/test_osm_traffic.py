@@ -85,5 +85,24 @@ class TrafficPathsTests(unittest.TestCase):
         self.assertEqual(paths["backward"]["lights"], [{"id": 7, "along": 700.0}])
 
 
+    def test_median_between_carriageways_with_opening_at_junction(self):
+        roads = [
+            road(1, True, [0, 0, 0, 500, 0, 1000]),
+            road(2, True, [-12, 1000, -12, 500, -12, 0]),
+            road(3, False, [0, 0, -12, 0], "secondary"),
+            road(4, False, [0, 1000, -12, 1000], "secondary"),
+            road(5, False, [0, 500, 80, 500], "residential"),   # rue à droite : carrefour à 500 m
+        ]
+        world = {"roads": roads, "route": {"xz": [0, 0, 0, 1000], "lengthMeters": 1000}}
+        paths = osm_traffic.traffic_paths(world)
+        meds = osm_traffic.medians(paths)
+        self.assertEqual(len(meds), 2, "coupé en deux par l'ouverture du carrefour")
+        for m in meds:
+            xs = m["xz"][0::2]
+            self.assertTrue(all(abs(x + 6) < 1e-6 for x in xs), "au milieu des deux chaussées")
+        zs = sorted(z for m in meds for z in m["xz"][1::2])
+        self.assertFalse(any(486 < z < 514 for z in zs), "ouvert autour du carrefour")
+
+
 if __name__ == "__main__":
     unittest.main()
