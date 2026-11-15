@@ -1,5 +1,5 @@
 {
-    "_note": "Feux tricolores du tronçon, faits main (OpenStreetMap n'en a aucun ici, vérifié le 2026-11-14). Kevin (2026-11-15) : les feux sont « au niveau des carrefours ». routeDistanceMeters = distance le long de l'itinéraire du joueur depuis le dispensaire. Carrefours nommés d'après les références photo (vidéo Nkozoa-Étoudi, docs/references/photos sur main) ; les feux eux-mêmes n'y sont pas lisibles (images 320 x 180) : provisional = à confirmer par Kevin. Pas de feu au pont d'Emana (Kevin, 2026-11-15).",
+    "_note": "Feux tricolores du tronçon, faits main (OpenStreetMap n'en a aucun ici, vérifié le 2026-11-14). Kevin (2026-11-15) : les feux sont « au niveau des carrefours ». routeDistanceMeters = distance le long de l'itinéraire du joueur depuis le dispensaire. Carrefours nommés d'après les références photo (vidéo Nkozoa-Étoudi, docs/references/photos sur main) ; les feux eux-mêmes n'y sont pas lisibles (images 320 x 180) : provisional = à confirmer par Kevin. Pas de feu au pont d'Emana ni au carrefour d'Étoudi (Kevin, 2026-11-15).",
     "lights": [
         { "id": 1, "name": "Carrefour du marché de Messassi", "routeDistanceMeters": 631, "provisional": false },
         { "id": 4, "name": "Carrefour Borne Fontaine Emana", "routeDistanceMeters": 2932, "provisional": false },
