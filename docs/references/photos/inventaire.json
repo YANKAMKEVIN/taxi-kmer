@@ -1,0 +1,1162 @@
+[
+  {
+    "path": "Lot_02_references__Apercu.jpg",
+    "bytes": 111147,
+    "dimensions": [
+      1000,
+      720
+    ],
+    "sha256": "16a4896ce13a5dcf442c2199d481c61770844ea227aa7676ea8ed870861f798e",
+    "original_path": "Lot_02_references/Apercu.jpg"
+  },
+  {
+    "path": "Lot_02_references__Bastos_polyclinique__Bastos_polyclinique_02.jpg",
+    "bytes": 669063,
+    "dimensions": [
+      2000,
+      1500
+    ],
+    "sha256": "d682ab125016f3d8ccbca1396965548931b735dc5f22811ef66684531598002c",
+    "original_path": "Lot_02_references/Bastos_polyclinique/Bastos_polyclinique_02.jpg"
+  },
+  {
+    "path": "Lot_02_references__Emana_hopital__Emana_hopital_01.jpg",
+    "bytes": 92593,
+    "dimensions": [
+      1080,
+      608
+    ],
+    "sha256": "1242e75a6407de2053633e4a44074a112d7889ab1e0b301c683955370e50c432",
+    "original_path": "Lot_02_references/Emana_hopital/Emana_hopital_01.jpg"
+  },
+  {
+    "path": "Lot_02_references__Emana_hopital__Emana_hopital_06.jpg",
+    "bytes": 81979,
+    "dimensions": [
+      800,
+      600
+    ],
+    "sha256": "b801cc82df704c03df1fc7757b653e65919e21466ffb910db971506e82822299",
+    "original_path": "Lot_02_references/Emana_hopital/Emana_hopital_06.jpg"
+  },
+  {
+    "path": "Lot_02_references__Emana_hopital__Emana_hopital_09.jpg",
+    "bytes": 55993,
+    "dimensions": [
+      800,
+      600
+    ],
+    "sha256": "088873ef458acbf5015b45dd97993ca16acd667b71dcc5140d576bba34bfefb7",
+    "original_path": "Lot_02_references/Emana_hopital/Emana_hopital_09.jpg"
+  },
+  {
+    "path": "Lot_02_references__Emana_hopital__Emana_hopital_12.jpg",
+    "bytes": 71161,
+    "dimensions": [
+      800,
+      600
+    ],
+    "sha256": "540486005fb5a0b67b1c2ea64cce5289f3876c1ac42d1dc55bd5a6f1e1c33f94",
+    "original_path": "Lot_02_references/Emana_hopital/Emana_hopital_12.jpg"
+  },
+  {
+    "path": "Lot_02_references__Messassi_Google_Maps__Messassi_maps_01.jpg",
+    "bytes": 248629,
+    "dimensions": [
+      1600,
+      778
+    ],
+    "sha256": "7cae228c891a39fb2ca17c6c36801baf77acdb554d5293a2ae7723e621f1cc2d",
+    "original_path": "Lot_02_references/Messassi_Google_Maps/Messassi_maps_01.jpg"
+  },
+  {
+    "path": "Lot_02_references__Messassi_Google_Maps__Messassi_maps_02.jpg",
+    "bytes": 202874,
+    "dimensions": [
+      1600,
+      900
+    ],
+    "sha256": "adee9a94adf055a71a11c0ecc1c2eca345e49861c03e31d588acc2855b7ba058",
+    "original_path": "Lot_02_references/Messassi_Google_Maps/Messassi_maps_02.jpg"
+  },
+  {
+    "path": "Lot_02_references__Messassi_Google_Maps__Messassi_maps_03.jpg",
+    "bytes": 242079,
+    "dimensions": [
+      900,
+      1200
+    ],
+    "sha256": "f0991b4128a7bc784e42ea877180df8fadb9d6d6669dc7256ffcd2dd751b8d04",
+    "original_path": "Lot_02_references/Messassi_Google_Maps/Messassi_maps_03.jpg"
+  },
+  {
+    "path": "Lot_02_references__Messassi_Google_Maps__Messassi_maps_04.jpg",
+    "bytes": 246628,
+    "dimensions": [
+      1600,
+      1200
+    ],
+    "sha256": "aa1674942573cc676932eb0c6717b9a10651e24db01e551a22879934f74e1366",
+    "original_path": "Lot_02_references/Messassi_Google_Maps/Messassi_maps_04.jpg"
+  },
+  {
+    "path": "Lot_02_references__Messassi_Google_Maps__Messassi_maps_05.jpg",
+    "bytes": 267140,
+    "dimensions": [
+      900,
+      1200
+    ],
+    "sha256": "0f6cb5ef729be27fb24a478762ef40d889ebe6614ef8d14820833e889767d2a1",
+    "original_path": "Lot_02_references/Messassi_Google_Maps/Messassi_maps_05.jpg"
+  },
+  {
+    "path": "Lot_02_references__Messassi_Google_Maps__Messassi_maps_06.jpg",
+    "bytes": 223804,
+    "dimensions": [
+      1600,
+      900
+    ],
+    "sha256": "10c5758811a83e7f8980465a197e869f7eb7fc7fe8424c5e608c827d8d68d6bd",
+    "original_path": "Lot_02_references/Messassi_Google_Maps/Messassi_maps_06.jpg"
+  },
+  {
+    "path": "Lot_02_references__Messassi_dispensaire__Messassi_dispensaire_01.jpg",
+    "bytes": 152124,
+    "dimensions": [
+      1080,
+      720
+    ],
+    "sha256": "dd22ee22c920c3e992a6a3525bb1e6ced852ecffa56711f511d6b4d9e41781ce",
+    "original_path": "Lot_02_references/Messassi_dispensaire/Messassi_dispensaire_01.jpg"
+  },
+  {
+    "path": "Lot_02_references__Messassi_hopital__Messassi_hopital_01.jpg",
+    "bytes": 68190,
+    "dimensions": [
+      810,
+      1080
+    ],
+    "sha256": "c0c7dd6c0b31a87102cc1d6fc6d9d276476fb4446bf23c67f2852bfd1c932f39",
+    "original_path": "Lot_02_references/Messassi_hopital/Messassi_hopital_01.jpg"
+  },
+  {
+    "path": "Lot_02_references__Messassi_marche__Messassi_marche_01.jpg",
+    "bytes": 373439,
+    "dimensions": [
+      1500,
+      900
+    ],
+    "sha256": "28516d7866331201455cb7a3d08168446038190d3b8b22f62f3480eaa3b3ec14",
+    "original_path": "Lot_02_references/Messassi_marche/Messassi_marche_01.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Apercu.jpg",
+    "bytes": 199535,
+    "dimensions": [
+      1000,
+      1225
+    ],
+    "sha256": "ff41b13800f913c38de088fc9e8ba9c3f554d2991e729ab60de9991b9eba5b75",
+    "original_path": "Lot_03_Messassi_Etoudi/Apercu.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Borne_Fontaine__Borne_Fontaine_01.jpg",
+    "bytes": 234638,
+    "dimensions": [
+      673,
+      1200
+    ],
+    "sha256": "891b2dab220c4576c608ce2035dae977c2aacca2b9db384ca3da0114b4391ee4",
+    "original_path": "Lot_03_Messassi_Etoudi/Borne_Fontaine/Borne_Fontaine_01.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Borne_Fontaine__Borne_Fontaine_04.jpg",
+    "bytes": 447337,
+    "dimensions": [
+      1600,
+      1200
+    ],
+    "sha256": "05f53c0758de6ff6b1aab277ad8ccd167bb5b84ee93dc01a0000acdba4c4cd7b",
+    "original_path": "Lot_03_Messassi_Etoudi/Borne_Fontaine/Borne_Fontaine_04.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Borne_Fontaine__Borne_Fontaine_05.jpg",
+    "bytes": 158562,
+    "dimensions": [
+      1600,
+      900
+    ],
+    "sha256": "5eb8ec5e9a730ea8f22ff57657c05f0345a15103b71284924886bb6896e8f48a",
+    "original_path": "Lot_03_Messassi_Etoudi/Borne_Fontaine/Borne_Fontaine_05.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Borne_Fontaine__Borne_Fontaine_07.jpg",
+    "bytes": 276405,
+    "dimensions": [
+      1600,
+      1200
+    ],
+    "sha256": "59464fb61b8dad8ac816e65594bb83ad5299542439354db94a16d78b3c56f125",
+    "original_path": "Lot_03_Messassi_Etoudi/Borne_Fontaine/Borne_Fontaine_07.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Borne_Fontaine__Borne_Fontaine_08.jpg",
+    "bytes": 359771,
+    "dimensions": [
+      900,
+      1200
+    ],
+    "sha256": "932b24ed971a4ba773a1876919fed7c34992d1f0bafe43a24cbb4ac9ea2f17e0",
+    "original_path": "Lot_03_Messassi_Etoudi/Borne_Fontaine/Borne_Fontaine_08.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Borne_Fontaine__Centre_ELA_facade.jpg",
+    "bytes": 252674,
+    "dimensions": [
+      1200,
+      630
+    ],
+    "sha256": "b0eda48f21cc2c975ffe8dd65ecaa8975a9bd1f6a324bdccaa371f49b8a38d90",
+    "original_path": "Lot_03_Messassi_Etoudi/Borne_Fontaine/Centre_ELA_facade.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Etoudi_carrefour_contexte__Etoudi_carrefour_contexte_01.jpg",
+    "bytes": 413600,
+    "dimensions": [
+      1600,
+      900
+    ],
+    "sha256": "3b2d273ac6742ebadfbfea07ac04593130de5215e2d82702674e6cd1b592d297",
+    "original_path": "Lot_03_Messassi_Etoudi/Etoudi_carrefour_contexte/Etoudi_carrefour_contexte_01.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Etoudi_carrefour_contexte__Etoudi_carrefour_contexte_02.jpg",
+    "bytes": 164466,
+    "dimensions": [
+      675,
+      1200
+    ],
+    "sha256": "ed2d4a53343df3376ec2aad9151949e44a733b63f844adfcf8f80645cd0507be",
+    "original_path": "Lot_03_Messassi_Etoudi/Etoudi_carrefour_contexte/Etoudi_carrefour_contexte_02.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Etoudi_carrefour_contexte__Etoudi_carrefour_contexte_03.jpg",
+    "bytes": 312829,
+    "dimensions": [
+      900,
+      1200
+    ],
+    "sha256": "957d03f3a15b59fdfebfbd3fd3caae4e995438650dbca074c70efae548b20709",
+    "original_path": "Lot_03_Messassi_Etoudi/Etoudi_carrefour_contexte/Etoudi_carrefour_contexte_03.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Etoudi_carrefour_contexte__Etoudi_carrefour_contexte_04.jpg",
+    "bytes": 597072,
+    "dimensions": [
+      1600,
+      1200
+    ],
+    "sha256": "913550d2bcc18fdfaef052ab7998067354eebf9d895288da3407a6d43b4773d8",
+    "original_path": "Lot_03_Messassi_Etoudi/Etoudi_carrefour_contexte/Etoudi_carrefour_contexte_04.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Etoudi_carrefour_contexte__Etoudi_carrefour_contexte_08.jpg",
+    "bytes": 540243,
+    "dimensions": [
+      1600,
+      1200
+    ],
+    "sha256": "85be569360ac75ce6ca7870328517a6ab1f7aead6fac83a2baef56a185f48c1f",
+    "original_path": "Lot_03_Messassi_Etoudi/Etoudi_carrefour_contexte/Etoudi_carrefour_contexte_08.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Etoudi_carrefour_contexte__Etoudi_carrefour_contexte_09.jpg",
+    "bytes": 205717,
+    "dimensions": [
+      540,
+      1200
+    ],
+    "sha256": "158d9dc318d0acaba7fbb96e8d5edf3649a904e450c574987ad0c3eb7dcd0390",
+    "original_path": "Lot_03_Messassi_Etoudi/Etoudi_carrefour_contexte/Etoudi_carrefour_contexte_09.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Etoudi_carrefour_contexte__Etoudi_carrefour_contexte_10.jpg",
+    "bytes": 530335,
+    "dimensions": [
+      1600,
+      900
+    ],
+    "sha256": "6cbece2b32850d39621235665b9d6aa96d810d7686fc1d71316450bdda432ed4",
+    "original_path": "Lot_03_Messassi_Etoudi/Etoudi_carrefour_contexte/Etoudi_carrefour_contexte_10.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Etoudi_palais_architecture__Palais_facade.jpg",
+    "bytes": 88714,
+    "dimensions": [
+      1600,
+      1066
+    ],
+    "sha256": "548df2c2dba82c16125f51591e4d245472883ac15ac4cc5e3a909b19509f36b8",
+    "original_path": "Lot_03_Messassi_Etoudi/Etoudi_palais_architecture/Palais_facade.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Etoudi_palais_architecture__Palais_vue_generale.jpg",
+    "bytes": 30811,
+    "dimensions": [
+      640,
+      430
+    ],
+    "sha256": "c428e05e647df7d3ac5129618b649124dc82694e1683dfefc6af7fa06ad305f6",
+    "original_path": "Lot_03_Messassi_Etoudi/Etoudi_palais_architecture/Palais_vue_generale.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Marche_Messassi__Marche_Messassi_01.jpg",
+    "bytes": 246437,
+    "dimensions": [
+      1600,
+      900
+    ],
+    "sha256": "42ec238bc02e34c2fa51bf79ecc1f74f50f82a75ca7ab38798cf80ae93372cc7",
+    "original_path": "Lot_03_Messassi_Etoudi/Marche_Messassi/Marche_Messassi_01.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Marche_Messassi__Marche_Messassi_03.jpg",
+    "bytes": 89310,
+    "dimensions": [
+      960,
+      720
+    ],
+    "sha256": "9e70407cb94091ebb2bd4aeebace325c19cad414e3e74661df7e486f032ada83",
+    "original_path": "Lot_03_Messassi_Etoudi/Marche_Messassi/Marche_Messassi_03.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Marche_Messassi__Marche_Messassi_04.jpg",
+    "bytes": 258400,
+    "dimensions": [
+      1600,
+      900
+    ],
+    "sha256": "a27d1d3fb034b53f77322c47590d4792a5043b917b4aace40feab38bdb1e58df",
+    "original_path": "Lot_03_Messassi_Etoudi/Marche_Messassi/Marche_Messassi_04.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Marche_Messassi__Marche_Messassi_05.jpg",
+    "bytes": 291893,
+    "dimensions": [
+      900,
+      1200
+    ],
+    "sha256": "f91435c2655fe483b06bbae5dae460263979e7ee2a905e60535b45a5486bbedd",
+    "original_path": "Lot_03_Messassi_Etoudi/Marche_Messassi/Marche_Messassi_05.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Marche_Messassi__Marche_Messassi_06.jpg",
+    "bytes": 340930,
+    "dimensions": [
+      1600,
+      901
+    ],
+    "sha256": "a771a6014c228969e50e6a10083af4860c7d2c67e27b759c256a7367ee47b000",
+    "original_path": "Lot_03_Messassi_Etoudi/Marche_Messassi/Marche_Messassi_06.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Marche_Messassi__Marche_Messassi_09.jpg",
+    "bytes": 400719,
+    "dimensions": [
+      1600,
+      1200
+    ],
+    "sha256": "87c75ffa1ba1b502f1db29f94d51d0679cf4ea0e23c3f26797de589e30bdb28b",
+    "original_path": "Lot_03_Messassi_Etoudi/Marche_Messassi/Marche_Messassi_09.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Marche_Messassi__Sorepco_facade.jpg",
+    "bytes": 44456,
+    "dimensions": [
+      500,
+      338
+    ],
+    "sha256": "18121d71e03a38dab58a7a0e8e4ecb7635e8461bc6101e14ca17c7f296337e95",
+    "original_path": "Lot_03_Messassi_Etoudi/Marche_Messassi/Sorepco_facade.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Pont_Emana__Pont_Emana_01.jpg",
+    "bytes": 120372,
+    "dimensions": [
+      675,
+      1200
+    ],
+    "sha256": "790437a741f1f8afeb3749ac7708522c54d51d5f26b2be6f796a60037edbe582",
+    "original_path": "Lot_03_Messassi_Etoudi/Pont_Emana/Pont_Emana_01.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Pont_Emana__Pont_Emana_03.jpg",
+    "bytes": 127619,
+    "dimensions": [
+      675,
+      1200
+    ],
+    "sha256": "9c45420828beb124621ab8b64241d870a106528ba063de5fb93632b7a087d9de",
+    "original_path": "Lot_03_Messassi_Etoudi/Pont_Emana/Pont_Emana_03.jpg"
+  },
+  {
+    "path": "Lot_03_Messassi_Etoudi__Pont_Emana__Pont_Emana_presse.png",
+    "bytes": 181219,
+    "dimensions": [
+      311,
+      282
+    ],
+    "sha256": "763a901047dc069b59c63872f98977d4e408fad97e664d1d86a6a2abc4fe307c",
+    "original_path": "Lot_03_Messassi_Etoudi/Pont_Emana/Pont_Emana_presse.png"
+  },
+  {
+    "path": "Lot_04_Entree_Palais__AfricaPress.jpg",
+    "bytes": 33601,
+    "dimensions": [
+      800,
+      400
+    ],
+    "sha256": "bc43ec513252c80a828fea0d2e6c4dcc50b0e8f36649dc9966c81acfddb9c22b",
+    "original_path": "Lot_04_Entree_Palais/AfricaPress.jpg"
+  },
+  {
+    "path": "Lot_04_Entree_Palais__Etoudi_04.jpg",
+    "bytes": 46861,
+    "dimensions": [
+      960,
+      432
+    ],
+    "sha256": "34e726f07adab28b4e55f9ce7c198744f8eb76362605c88ceb1c76ee7455abe5",
+    "original_path": "Lot_04_Entree_Palais/Etoudi_04.jpg"
+  },
+  {
+    "path": "Lot_04_Entree_Palais__Lebledparle.jpg",
+    "bytes": 90193,
+    "dimensions": [
+      675,
+      900
+    ],
+    "sha256": "4f01243c20223efa55a8420e8c9c6d14d1822154ab2ec874b71cdb1e0f02fcd2",
+    "original_path": "Lot_04_Entree_Palais/Lebledparle.jpg"
+  },
+  {
+    "path": "Lot_05_Axe_Etoudi__Axe_Etoudi.jpg",
+    "bytes": 156826,
+    "dimensions": [
+      750,
+      750
+    ],
+    "sha256": "959ec416f937f5adaf3e5f847a0f7b5f8c242411b3889ccf2344ebea4fa1a765",
+    "original_path": "Lot_05_Axe_Etoudi/Axe_Etoudi.jpg"
+  },
+  {
+    "path": "Lot_05_Axe_Etoudi__Route_presse_01.jpg",
+    "bytes": 425738,
+    "dimensions": [
+      2000,
+      1328
+    ],
+    "sha256": "248bb4b09d45ea580a4d320334c0e5ed57bce01205ec97377045a689b6d4d736",
+    "original_path": "Lot_05_Axe_Etoudi/Route_presse_01.jpg"
+  },
+  {
+    "path": "Lot_05_Axe_Etoudi__Route_presse_02.jpg",
+    "bytes": 30412,
+    "dimensions": [
+      1276,
+      766
+    ],
+    "sha256": "b2a07dac48530e665052606b16136fd1935f026a6bc12e120ce3f360ce15cd2a",
+    "original_path": "Lot_05_Axe_Etoudi/Route_presse_02.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Apercu_01.jpg",
+    "bytes": 340384,
+    "dimensions": [
+      1360,
+      980
+    ],
+    "sha256": "66aec038d19230a23f4f29dced994aaebaf8fafcfbd5ab4d6bf3010176c1c758",
+    "original_path": "Lot_06_Recherche_elargie/Apercu_01.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Apercu_02.jpg",
+    "bytes": 377422,
+    "dimensions": [
+      1360,
+      980
+    ],
+    "sha256": "ff4b59356aee7655dc8aac2551be243a6590c583a07cae6d7b91ae9761d58a35",
+    "original_path": "Lot_06_Recherche_elargie/Apercu_02.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Apercu_03.jpg",
+    "bytes": 400580,
+    "dimensions": [
+      1360,
+      980
+    ],
+    "sha256": "48a2c6163b6667dbd1d97a72c85393a5e16bb7396765cfc372b8b87a2facc741",
+    "original_path": "Lot_06_Recherche_elargie/Apercu_03.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Apercu_04.jpg",
+    "bytes": 231562,
+    "dimensions": [
+      1360,
+      755
+    ],
+    "sha256": "df1be539851d57e284abb531d427a11077b38803c65a547e635c24ccf17a3fdc",
+    "original_path": "Lot_06_Recherche_elargie/Apercu_04.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Emana_contexte__Emana_pont_rue_laterale.jpg",
+    "bytes": 86254,
+    "dimensions": [
+      700,
+      700
+    ],
+    "sha256": "c3b65bf2ae4602b14a8289263d0cc5f3c7b9ae71bca3994b1f07a0118123cde8",
+    "original_path": "Lot_06_Recherche_elargie/Emana_contexte/Emana_pont_rue_laterale.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Messassi__Marche_chaussee_2017.jpg",
+    "bytes": 54566,
+    "dimensions": [
+      700,
+      525
+    ],
+    "sha256": "0ea06748bde7c9aff044c8b3ef80afc0487f9c070eb992d65e4c011a96b5a306",
+    "original_path": "Lot_06_Recherche_elargie/Messassi/Marche_chaussee_2017.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Messassi__Vision_Confort_facade_2024.jpg",
+    "bytes": 428283,
+    "dimensions": [
+      1920,
+      1542
+    ],
+    "sha256": "5502406b626fe675dcc450169902cded09e2b8e27f240c70f15951efc09e8464",
+    "original_path": "Lot_06_Recherche_elargie/Messassi/Vision_Confort_facade_2024.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Etoudi_Tongolo__01m40s.jpg",
+    "bytes": 24492,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "e3532e9df00d5a8b8c2a2ea1cae81fc462c579828742949c86b6e06cfc270cb5",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Etoudi_Tongolo/01m40s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Etoudi_Tongolo__02m00s.jpg",
+    "bytes": 24932,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "afb9c4e060dddb5ebcad011d73990d0a37f89a413188011f46f3d16c7045628b",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Etoudi_Tongolo/02m00s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Etoudi_Tongolo__02m20s.jpg",
+    "bytes": 29981,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "d7d7578a9e2c1985df2eb9c2dfe8045bec8672a0167e1405b52aa92242e0b13d",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Etoudi_Tongolo/02m20s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Etoudi_Tongolo__02m30s.jpg",
+    "bytes": 26390,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "749e578886ef53a91f4a74cefa4b1b4cdd7eb873ced318dc71a3721dcbf3f06a",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Etoudi_Tongolo/02m30s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Etoudi_Tongolo__03m10s.jpg",
+    "bytes": 26390,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "b4591f78e0086f175a142df81b33ce5baad49f7439c3511ab11352dbd45fc47a",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Etoudi_Tongolo/03m10s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Etoudi_Tongolo__03m40s.jpg",
+    "bytes": 22129,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "b9a01d95d7cf9007ed65c1dd518e3b7bfabd27c7f88dbd9e392c4c4e7625f08c",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Etoudi_Tongolo/03m40s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Etoudi_Tongolo__04m00s.jpg",
+    "bytes": 18479,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "ef543d3ad0f620b50cf798b2d763b6978a27bde7c8c820841214bbf79db21885",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Etoudi_Tongolo/04m00s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Etoudi_Tongolo__04m30s.jpg",
+    "bytes": 20627,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "6139d57a7e751ed5f04593cbe2c50732faefbf0fae7a65609557801615910810",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Etoudi_Tongolo/04m30s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Etoudi_Tongolo__05m00s.jpg",
+    "bytes": 24700,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "4e413882f2a8b41c27ce06c455d099b404e2755fcf1d6478e434bc76a3e29e95",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Etoudi_Tongolo/05m00s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Etoudi_Tongolo__05m30s.jpg",
+    "bytes": 21164,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "c10385a1ed4c89bc831c47ace86a19beffda3c6c2577e7373b81daa1b8b2ad94",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Etoudi_Tongolo/05m30s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Etoudi_Tongolo__05m40s.jpg",
+    "bytes": 25361,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "c85d38d7dfacb4dc2285beb51e7b960452d7d51cc22b0965b0e18531f96636c1",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Etoudi_Tongolo/05m40s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Etoudi_Tongolo__06m00s.jpg",
+    "bytes": 19362,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "1c200034c446548d7d471e704935315f8d9de2f6fcd643249cae966d8be30d34",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Etoudi_Tongolo/06m00s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Etoudi_Tongolo__06m30s.jpg",
+    "bytes": 28071,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "6ebbfd8b9ba387d1747b73d62fd76edb7150e547f354396fffd4099c7c2022db",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Etoudi_Tongolo/06m30s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Etoudi_Tongolo__06m40s.jpg",
+    "bytes": 27905,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "cb3cb5a47a4468f16b0ebd2094397b64fed9ce2329e7a276f6884c761061499b",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Etoudi_Tongolo/06m40s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Emana_Borne_Fontaine__07m30s.jpg",
+    "bytes": 19642,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "198d4466cea271cbf41f2add5674cc6b472561d6f32b6a055028925ddef1dad8",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Emana_Borne_Fontaine/07m30s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Emana_Borne_Fontaine__08m10s.jpg",
+    "bytes": 29785,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "35ede2faf4fbea43b937436dc1f93ef492e69b17a1a1459b5e64703263563fcf",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Emana_Borne_Fontaine/08m10s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Emana_Borne_Fontaine__08m30s.jpg",
+    "bytes": 21720,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "0d590e9622e04aa10d8f663495f6882284cbe4dd182162b8984e6f8126ecd99b",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Emana_Borne_Fontaine/08m30s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Emana_Borne_Fontaine__09m00s.jpg",
+    "bytes": 27708,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "aad38372d594f9ea47dd3cb9b3b9f86aa9ba08caceb29d28d436d8cd6ec173b4",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Emana_Borne_Fontaine/09m00s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Emana_Borne_Fontaine__09m30s.jpg",
+    "bytes": 27354,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "b38ad08c1149e095c8d7954ff52aa6844bb1c0beb959e74d75100714210ee06c",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Emana_Borne_Fontaine/09m30s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Emana_Borne_Fontaine__10m00s.jpg",
+    "bytes": 17386,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "1ab2b0f1e390f5e4170cdd2b37f6de4e7d255d558543f6f580364bcb4c20e92c",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Emana_Borne_Fontaine/10m00s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Emana_Borne_Fontaine__10m50s.jpg",
+    "bytes": 18823,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "bd8465a2cef2e0ace3ecc390f1c043b342abdd33db1fffd9a3ac83dd30e4dc4f",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Emana_Borne_Fontaine/10m50s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Emana_Borne_Fontaine__11m20s.jpg",
+    "bytes": 23176,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "01e24f818b67f54f55e2ceca076b73fdba7a7b30baf176315d6e30e95442f995",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Emana_Borne_Fontaine/11m20s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Emana_Borne_Fontaine__12m00s.jpg",
+    "bytes": 20104,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "5a2cc20f9ecb53a817e17b546558852534f254dc8fa6385bcea239502cc0d640",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Emana_Borne_Fontaine/12m00s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Emana_Borne_Fontaine__12m40s.jpg",
+    "bytes": 24128,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "d61be7f4adbf4f802232acf5a69b639125d27608624f9db71f18f13d0c3b1c20",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Emana_Borne_Fontaine/12m40s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Etoudi__08m40s.jpg",
+    "bytes": 18671,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "d707be47732d753d99a896e5f627ade0ecd1e48975cf041ce66d3d3cfdc685be",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Etoudi/08m40s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Etoudi__08m50s.jpg",
+    "bytes": 18032,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "85d608756829bf904defef35fda19924ff5ba46dc031a86e9e76aeec38c09fa6",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Etoudi/08m50s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Etoudi__09m00s.jpg",
+    "bytes": 16280,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "42536e10d8025e36053b86268bb849532e9a3723c8fd22ace53c56bd2624876b",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Etoudi/09m00s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Etoudi__09m10s.jpg",
+    "bytes": 17532,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "5d24f1563e7a2de8f79d274fdad837243f74e853f0fdb5156eb96e4efad33fa9",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Etoudi/09m10s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Etoudi__09m30s.jpg",
+    "bytes": 20367,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "41c4046f3714cbb007acbd21355332d759058c51e9693521a04c83e62f45b9ab",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Etoudi/09m30s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Etoudi__09m50s.jpg",
+    "bytes": 23485,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "b054cc1a8fb835a0b10c624b2cff0bc747b4c11f78ce7a47ee6c80881318cec2",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Etoudi/09m50s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Etoudi__10m10s.jpg",
+    "bytes": 18033,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "54735afd81e9b46a35cb6a969a417c82bb0bff12c8d02038a70788c8ad586784",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Etoudi/10m10s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Etoudi__10m40s.jpg",
+    "bytes": 16042,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "fc90f51384b94a676784fff74c5faa99257e8d7d3a02792c49c6043dc0e80498",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Etoudi/10m40s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Etoudi__11m00s.jpg",
+    "bytes": 24552,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "8e2e3a445980427c881061bb5e7bde73ed43b170a008a2d4a6c16cb63ac9f3d8",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Etoudi/11m00s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Etoudi__11m40s.jpg",
+    "bytes": 13742,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "8e4ad928a500fa5bc6e2787f1b488c06b9bbba91b0b354b2b90820033cd44bbd",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Etoudi/11m40s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Etoudi__12m10s.jpg",
+    "bytes": 16956,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "57179a02324eaf8870134b71ce496b0f1582d3ff3c2a85730d11716db7052b02",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Etoudi/12m10s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Etoudi__12m40s.jpg",
+    "bytes": 21455,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "b95bf563441ff43303c4016285790ba86a80f69cd91e29b0311b754e29f59bfa",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Etoudi/12m40s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Etoudi__13m10s.jpg",
+    "bytes": 24607,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "a87fd1ba63a67f2b899a67c723f68a2d0a7d5983c8881c5c1db13490c180ddac",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Etoudi/13m10s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Etoudi__13m30s.jpg",
+    "bytes": 15793,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "d2ec33a616d97a2da3ce598bd18a336f60bf6517c2f2a80b5b00a92c3063ed2f",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Etoudi/13m30s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Etoudi__14m00s.jpg",
+    "bytes": 19915,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "5f4f9178b3aeecccf87b32702281a446b11f926bf5c1e07dd63408ad7f069d61",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Etoudi/14m00s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Etoudi__14m20s.jpg",
+    "bytes": 24858,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "3deaf9c1ff35dedc35f3ebe1864c796a07166b59e2d9adafdc368da0c5f81af2",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Etoudi/14m20s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Etoudi__14m40s.jpg",
+    "bytes": 19343,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "4d8db189f468cebbb14bb2db335bc7a0b420a2b6c755d1febc4605d23272481f",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Etoudi/14m40s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Etoudi__15m00s.jpg",
+    "bytes": 18274,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "56af1126bb64f06ed77bd8fff2b91b7250916ec4e6dff024167dd764db2e4938",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Etoudi/15m00s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Etoudi__15m40s.jpg",
+    "bytes": 19742,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "11c0d3c527efba9de70dcada38b1d7c01404a9d8052ad712fd851c8dcfc5aa11",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Etoudi/15m40s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Etoudi__16m00s.jpg",
+    "bytes": 20218,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "1e2075fc43758d10223fc2adc39fa5138a20265f16bdc3f23d5111d6f1dab936",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Etoudi/16m00s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Etoudi__16m30s.jpg",
+    "bytes": 17347,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "5f5f4c13c2bbdc196c6669813564a80232867657745ff65fe077b18996ce007d",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Etoudi/16m30s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Nkozoa_Etoudi__16m40s.jpg",
+    "bytes": 17559,
+    "dimensions": [
+      320,
+      180
+    ],
+    "sha256": "c6817f99b2d965722a04af1684d396a9726655e321caa79bb4483d9bbde0dad7",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Nkozoa_Etoudi/16m40s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Poste_Centrale_Bastos__10m50s.jpg",
+    "bytes": 10352,
+    "dimensions": [
+      160,
+      90
+    ],
+    "sha256": "a2dc642c984aa497980a32f1927e1fae070e0590dfcbcbccc3a3ceda564f0e1d",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Poste_Centrale_Bastos/10m50s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Poste_Centrale_Bastos__11m20s.jpg",
+    "bytes": 10118,
+    "dimensions": [
+      160,
+      90
+    ],
+    "sha256": "216850a9d1dbff4e871ab7e00c087299124fa571b367a8dd0a424870b9c75e72",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Poste_Centrale_Bastos/11m20s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Poste_Centrale_Bastos__11m40s.jpg",
+    "bytes": 8422,
+    "dimensions": [
+      160,
+      90
+    ],
+    "sha256": "80addfce00d595677f4ac15ee13167bad4b32fe35539079cba24c0071a152744",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Poste_Centrale_Bastos/11m40s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Poste_Centrale_Bastos__12m10s.jpg",
+    "bytes": 9712,
+    "dimensions": [
+      160,
+      90
+    ],
+    "sha256": "e5ca39b3c3397c102e9587ed43ea68c9886e9f3e97764797c2150be3d2c56352",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Poste_Centrale_Bastos/12m10s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Poste_Centrale_Bastos__12m30s.jpg",
+    "bytes": 7600,
+    "dimensions": [
+      160,
+      90
+    ],
+    "sha256": "ec16fbb40b4283e3caeef19d293d79b8ae7da1c45b80e34ef50ccd3b7a4b5c89",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Poste_Centrale_Bastos/12m30s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Poste_Centrale_Bastos__12m50s.jpg",
+    "bytes": 8370,
+    "dimensions": [
+      160,
+      90
+    ],
+    "sha256": "a8cb79122ca4e93eac77fd5da7030ed0a21d75a42348b7dc4e8ab9dfeb85deb1",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Poste_Centrale_Bastos/12m50s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Poste_Centrale_Bastos__13m10s.jpg",
+    "bytes": 7279,
+    "dimensions": [
+      160,
+      90
+    ],
+    "sha256": "a4e7d196815e133e4485e129371f1aaf43100754f2fe33726c14bda4b5dc41f2",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Poste_Centrale_Bastos/13m10s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Poste_Centrale_Bastos__13m40s.jpg",
+    "bytes": 10254,
+    "dimensions": [
+      160,
+      90
+    ],
+    "sha256": "187b9f1bc44b26119130bd977984f5a97ef236044cff694202c2292921b3f24f",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Poste_Centrale_Bastos/13m40s.jpg"
+  },
+  {
+    "path": "Lot_06_Recherche_elargie__Videos__Poste_Centrale_Bastos__14m00s.jpg",
+    "bytes": 9471,
+    "dimensions": [
+      160,
+      90
+    ],
+    "sha256": "86ba41a749980dcdf31f07c8dd6e3413d566a25ed070b5fc340289927fd205f5",
+    "original_path": "Lot_06_Recherche_elargie/Videos/Poste_Centrale_Bastos/14m00s.jpg"
+  },
+  {
+    "path": "Photos_Yaounde__Bastos__02_Bastos_crepuscule.jpg",
+    "bytes": 3931370,
+    "dimensions": [
+      3968,
+      2976
+    ],
+    "sha256": "52f3c8d975a168e0e2796ccb605c845dbb6d016436b2ffc0a1782d42fb99a092",
+    "original_path": "Photos_Yaounde/Bastos/02_Bastos_crepuscule.jpg"
+  },
+  {
+    "path": "Photos_Yaounde__Emana__01_RN1_Emana.jpg",
+    "bytes": 3198665,
+    "dimensions": [
+      4468,
+      3351
+    ],
+    "sha256": "7b973e5a2456fd8d86929440847ccfc8ffe93512a5cab206909612e55470a034",
+    "original_path": "Photos_Yaounde/Emana/01_RN1_Emana.jpg"
+  },
+  {
+    "path": "Photos_Yaounde__Tongolo__03_Feux_Tongolo.jpg",
+    "bytes": 325327,
+    "dimensions": [
+      1057,
+      978
+    ],
+    "sha256": "286dad6522648f8eb2d8c13cc27be96b5bfc0bd8410cdb5849bdc98be3465d5f",
+    "original_path": "Photos_Yaounde/Tongolo/03_Feux_Tongolo.jpg"
+  },
+  {
+    "path": "Photos_Yaounde__Tongolo__04_Feux_Tongolo.jpg",
+    "bytes": 475467,
+    "dimensions": [
+      1601,
+      944
+    ],
+    "sha256": "af11d2a44f1c50a11c93d0b5c53dc585bfe7d7895ca6580b769846a8d0176963",
+    "original_path": "Photos_Yaounde/Tongolo/04_Feux_Tongolo.jpg"
+  },
+  {
+    "path": "Photos_Yaounde__Tongolo__05_Descente_Carrefour_Sorcier.jpg",
+    "bytes": 5563074,
+    "dimensions": [
+      3120,
+      4208
+    ],
+    "sha256": "29b5b5cdd44d95826c2d91009276c5400ea80eb090e71d122c1aacac63b780bb",
+    "original_path": "Photos_Yaounde/Tongolo/05_Descente_Carrefour_Sorcier.jpg"
+  },
+  {
+    "path": "Photos_Yaounde__Tongolo_contexte__06_Zone_marecageuse.jpg",
+    "bytes": 5369279,
+    "dimensions": [
+      3120,
+      4160
+    ],
+    "sha256": "120486743cb1ea515f237a4c7bf7af78bcf1bb03189768657ca1e7e1c80cd2f8",
+    "original_path": "Photos_Yaounde/Tongolo_contexte/06_Zone_marecageuse.jpg"
+  },
+  {
+    "path": "Photos_Yaounde__Tongolo_contexte__07_Collecte_bouteilles.jpg",
+    "bytes": 6190582,
+    "dimensions": [
+      3120,
+      4160
+    ],
+    "sha256": "1a36c6bc4b51133002563e49473132fb616855c9c15ae02c8d1f8476ed174bdf",
+    "original_path": "Photos_Yaounde/Tongolo_contexte/07_Collecte_bouteilles.jpg"
+  }
+]
