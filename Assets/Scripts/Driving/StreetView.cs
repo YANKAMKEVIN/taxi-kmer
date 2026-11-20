@@ -35,6 +35,7 @@ namespace TaxiKmer.Driving
         private readonly Dictionary<string, GameObject> _stopMarkers = new Dictionary<string, GameObject>();
         private readonly List<Bubble> _bubbles = new List<Bubble>();
         private readonly List<Rect> _placed = new List<Rect>();
+        private readonly List<Image> _markerLabels = new List<Image>();
         private readonly Text[] _messageLines = new Text[2];
         private readonly MessageStack _messages = new MessageStack(2);
         private readonly List<(Text text, float start, int amount)> _pops = new List<(Text, float, int)>();
@@ -78,6 +79,8 @@ namespace TaxiKmer.Driving
             public Text Text;
         }
 
+        private const int RingSegments = 16;
+
         private static readonly Color BubbleFits = new Color(0.3f, 0.85f, 0.4f);
         private static readonly Color BubbleNeedsMove = new Color(1f, 0.6f, 0.15f);
         private static readonly Color BubbleNoRoom = new Color(1f, 0.3f, 0.25f);
@@ -86,6 +89,7 @@ namespace TaxiKmer.Driving
         {
             public GameObject Root;
             public GameObject AcceptedMark;
+            public Transform Ring;
         }
 
         private static readonly Color[] Shirts =
@@ -388,7 +392,13 @@ namespace TaxiKmer.Driving
             foreach (var c in Street.Waiting)
             {
                 if (!_people.TryGetValue(c, out var person)) _people[c] = person = MakePerson(c);
-                person.AcceptedMark.SetActive(c.State == RoadsideState.Accepted);
+                var accepted = c.State == RoadsideState.Accepted;
+                person.AcceptedMark.SetActive(accepted);
+                if (accepted)
+                {
+                    var k = WorldMarkers.RingPulse(Time.time);
+                    person.Ring.localScale = new Vector3(k, 1f, k);
+                }
                 if (c.Calling) calling.Add(c);
             }
             // Le plus proche d'abord : sa bulle reste à sa place, les suivantes montent si elles la chevauchent.
@@ -424,9 +434,24 @@ namespace TaxiKmer.Driving
             var shirt = Shirts[(c.Client.Id.GetHashCode() & 0x7fffffff) % Shirts.Length];
             Part(root.transform, PrimitiveType.Capsule, new Vector3(0f, 0.8f, 0f), new Vector3(width, 0.8f, width * 0.75f), shirt);
             Part(root.transform, PrimitiveType.Sphere, new Vector3(0f, 1.78f, 0f), Vector3.one * 0.26f, new Color(0.35f, 0.22f, 0.14f));
-            var mark = Part(root.transform, PrimitiveType.Cube, new Vector3(0f, 2.5f, 0f), new Vector3(0.35f, 0.35f, 0.35f), new Color(1f, 0.8f, 0.05f));
-            mark.transform.localRotation = Quaternion.Euler(45f, 0f, 45f);
-            return new Person { Root = root, AcceptedMark = mark };
+            // Client accepté : anneau jaune qui pulse au sol sous lui, et zone d'arrêt dessinée sur la voie devant lui
+            // (le taxi s'y arrête pour le faire monter ; local +z = vers la route).
+            var mark = new GameObject("Client accepté");
+            mark.transform.SetParent(root.transform, false);
+            var yellow = new Color(1f, 0.8f, 0.05f);
+            var ring = new GameObject("Anneau").transform;
+            ring.SetParent(mark.transform, false);
+            for (var i = 0; i < RingSegments; i++)
+            {
+                var a = i * 360f / RingSegments;
+                var seg = Part(ring, PrimitiveType.Cube, Quaternion.Euler(0f, a, 0f) * new Vector3(0f, 0.03f, 0.8f),
+                    new Vector3(0.34f, 0.02f, 0.12f), yellow);
+                seg.transform.localRotation = Quaternion.Euler(0f, a, 0f);
+            }
+            Part(mark.transform, PrimitiveType.Cube, new Vector3(0f, 0.02f, sideOffset - taxi.laneOffset), new Vector3(8f, 0.02f, 2.4f),
+                new Color(1f, 0.85f, 0.2f));
+            mark.SetActive(false);
+            return new Person { Root = root, AcceptedMark = mark, Ring = ring };
         }
 
         private void SpawnLeavingPerson(Client c)
@@ -472,8 +497,43 @@ namespace TaxiKmer.Driving
 
         private void SyncStopMarkers()
         {
+            var shown = 0;
             foreach (var kv in _stopMarkers)
-                kv.Value.SetActive(Street.Shift.Cabin.PassengersFor(kv.Key).Count > 0);
+            {
+                var count = Street.Shift.Cabin.PassengersFor(kv.Key).Count;
+                kv.Value.SetActive(count > 0);
+                if (count == 0 || Street.DayFinished) continue;
+                ShowMarkerLabel(shown++, kv.Value.transform.position + Vector3.up * 6.8f,
+                    WorldMarkers.DestinationLabel(Street.FindStop(kv.Key)?.name ?? kv.Key, count));
+            }
+            for (var i = shown; i < _markerLabels.Count; i++) _markerLabels[i].gameObject.SetActive(false);
+        }
+
+        /// <summary>Nom du lieu et nombre de passagers qui y descendent, au-dessus de la colonne (texte d'écran).</summary>
+        private void ShowMarkerLabel(int index, Vector3 world, string text)
+        {
+            while (_markerLabels.Count <= index)
+            {
+                var bg = UiKit.NewImage(controls.Overlay, "Nom du repère", new Color(0.05f, 0.25f, 0.1f, 0.85f), UiKit.Rounded);
+                var r = bg.rectTransform;
+                r.anchorMin = r.anchorMax = Vector2.zero;
+                r.pivot = new Vector2(0.5f, 0f);
+                var t = UiKit.NewText(bg.transform, controls.Font, TextAnchor.MiddleCenter, Color.white);
+                t.horizontalOverflow = HorizontalWrapMode.Overflow;
+                UiKit.Fill(t.rectTransform);
+                _markerLabels.Add(bg);
+            }
+            var label = _markerLabels[index];
+            var screen = _camera != null ? _camera.WorldToScreenPoint(world) : Vector3.back;
+            var visible = screen.z > 0f;
+            label.gameObject.SetActive(visible);
+            if (!visible) return;
+            var h = Screen.height;
+            var text2 = label.GetComponentInChildren<Text>();
+            text2.text = text;
+            text2.fontSize = Mathf.RoundToInt(h * Mathf.Clamp(1.2f / screen.z, 0.026f, 0.04f));
+            label.rectTransform.sizeDelta = new Vector2(text2.preferredWidth + h * 0.03f, text2.fontSize * 1.6f);
+            label.rectTransform.anchoredPosition = new Vector2(screen.x, screen.y);
         }
 
         // ---------- Interface ----------
