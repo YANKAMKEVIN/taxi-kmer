@@ -71,7 +71,7 @@ namespace TaxiKmer.Driving
             if (!visible) return;
             float h = Screen.height;
             float w = h * 0.2f, ht = h * 0.25f, pad = h * 0.015f;
-            UiKit.PlaceTopLeft(_root, h * 0.04f, h * 0.235f, w, ht);
+            UiKit.PlaceTopLeft(_root, h * 0.04f, h * (ShiftGaugesView.BottomFraction + 0.02f), w, ht);
 
             var refused = Time.time < _refusedUntil ? _refused : null;
             var seats = CabinPlan.Seats(cabin, refused);

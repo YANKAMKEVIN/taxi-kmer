@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Text;
 using TaxiKmer.Core.Day;
 using TaxiKmer.Core.Rides;
 using TaxiKmer.Core.Ux;
@@ -36,7 +35,6 @@ namespace TaxiKmer.Driving
         private readonly Dictionary<string, GameObject> _stopMarkers = new Dictionary<string, GameObject>();
         private readonly List<Bubble> _bubbles = new List<Bubble>();
         private readonly List<Rect> _placed = new List<Rect>();
-        private Text _status;
         private Text _toast;
         private float _toastUntil;
         private bool _dayOverShown;
@@ -46,6 +44,7 @@ namespace TaxiKmer.Driving
         private Text _tutorialText;
         private RouteStripView _strip;
         private CabinPlanView _cabinView;
+        private ShiftGaugesView _gauges;
 
         /// <summary>Clé des préférences : le tutoriel de la première journée a été suivi jusqu'au bout.</summary>
         public const string TutorialDoneKey = "tutoriel.fait";
@@ -101,6 +100,7 @@ namespace TaxiKmer.Driving
             foreach (var stop in stops.stops) _stopMarkers[stop.id] = MakeStopMarker(stop);
             _tutorial = new Tutorial(PlayerPrefs.GetInt(TutorialDoneKey, 0) == 0, shift.Ledger.Versement);
             BuildHud();
+            _gauges = new ShiftGaugesView(controls.Overlay, controls.Font);
             _strip = new RouteStripView(controls.Overlay, controls.Font, stops.stops, _cum[_cum.Length - 1]);
             _cabinView = new CabinPlanView(controls.Overlay, controls.Font, stops.stops);
         }
@@ -373,9 +373,6 @@ namespace TaxiKmer.Driving
 
         private void BuildHud()
         {
-            _status = NewText(TextAnchor.UpperLeft);
-            var sr = _status.rectTransform;
-            sr.anchorMin = sr.anchorMax = sr.pivot = new Vector2(0f, 1f);
             _toast = NewText(TextAnchor.MiddleCenter);
             var tr = _toast.rectTransform;
             tr.anchorMin = tr.anchorMax = tr.pivot = new Vector2(0.5f, 1f);
@@ -488,17 +485,7 @@ namespace TaxiKmer.Driving
         {
             var h = Screen.height;
             var shift = Street.Shift;
-            var sb = new StringBuilder();
-            sb.Append(shift.Clock.Display).Append("   ").Append(Money(shift.Ledger.Revenue)).Append('\n');
-            var versement = shift.Ledger.Versement;
-            sb.Append("Versement ").Append(Thousands(System.Math.Min(shift.Ledger.Revenue, versement)))
-              .Append(" / ").Append(Thousands(versement))
-              .Append(shift.Ledger.Revenue >= versement ? " (atteint)" : "");
-            _status.text = sb.ToString();
-            _status.fontSize = Mathf.RoundToInt(h * 0.04f);
-            _status.rectTransform.anchoredPosition = new Vector2(h * 0.04f, -h * 0.12f);
-            _status.rectTransform.sizeDelta = new Vector2(h * 1.2f, h * 0.11f);
-            _status.enabled = !Street.DayFinished;
+            _gauges.Update(shift, shift.Ledger.Revenue, !Street.DayFinished);
 
             _toast.enabled = Time.time < _toastUntil;
             _toast.fontSize = Mathf.RoundToInt(h * 0.045f);
@@ -523,8 +510,5 @@ namespace TaxiKmer.Driving
         };
 
         private static string Money(int amount) => DaySummary.Money(amount);
-
-        /// <summary>10000 → « 10 000 » (sans la devise).</summary>
-        private static string Thousands(int amount) => DaySummary.Money(amount).Replace(" FCFA", "");
     }
 }
