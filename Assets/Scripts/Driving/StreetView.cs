@@ -40,6 +40,8 @@ namespace TaxiKmer.Driving
         private readonly List<(Text text, float start, int amount)> _pops = new List<(Text, float, int)>();
         private readonly RollingCounter _revenue = new RollingCounter(0);
         private bool _dayOverShown;
+        private bool _lastHourShown;
+        private Text _endReminder;
         private DaySummaryView _summaryView;
         private Tutorial _tutorial;
         private Image _tutorialPanel;
@@ -180,6 +182,11 @@ namespace TaxiKmer.Driving
                 _ => "",
             };
 
+            if (HudGauges.LastHour(shift.Clock) && !_lastHourShown && !Street.DayFinished)
+            {
+                _lastHourShown = true;
+                Toast(HudGauges.LastHourMessage, 5f);
+            }
             if (shift.Clock.IsOver && !_dayOverShown && !Street.DayFinished)
             {
                 _dayOverShown = true;
@@ -458,6 +465,13 @@ namespace TaxiKmer.Driving
                 tr.anchorMin = tr.anchorMax = tr.pivot = new Vector2(0.5f, 1f);
             }
 
+            // Rappel de fin de journée, en petit en bas au centre (entre les flèches et les pédales).
+            _endReminder = NewText(TextAnchor.LowerCenter);
+            _endReminder.color = new Color(1f, 0.75f, 0.35f);
+            _endReminder.horizontalOverflow = HorizontalWrapMode.Wrap;
+            var er = _endReminder.rectTransform;
+            er.anchorMin = er.anchorMax = er.pivot = new Vector2(0.5f, 0f);
+
             _tutorialPanel = UiKit.NewImage(controls.Overlay, "Tutoriel", new Color(0.05f, 0.05f, 0.07f, 0.82f), UiKit.Rounded);
             _tutorialText = UiKit.NewText(_tutorialPanel.transform, controls.Font, TextAnchor.MiddleCenter, new Color(1f, 0.92f, 0.55f));
             UiKit.Fill(_tutorialText.rectTransform, Screen.height * 0.015f);
@@ -568,6 +582,13 @@ namespace TaxiKmer.Driving
             var shift = Street.Shift;
             UpdatePaymentPops();
             _gauges.Update(shift, _revenue.Shown, !Street.DayFinished);
+
+            var reminder = Street.DayFinished ? "" : HudGauges.EndOfDayReminder(shift.Clock, shift.Cabin.PassengerCount);
+            _endReminder.enabled = reminder.Length > 0;
+            _endReminder.text = reminder;
+            _endReminder.fontSize = Mathf.RoundToInt(h * 0.03f);
+            _endReminder.rectTransform.anchoredPosition = new Vector2(0f, h * 0.07f);
+            _endReminder.rectTransform.sizeDelta = new Vector2(Mathf.Max(h * 0.4f, Screen.width - h * 1.2f), h * 0.1f);
 
             // Messages empilés sur deux lignes (le plus récent en haut), sous la consigne du tutoriel si elle est affichée.
             var lines = Street.DayFinished ? new List<string>() : new List<string>(_messages.Visible(Time.time));

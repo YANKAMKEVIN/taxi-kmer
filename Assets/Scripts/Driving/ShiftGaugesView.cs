@@ -24,6 +24,7 @@ namespace TaxiKmer.Driving
         private static readonly Color DayColor = new Color(1f, 1f, 1f, 0.85f);
         private static readonly Color Filling = new Color(1f, 0.82f, 0.1f, 0.95f);
         private static readonly Color Covered = new Color(0.3f, 0.85f, 0.4f, 0.95f);
+        private static readonly Color LateColor = new Color(1f, 0.6f, 0.15f, 1f);
 
         /// <summary>Bas du bloc (pixels depuis le haut de l'écran) : ce qui suit dans le HUD se place dessous.</summary>
         public static float BottomFraction => 0.27f;
@@ -66,7 +67,12 @@ namespace TaxiKmer.Driving
             var w = h * 0.36f;
 
             _clock.text = shift.Clock.Display;
-            _clock.fontSize = Mathf.RoundToInt(h * 0.05f);
+            // Dernière heure : l'horloge passe à l'orange et bat doucement ; après l'heure de fin, orange fixe.
+            var lastHour = HudGauges.LastHour(shift.Clock);
+            var late = lastHour || shift.Clock.IsOver;
+            _clock.color = late ? LateColor : Color.white;
+            _clock.fontSize = Mathf.RoundToInt(h * 0.05f * (lastHour ? 1f + 0.08f * UiKit.Pulse(3.5f) : 1f));
+            _dayFill.color = late ? LateColor : DayColor;
             UiKit.PlaceTopLeft(_clock.rectTransform, x, h * 0.115f, w, h * 0.06f);
             UiKit.PlaceTopLeft(_dayTrack.rectTransform, x, h * 0.175f, w * 0.6f, h * 0.012f);
             Fill(_dayFill.rectTransform, HudGauges.DayLeft(shift.Clock));

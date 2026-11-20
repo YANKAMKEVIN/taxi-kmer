@@ -31,6 +31,9 @@ namespace TaxiKmer.Core.Day
             }
         }
 
+        /// <summary>Minutes de jeu avant l'heure de fin (0 une fois atteinte).</summary>
+        public int MinutesLeft => _config.endHour * 60 - GameMinutes;
+
         public string Display => $"{GameMinutes / 60:00}:{GameMinutes % 60:00}";
 
         public void Advance(float realSeconds)
