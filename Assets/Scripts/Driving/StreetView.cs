@@ -34,7 +34,7 @@ namespace TaxiKmer.Driving
         private float[] _cum;
         private readonly Dictionary<RoadsideClient, Person> _people = new Dictionary<RoadsideClient, Person>();
         private readonly Dictionary<string, GameObject> _stopMarkers = new Dictionary<string, GameObject>();
-        private readonly List<Text> _bubbles = new List<Text>();
+        private readonly List<Bubble> _bubbles = new List<Bubble>();
         private readonly List<Rect> _placed = new List<Rect>();
         private Text _status;
         private Text _toast;
@@ -51,6 +51,20 @@ namespace TaxiKmer.Driving
         public const string TutorialDoneKey = "tutoriel.fait";
         private MaterialPropertyBlock _block;
         private Camera _camera;
+
+        /// <summary>Bulle d'un client : fond sombre arrondi, pointe, bordure (rentre / à déplacer / ne rentre pas), carrure, texte.</summary>
+        private sealed class Bubble
+        {
+            public RectTransform Root;
+            public Image Border;
+            public Image Pointer;
+            public Image Build;
+            public Text Text;
+        }
+
+        private static readonly Color BubbleFits = new Color(0.3f, 0.85f, 0.4f);
+        private static readonly Color BubbleNeedsMove = new Color(1f, 0.6f, 0.15f);
+        private static readonly Color BubbleNoRoom = new Color(1f, 0.3f, 0.25f);
 
         private sealed class Person
         {
@@ -278,10 +292,9 @@ namespace TaxiKmer.Driving
             for (var i = 0; i < calling.Count; i++)
             {
                 var c = calling[i];
-                ShowBubble(i, _people[c].Root.transform.position + Vector3.up * 2.4f,
-                    $"{ShortName(c.Client.DestinationStopId)}, {c.Client.ProposedFare} !");
+                ShowBubble(i, _people[c].Root.transform.position + Vector3.up * 2.4f, c.Client);
             }
-            for (var i = calling.Count; i < _bubbles.Count; i++) _bubbles[i].enabled = false;
+            for (var i = calling.Count; i < _bubbles.Count; i++) _bubbles[i].Root.gameObject.SetActive(false);
         }
 
         private Person MakePerson(RoadsideClient c)
@@ -387,25 +400,54 @@ namespace TaxiKmer.Driving
             return t;
         }
 
-        private void ShowBubble(int index, Vector3 world, string text)
+        private Bubble NewBubble()
         {
-            while (_bubbles.Count <= index)
-            {
-                var b = NewText(TextAnchor.LowerCenter);
-                b.rectTransform.anchorMin = b.rectTransform.anchorMax = Vector2.zero;
-                b.rectTransform.pivot = new Vector2(0.5f, 0f);
-                b.color = new Color(1f, 0.95f, 0.6f);
-                _bubbles.Add(b);
-            }
+            var go = new GameObject("Bulle", typeof(RectTransform));
+            go.transform.SetParent(controls.Overlay, false);
+            var b = new Bubble { Root = (RectTransform)go.transform };
+            b.Root.anchorMin = b.Root.anchorMax = Vector2.zero;
+            b.Root.pivot = new Vector2(0.5f, 0f);
+            var dark = new Color(0.06f, 0.06f, 0.08f, 0.9f);
+            b.Pointer = UiKit.NewImage(b.Root, "Pointe", dark);
+            b.Pointer.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 45f);
+            var bg = UiKit.NewImage(b.Root, "Fond", dark, UiKit.Rounded);
+            UiKit.Fill(bg.rectTransform);
+            b.Border = UiKit.NewImage(b.Root, "Bordure", BubbleFits, UiKit.Frame);
+            UiKit.Fill(b.Border.rectTransform);
+            b.Build = UiKit.NewImage(b.Root, "Carrure", new Color(1f, 1f, 1f, 0.9f), UiKit.Rounded);
+            b.Text = UiKit.NewText(b.Root, controls.Font, TextAnchor.MiddleLeft, Color.white);
+            b.Text.horizontalOverflow = HorizontalWrapMode.Overflow;
+            b.Text.supportRichText = true;
+            return b;
+        }
+
+        private void ShowBubble(int index, Vector3 world, Client client)
+        {
+            while (_bubbles.Count <= index) _bubbles.Add(NewBubble());
             var bubble = _bubbles[index];
             var screen = _camera != null ? _camera.WorldToScreenPoint(world) : Vector3.back;
-            bubble.enabled = screen.z > 0f;
-            if (!bubble.enabled) return;
+            var visible = screen.z > 0f;
+            bubble.Root.gameObject.SetActive(visible);
+            if (!visible) return;
             var h = Screen.height;
-            bubble.fontSize = Mathf.RoundToInt(h * Mathf.Clamp(0.7f / screen.z, 0.028f, 0.045f));
-            bubble.text = text;
-            var size = new Vector2(bubble.preferredWidth + h * 0.02f, bubble.fontSize * 1.25f);
-            var pos = new Vector2(screen.x, screen.y);
+            var font = Mathf.RoundToInt(h * Mathf.Clamp(0.7f / screen.z, 0.028f, 0.045f));
+            bubble.Text.fontSize = font;
+            // Destination en blanc, prix en jaune et en gras (« Étoudi, 500 ! »).
+            bubble.Text.text = $"{ShortName(client.DestinationStopId)}, <b><color=#FFD21A>{client.ProposedFare}</color></b> !";
+
+            var fit = CabinPlan.Fit(Street.Shift.Cabin, client);
+            bubble.Border.color = fit == SeatFit.Fits ? BubbleFits : fit == SeatFit.NeedsMove ? BubbleNeedsMove : BubbleNoRoom;
+
+            // Icône de carrure : un buste plus ou moins large, à gauche du texte.
+            var pad = font * 0.45f;
+            var iconH = font * 0.9f;
+            var iconW = iconH * CabinPlan.SilhouetteWidth(client.Corpulence) * 0.8f;
+            var iconSlot = iconH * 0.8f;
+            var textW = bubble.Text.preferredWidth;
+            var size = new Vector2(pad + iconSlot + pad * 0.6f + textW + pad, font * 1.6f);
+            var pointer = font * 0.45f;
+
+            var pos = new Vector2(screen.x, screen.y + pointer * 0.7f);
             for (var guard = 0; guard < 10; guard++)
             {
                 var r = new Rect(pos.x - size.x / 2f, pos.y, size.x, size.y);
@@ -414,12 +456,32 @@ namespace TaxiKmer.Driving
                 {
                     if (!p.Overlaps(r)) continue;
                     overlap = true;
-                    pos.y = p.yMax + 1f;
+                    pos.y = p.yMax + 2f;
                 }
                 if (!overlap) { _placed.Add(r); break; }
             }
-            bubble.rectTransform.sizeDelta = size;
-            bubble.rectTransform.anchoredPosition = pos;
+            bubble.Root.sizeDelta = size;
+            bubble.Root.anchoredPosition = pos;
+
+            var pr = bubble.Pointer.rectTransform;
+            pr.anchorMin = pr.anchorMax = new Vector2(0.5f, 0f);
+            pr.pivot = new Vector2(0.5f, 0.5f);
+            pr.sizeDelta = new Vector2(pointer, pointer);
+            pr.anchoredPosition = Vector2.zero;
+            // Seule la bulle la plus proche garde sa pointe : les autres sont empilées au-dessus.
+            bubble.Pointer.enabled = pos.y <= screen.y + pointer;
+
+            var ir = bubble.Build.rectTransform;
+            ir.anchorMin = ir.anchorMax = new Vector2(0f, 0.5f);
+            ir.pivot = new Vector2(0.5f, 0.5f);
+            ir.anchoredPosition = new Vector2(pad + iconSlot / 2f, 0f);
+            ir.sizeDelta = new Vector2(iconW, iconH);
+
+            var tr = bubble.Text.rectTransform;
+            tr.anchorMin = tr.anchorMax = new Vector2(0f, 0.5f);
+            tr.pivot = new Vector2(0f, 0.5f);
+            tr.anchoredPosition = new Vector2(pad + iconSlot + pad * 0.6f, 0f);
+            tr.sizeDelta = new Vector2(textW + 2f, size.y);
         }
 
         private void UpdateHud()

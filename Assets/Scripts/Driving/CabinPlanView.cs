@@ -43,12 +43,12 @@ namespace TaxiKmer.Driving
             _root = (RectTransform)go.transform;
             _body = UiKit.NewImage(_root, "Caisse", new Color(0.05f, 0.05f, 0.07f, 0.6f), UiKit.Rounded);
             UiKit.Fill(_body.rectTransform);
-            var outline = UiKit.NewImage(_root, "Contour", new Color(1f, 0.82f, 0.1f, 0.9f), Frame);
+            var outline = UiKit.NewImage(_root, "Contour", new Color(1f, 0.82f, 0.1f, 0.9f), UiKit.Frame);
             UiKit.Fill(outline.rectTransform);
             _wheel = UiKit.NewImage(_root, "Volant", new Color(0.75f, 0.75f, 0.75f, 0.8f), UiKit.Ring);
             for (var i = 0; i < 5; i++)
             {
-                _frames.Add(UiKit.NewImage(_root, "Place", FreeFrame, Frame));
+                _frames.Add(UiKit.NewImage(_root, "Place", FreeFrame, UiKit.Frame));
                 var person = UiKit.NewImage(_root, "Passager", Color.white, UiKit.Rounded);
                 var letter = UiKit.NewText(person.transform, font, TextAnchor.MiddleCenter, new Color(0.08f, 0.08f, 0.1f));
                 letter.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -57,9 +57,6 @@ namespace TaxiKmer.Driving
                 _letters.Add(letter);
             }
         }
-
-        private static Sprite Frame => UiKit.Cached("contour", () =>
-            UiKit.ToSprite("UiContour", Shapes.RoundedFrame(64, 18f, 5f), 64, 20f));
 
         /// <summary>Un client ne rentre pas : ses places trop étroites clignotent un moment.</summary>
         public void ShowRefused(Client client)

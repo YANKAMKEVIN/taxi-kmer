@@ -45,6 +45,33 @@ namespace TaxiKmer.Core.Tests
         }
 
         [Test]
+        public void Fit_TellsWhetherAWaitingClientFits()
+        {
+            var cabin = new TaxiCabin(new SeatingConfig());
+            Assert.AreEqual(SeatFit.Fits, CabinPlan.Fit(cabin, C("x", Corpulence.Costaud)));
+            // Derrière : costaud + costaud + mince (10 > 9 : le mince va devant). Devant : costaud.
+            cabin.TryBoard(C("b1", Corpulence.Costaud), out _);
+            cabin.TryBoard(C("b2", Corpulence.Costaud), out _);
+            cabin.TryBoard(C("f1", Corpulence.Costaud), out _);
+            Assert.AreEqual(SeatFit.Fits, CabinPlan.Fit(cabin, C("m", Corpulence.Mince)), "Un mince rentre devant.");
+            Assert.AreEqual(SeatFit.NoRoom, CabinPlan.Fit(cabin, C("n", Corpulence.Normal)));
+        }
+
+        [Test]
+        public void Fit_NeedsMove_WhenSwappingBenchesMakesRoom()
+        {
+            var cabin = new TaxiCabin(new SeatingConfig());
+            // Derrière : normal + normal + mince (8/9) ; devant : costaud (4/6). Un normal ne rentre ni derrière ni devant,
+            // mais si le mince passe devant (4 + 2 = 6), il reste 6/9 derrière : le normal rentre.
+            cabin.TryBoard(C("b1", Corpulence.Normal), out _);
+            cabin.TryBoard(C("b2", Corpulence.Normal), out _);
+            cabin.TryBoard(C("b3", Corpulence.Mince), out _);
+            cabin.TryBoard(C("f1", Corpulence.Costaud), out _);
+            Assert.AreEqual(BenchSide.Front, cabin.BenchOf(cabin.Find("f1")).Side);
+            Assert.AreEqual(SeatFit.NeedsMove, CabinPlan.Fit(cabin, C("n", Corpulence.Normal)));
+        }
+
+        [Test]
         public void SilhouettesGrowWithCorpulence()
         {
             Assert.Less(CabinPlan.SilhouetteWidth(Corpulence.Mince), CabinPlan.SilhouetteWidth(Corpulence.Normal));

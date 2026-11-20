@@ -19,6 +19,10 @@ namespace TaxiKmer.Driving
         public static Sprite Rounded => Cached("arrondi", () =>
             ToSprite("UiArrondi", Shapes.RoundedRect(RoundSize, RoundRadius), RoundSize, RoundRadius + 2f));
 
+        /// <summary>Contour d'un rectangle arrondi (bordures, places libres), découpé en 9.</summary>
+        public static Sprite Frame => Cached("contour", () =>
+            ToSprite("UiContour", Shapes.RoundedFrame(RoundSize, 18f, 5f), RoundSize, 20f));
+
         public static Sprite Disc => Cached("disque", () => ToSprite("UiDisque", Shapes.Disc(64), 64, 0f));
 
         public static Sprite Ring => Cached("anneau", () => ToSprite("UiAnneau", Shapes.Ring(64, 7f), 64, 0f));

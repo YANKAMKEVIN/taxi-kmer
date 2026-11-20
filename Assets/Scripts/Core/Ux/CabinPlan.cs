@@ -13,6 +13,15 @@ namespace TaxiKmer.Core.Ux
         public bool Blocking;
     }
 
+    /// <summary>Un client qui attend rentre-t-il dans le taxi ?</summary>
+    public enum SeatFit
+    {
+        Fits,
+        /// <summary>Il rentre si un passager change de banquette.</summary>
+        NeedsMove,
+        NoRoom,
+    }
+
     /// <summary>
     /// Plan du taxi vu de dessus pour le HUD : places avant (à côté du chauffeur) puis arrière, dans l'ordre où les
     /// passagers sont assis, et places qui coincent quand un client ne rentre pas (mécanique de corpulence).
@@ -26,6 +35,13 @@ namespace TaxiKmer.Core.Ux
             Add(seats, cabin.Front, refused);
             Add(seats, cabin.Back, refused);
             return seats;
+        }
+
+        /// <summary>Le client rentre-t-il tel quel, en faisant changer quelqu'un de place, ou pas du tout ?</summary>
+        public static SeatFit Fit(TaxiCabin cabin, Client client)
+        {
+            if (cabin.CanBoard(client)) return SeatFit.Fits;
+            return cabin.FindMoveToFit(client) != null ? SeatFit.NeedsMove : SeatFit.NoRoom;
         }
 
         /// <summary>Largeur relative d'une silhouette dans sa place (0 à 1) : mince, normal, costaud.</summary>
