@@ -72,7 +72,7 @@ namespace TaxiKmer.Driving
             Fill(_dayFill.rectTransform, HudGauges.DayLeft(shift.Clock));
 
             var versement = shift.Ledger.Versement;
-            var revenue = shift.Ledger.Revenue;
+            var revenue = shownRevenue; // le compteur défile : la jauge et la légende suivent ce qu'il affiche
             var covered = HudGauges.VersementCovered(revenue, versement);
             _caption.text = HudGauges.VersementCaption(revenue, versement);
             _caption.fontSize = Mathf.RoundToInt(h * 0.028f);
@@ -83,6 +83,16 @@ namespace TaxiKmer.Driving
             _gaugeFill.color = covered ? Covered : Filling;
             _revenue.text = DaySummary.Money(shownRevenue);
             _revenue.fontSize = Mathf.RoundToInt(h * 0.03f);
+        }
+
+        /// <summary>Centre du compteur de recette, en pixels d'écran (le montant payé y file).</summary>
+        public Vector2 RevenueScreenPoint
+        {
+            get
+            {
+                float h = Screen.height;
+                return new Vector2(h * 0.04f + h * 0.18f, h - (h * 0.225f + h * 0.0225f));
+            }
         }
 
         /// <summary>Remplit la barre de la gauche jusqu'à la fraction donnée.</summary>

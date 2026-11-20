@@ -35,8 +35,10 @@ namespace TaxiKmer.Driving
         private readonly Dictionary<string, GameObject> _stopMarkers = new Dictionary<string, GameObject>();
         private readonly List<Bubble> _bubbles = new List<Bubble>();
         private readonly List<Rect> _placed = new List<Rect>();
-        private Text _toast;
-        private float _toastUntil;
+        private readonly Text[] _messageLines = new Text[2];
+        private readonly MessageStack _messages = new MessageStack(2);
+        private readonly List<(Text text, float start, int amount)> _pops = new List<(Text, float, int)>();
+        private readonly RollingCounter _revenue = new RollingCounter(0);
         private bool _dayOverShown;
         private DaySummaryView _summaryView;
         private Tutorial _tutorial;
@@ -301,7 +303,7 @@ namespace TaxiKmer.Driving
             switch (outcome.Kind)
             {
                 case StreetActionKind.Drop:
-                    Toast($"+{Money(outcome.Paid)}");
+                    if (outcome.Paid > 0) StartPaymentPop(outcome.Paid);
                     _sounds.PlayDoor();
                     if (outcome.Paid > 0) _sounds.PlayCoins();
                     foreach (var c in outcome.Dropped) SpawnLeavingPerson(c);
@@ -329,8 +331,9 @@ namespace TaxiKmer.Driving
             controls.Locked = true;
             controls.ActionVisible = false;
             _sounds.Muted = true;
-            _toast.enabled = false;
-            _toastUntil = 0f;
+            _messages.Clear();
+            foreach (var p in _pops) Destroy(p.text.gameObject);
+            _pops.Clear();
             _summaryView = gameObject.AddComponent<DaySummaryView>();
             _summaryView.Show(Street.Summary, Street.Shift.Clock.Display, controls.Font);
         }
@@ -448,9 +451,12 @@ namespace TaxiKmer.Driving
 
         private void BuildHud()
         {
-            _toast = NewText(TextAnchor.MiddleCenter);
-            var tr = _toast.rectTransform;
-            tr.anchorMin = tr.anchorMax = tr.pivot = new Vector2(0.5f, 1f);
+            for (var i = 0; i < _messageLines.Length; i++)
+            {
+                _messageLines[i] = NewText(TextAnchor.MiddleCenter);
+                var tr = _messageLines[i].rectTransform;
+                tr.anchorMin = tr.anchorMax = tr.pivot = new Vector2(0.5f, 1f);
+            }
 
             _tutorialPanel = UiKit.NewImage(controls.Overlay, "Tutoriel", new Color(0.05f, 0.05f, 0.07f, 0.82f), UiKit.Rounded);
             _tutorialText = UiKit.NewText(_tutorialPanel.transform, controls.Font, TextAnchor.MiddleCenter, new Color(1f, 0.92f, 0.55f));
@@ -560,19 +566,65 @@ namespace TaxiKmer.Driving
         {
             var h = Screen.height;
             var shift = Street.Shift;
-            _gauges.Update(shift, shift.Ledger.Revenue, !Street.DayFinished);
+            UpdatePaymentPops();
+            _gauges.Update(shift, _revenue.Shown, !Street.DayFinished);
 
-            _toast.enabled = Time.time < _toastUntil;
-            _toast.fontSize = Mathf.RoundToInt(h * 0.045f);
-            // Sous la consigne du tutoriel quand elle est affichée.
-            _toast.rectTransform.anchoredPosition = new Vector2(0f, _tutorialPanel.gameObject.activeSelf ? -h * 0.42f : -h * 0.30f);
-            _toast.rectTransform.sizeDelta = new Vector2(h * 1.4f, h * 0.1f);
+            // Messages empilés sur deux lignes (le plus récent en haut), sous la consigne du tutoriel si elle est affichée.
+            var lines = Street.DayFinished ? new List<string>() : new List<string>(_messages.Visible(Time.time));
+            var top = _tutorialPanel.gameObject.activeSelf ? h * 0.42f : h * 0.30f;
+            for (var i = 0; i < _messageLines.Length; i++)
+            {
+                var line = _messageLines[i];
+                line.enabled = i < lines.Count;
+                if (!line.enabled) continue;
+                line.text = lines[i];
+                line.fontSize = Mathf.RoundToInt(h * (i == 0 ? 0.045f : 0.036f));
+                line.color = i == 0 ? Color.white : new Color(1f, 1f, 1f, 0.75f);
+                line.rectTransform.anchoredPosition = new Vector2(0f, -(top + i * h * 0.06f));
+                line.rectTransform.sizeDelta = new Vector2(h * 1.4f, h * 0.06f);
+            }
         }
 
-        private void Toast(string text, float seconds = 3f)
+        private void Toast(string text, float seconds = 3f) => _messages.Push(text, seconds, Time.time);
+
+        /// <summary>Le montant payé jaillit du taxi en jaune, grossit, puis file vers le compteur de recette.</summary>
+        private void StartPaymentPop(int amount)
         {
-            _toast.text = text;
-            _toastUntil = Time.time + seconds;
+            var t = NewText(TextAnchor.MiddleCenter);
+            t.text = $"+{Money(amount)}";
+            t.color = new Color(1f, 0.85f, 0.15f);
+            t.fontStyle = FontStyle.Bold;
+            var r = t.rectTransform;
+            r.anchorMin = r.anchorMax = Vector2.zero;
+            r.pivot = new Vector2(0.5f, 0.5f);
+            _pops.Add((t, Time.time, amount));
+            UpdatePaymentPops();
+        }
+
+        private void UpdatePaymentPops()
+        {
+            var h = Screen.height;
+            var from = _camera != null ? (Vector2)_camera.WorldToScreenPoint(taxi.transform.position + Vector3.up * 2.2f) : new Vector2(Screen.width / 2f, h / 2f);
+            var to = _gauges.RevenueScreenPoint;
+            for (var i = _pops.Count - 1; i >= 0; i--)
+            {
+                var (text, start, amount) = _pops[i];
+                var elapsed = Time.time - start;
+                if (PaymentPop.Arrived(elapsed))
+                {
+                    _revenue.SetTarget(_revenue.Target + amount);
+                    Destroy(text.gameObject);
+                    _pops.RemoveAt(i);
+                    continue;
+                }
+                PaymentPop.Sample(elapsed, out var scale, out var travel);
+                text.fontSize = Mathf.Max(1, Mathf.RoundToInt(h * 0.06f * scale));
+                text.rectTransform.sizeDelta = new Vector2(h * 0.6f, h * 0.1f);
+                text.rectTransform.anchoredPosition = Vector2.Lerp(from, to, travel);
+            }
+            // Recette changée sans animation (ex. tests) : le compteur la rattrape.
+            if (_pops.Count == 0 && _revenue.Target != Street.Shift.Ledger.Revenue) _revenue.SetTarget(Street.Shift.Ledger.Revenue);
+            _revenue.Step(Time.deltaTime);
         }
 
         private string ShortName(string stopId) => StopNames.Short(Street.FindStop(stopId)?.name ?? stopId);
