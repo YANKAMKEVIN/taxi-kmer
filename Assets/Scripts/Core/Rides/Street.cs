@@ -264,6 +264,15 @@ namespace TaxiKmer.Core.Rides
             return outcome;
         }
 
+        /// <summary>
+        /// Le joueur termine la journée depuis la pause, à n'importe quelle heure : le bilan est arrêté tout de suite
+        /// et les passagers encore à bord descendent sans payer (comme pour « Terminer la journée » après l'heure).
+        /// </summary>
+        public void EndDayNow()
+        {
+            if (!DayFinished) Finish();
+        }
+
         private void Finish()
         {
             var unpaid = 0;

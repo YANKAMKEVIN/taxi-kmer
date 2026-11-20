@@ -112,9 +112,9 @@ namespace TaxiKmer.Driving
             _laidOutFor = size;
             float h = size.y;
             _unit = h;
-            // Entre le compteur de vitesse (haut gauche) et le klaxon (haut droite).
+            // Entre le compteur de vitesse (haut gauche) et le bouton pause, à gauche du klaxon (haut droite).
             _x0 = h * 0.47f;
-            _width = Mathf.Max(h * 0.4f, size.x - h * 0.32f - _x0);
+            _width = Mathf.Max(h * 0.4f, size.x - h * 0.43f - _x0);
             _lineY = h * 0.07f;
             Place(_line, _x0 + _width / 2f, _lineY, _width, h * 0.008f);
 

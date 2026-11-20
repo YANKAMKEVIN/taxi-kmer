@@ -45,6 +45,16 @@ namespace TaxiKmer.Driving
         private RouteStripView _strip;
         private CabinPlanView _cabinView;
         private ShiftGaugesView _gauges;
+        private GameMenu _menu;
+        private GameMenuView _menuView;
+        private readonly GameSettings _settings = new GameSettings();
+        private bool _timeStopped;
+        private float _savedTimeScale = 1f;
+
+        /// <summary>L'écran titre a déjà été passé depuis le lancement (une nouvelle journée repart directement au volant).</summary>
+        public static bool TitleDone { get; set; }
+        /// <summary>Clé des préférences : volume général (0 à 1).</summary>
+        public const string VolumeKey = "reglages.volume";
 
         /// <summary>Clé des préférences : le tutoriel de la première journée a été suivi jusqu'au bout.</summary>
         public const string TutorialDoneKey = "tutoriel.fait";
@@ -101,6 +111,10 @@ namespace TaxiKmer.Driving
             _tutorial = new Tutorial(PlayerPrefs.GetInt(TutorialDoneKey, 0) == 0, shift.Ledger.Versement);
             BuildHud();
             _gauges = new ShiftGaugesView(controls.Overlay, controls.Font);
+            _menu = new GameMenu(!TitleDone);
+            _menuView = new GameMenuView(transform, controls.Font);
+            _settings.Volume = PlayerPrefs.GetFloat(VolumeKey, GameSettings.DefaultVolume);
+            AudioListener.volume = _settings.Volume;
             _strip = new RouteStripView(controls.Overlay, controls.Font, stops.stops, _cum[_cum.Length - 1]);
             _cabinView = new CabinPlanView(controls.Overlay, controls.Font, stops.stops);
         }
@@ -132,7 +146,14 @@ namespace TaxiKmer.Driving
         {
             var dt = Time.deltaTime;
             var shift = Street.Shift;
-            if (!Street.DayFinished)
+
+            // Menu d'abord : la touche qui ouvre la pause ne doit pas la refermer dans la même image.
+            // Le bilan passe devant tout (l'écran titre ne reste pas affiché par-dessus).
+            ApplyMenu(_menuView.Update(Street.DayFinished ? MenuScreen.None : _menu.Screen, _settings, shift.Cabin.PassengerCount));
+            if (controls.PauseTriggered && !Street.DayFinished && _menu.Pause()) SetTimeStopped(true);
+            controls.Locked = _menu.Frozen || _summaryView != null;
+
+            if (!Street.DayFinished && !_menu.Frozen)
             {
                 shift.Clock.Advance(dt);
                 shift.Ledger.AddDistance(Mathf.Abs(taxi.SpeedKmh) / 3.6f * dt);
@@ -169,11 +190,58 @@ namespace TaxiKmer.Driving
             _cabinView.Update(Street.Shift.Cabin, !Street.DayFinished);
         }
 
+        private void ApplyMenu(MenuChoice choice)
+        {
+            switch (choice)
+            {
+                case MenuChoice.StartDay:
+                    _menu.StartDay();
+                    TitleDone = true;
+                    break;
+                case MenuChoice.Resume: _menu.Resume(); break;
+                case MenuChoice.OpenSettings: _menu.OpenSettings(); break;
+                case MenuChoice.CloseSettings: _menu.CloseSettings(); break;
+                case MenuChoice.EndDay:
+                    if (_menu.EndDay()) Street.EndDayNow();
+                    break;
+                case MenuChoice.VolumeDown:
+                case MenuChoice.VolumeUp:
+                    if (choice == MenuChoice.VolumeUp) _settings.VolumeUp(); else _settings.VolumeDown();
+                    AudioListener.volume = _settings.Volume;
+                    PlayerPrefs.SetFloat(VolumeKey, _settings.Volume);
+                    PlayerPrefs.Save();
+                    break;
+            }
+            SetTimeStopped(_menu.TimeStopped);
+        }
+
+        /// <summary>Pause : physique, horloge et sons arrêtés (Time.timeScale = 0), rétablis à la reprise.</summary>
+        private void SetTimeStopped(bool stop)
+        {
+            if (stop == _timeStopped) return;
+            _timeStopped = stop;
+            if (stop)
+            {
+                _savedTimeScale = Time.timeScale;
+                Time.timeScale = 0f;
+            }
+            else Time.timeScale = _savedTimeScale;
+            AudioListener.pause = stop;
+        }
+
+        /// <summary>L'appli passe en arrière-plan (appel, notification) : la journée se met en pause.</summary>
+        private void OnApplicationPause(bool paused)
+        {
+            if (paused && Street != null && _menu != null && !Street.DayFinished && _menu.Pause()) SetTimeStopped(true);
+        }
+
+        private void OnDestroy() => SetTimeStopped(false);
+
         /// <summary>Tutoriel de la première journée : consigne sous le bouton contextuel, bouton concerné mis en avant.</summary>
         private void UpdateTutorial(float dt, TaxiOnRoute state)
         {
             var wasActive = _tutorial.Active;
-            if (wasActive && !Street.DayFinished)
+            if (wasActive && !Street.DayFinished && !_menu.Frozen)
             {
                 var accepted = false;
                 foreach (var c in Street.Waiting) accepted |= c.State == RoadsideState.Accepted;
@@ -191,7 +259,7 @@ namespace TaxiKmer.Driving
                     PlayerPrefs.Save();
                 }
             }
-            var show = _tutorial.Active && !Street.DayFinished;
+            var show = _tutorial.Active && !Street.DayFinished && !_menu.Frozen;
             controls.Highlight = show ? _tutorial.Highlight : Core.Driving.DriveControl.None;
             _tutorialPanel.gameObject.SetActive(show);
             if (!show) return;

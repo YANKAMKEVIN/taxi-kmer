@@ -80,6 +80,24 @@ namespace TaxiKmer.Driving
             return t;
         }
 
+        /// <summary>Bouton arrondi avec son libellé centré (l'appui se lit avec <see cref="Tapped"/>).</summary>
+        public static Image NewButton(Transform parent, Font font, string label, Color color, out Text text)
+        {
+            var img = NewImage(parent, label, color, Rounded);
+            text = NewText(img.transform, font, TextAnchor.MiddleCenter, Color.white);
+            text.text = label;
+            Fill(text.rectTransform);
+            return img;
+        }
+
+        /// <summary>Élément centré horizontalement, placé en pixels depuis le haut de son parent.</summary>
+        public static void PlaceTopCenter(RectTransform r, float y, float w, float h)
+        {
+            r.anchorMin = r.anchorMax = r.pivot = new Vector2(0.5f, 1f);
+            r.anchoredPosition = new Vector2(0f, -y);
+            r.sizeDelta = new Vector2(w, h);
+        }
+
         /// <summary>Étire un élément sur tout son parent, avec une marge intérieure en pixels.</summary>
         public static void Fill(RectTransform r, float inset = 0f)
         {

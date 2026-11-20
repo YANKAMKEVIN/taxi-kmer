@@ -9,7 +9,7 @@ namespace TaxiKmer.Driving
     /// Commandes du joueur : écran tactile (flèches à gauche, pédales à droite, klaxon en haut à droite, glisser ailleurs
     /// pour tourner la caméra), souris et clavier pour l'éditeur. Dessine les boutons et le compteur de vitesse.
     /// Clavier : ← → / Q D / A (tourner), ↑ / Z / W (accélérer), ↓ / S / espace (frein, marche arrière), H (klaxon),
-    /// E ou Entrée (bouton contextuel), R (remettre sur la route).
+    /// E ou Entrée (bouton contextuel), R (remettre sur la route), Échap ou Retour Android (pause).
     /// </summary>
     [DefaultExecutionOrder(-10)]
     public sealed class DriverControls : MonoBehaviour
@@ -38,6 +38,8 @@ namespace TaxiKmer.Driving
         public bool ActionTriggered { get; private set; }
         /// <summary>Le klaxon vient d'être pressé (cette image seulement).</summary>
         public bool HornTriggered { get; private set; }
+        /// <summary>Le bouton pause (ou Échap / Retour Android) vient d'être pressé (cette image seulement).</summary>
+        public bool PauseTriggered { get; private set; }
         /// <summary>Calque d'interface où le jeu peut ajouter ses propres textes.</summary>
         public RectTransform Overlay => _canvas;
         public Font Font { get; private set; }
@@ -66,6 +68,7 @@ namespace TaxiKmer.Driving
             if (!ActionVisible) input.Action = false;
             ActionTriggered = input.Action && !_previous.Action;
             HornTriggered = input.Horn && !_previous.Horn;
+            PauseTriggered = input.Pause && !_previous.Pause;
             _previous = input;
             if (taxi != null)
             {
@@ -86,6 +89,7 @@ namespace TaxiKmer.Driving
                 Brake = Key(KeyCode.DownArrow) || Key(KeyCode.S) || Key(KeyCode.Space),
                 Horn = Key(KeyCode.H),
                 Action = Key(KeyCode.E) || Key(KeyCode.Return),
+                Pause = Key(KeyCode.Escape), // aussi le bouton Retour d'Android
             };
         }
 
@@ -203,7 +207,8 @@ namespace TaxiKmer.Driving
                     rect.sizeDelta = new Vector2(r.Width, r.Height);
                     var label = rect.GetComponentInChildren<Text>();
                     var big = zone.label.Length > 0 && zone.label.Length <= 2;
-                    label.fontSize = Mathf.RoundToInt(size.y * (big ? 0.12f : zone.control == DriveControl.Action ? 0.05f : 0.04f));
+                    var px = size.y * (big ? 0.12f : zone.control == DriveControl.Action ? 0.05f : 0.04f);
+                    label.fontSize = Mathf.RoundToInt(Mathf.Min(px, r.Height * 0.55f));
                 }
                 var sr = (RectTransform)_speed.transform;
                 sr.anchoredPosition = new Vector2(size.y * 0.04f, -size.y * 0.04f);

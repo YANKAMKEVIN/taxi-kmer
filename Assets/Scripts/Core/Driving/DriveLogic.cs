@@ -11,6 +11,8 @@ namespace TaxiKmer.Core.Driving
         public bool Brake;
         public bool Horn;
         public bool Action;
+        /// <summary>Bouton pause (ou Échap / Retour Android).</summary>
+        public bool Pause;
 
         public static DriveInput operator |(DriveInput a, DriveInput b) => new DriveInput
         {
@@ -20,6 +22,7 @@ namespace TaxiKmer.Core.Driving
             Brake = a.Brake || b.Brake,
             Horn = a.Horn || b.Horn,
             Action = a.Action || b.Action,
+            Pause = a.Pause || b.Pause,
         };
 
         public void Press(DriveControl control)
@@ -32,6 +35,7 @@ namespace TaxiKmer.Core.Driving
                 case DriveControl.Brake: Brake = true; break;
                 case DriveControl.Horn: Horn = true; break;
                 case DriveControl.Action: Action = true; break;
+                case DriveControl.Pause: Pause = true; break;
             }
         }
     }

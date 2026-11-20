@@ -12,6 +12,8 @@ namespace TaxiKmer.Core.Driving
         Horn,
         /// <summary>Bouton contextuel « Faire monter / Faire descendre », visible seulement quand une action est possible.</summary>
         Action,
+        /// <summary>Bouton pause, à gauche du klaxon.</summary>
+        Pause,
     }
 
     public enum ScreenCorner
@@ -73,7 +75,7 @@ namespace TaxiKmer.Core.Driving
     /// <summary>
     /// Disposition des commandes tactiles (décision de Kevin, jalon 1) : à gauche les flèches ← →,
     /// à droite la grande pédale d'accélérateur et la pédale de frein / marche arrière, en haut à droite le klaxon ;
-    /// bouton contextuel (faire monter, faire descendre) en haut au centre.
+    /// bouton contextuel (faire monter, faire descendre) en haut au centre ; pause à gauche du klaxon.
     /// </summary>
     [Serializable]
     public class ControlLayout
@@ -106,6 +108,7 @@ namespace TaxiKmer.Core.Driving
                     new ControlZone { control = DriveControl.Brake, corner = ScreenCorner.BottomRight, side = 0.30f, edge = 0.05f, width = 0.22f, height = 0.28f, label = "Frein\nArrière" },
                     new ControlZone { control = DriveControl.Horn, corner = ScreenCorner.TopRight, side = 0.04f, edge = 0.05f, width = 0.24f, height = 0.24f, label = "Klaxon" },
                     new ControlZone { control = DriveControl.Action, corner = ScreenCorner.TopCenter, side = 0f, edge = 0.12f, width = 0.5f, height = 0.16f, label = "" },
+                    new ControlZone { control = DriveControl.Pause, corner = ScreenCorner.TopRight, side = 0.31f, edge = 0.05f, width = 0.1f, height = 0.1f, label = "II" },
                 },
             };
         }

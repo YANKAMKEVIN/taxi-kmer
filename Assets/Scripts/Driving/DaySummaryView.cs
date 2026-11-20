@@ -65,7 +65,11 @@ namespace TaxiKmer.Driving
         }
 
         /// <summary>Nouvelle journée : on recharge la scène (pas encore de progression d'un jour à l'autre).</summary>
-        public void NewDay() => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        public void NewDay()
+        {
+            StreetView.TitleDone = true; // la nouvelle journée repart directement au volant
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        }
 
         private void Build()
         {

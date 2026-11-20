@@ -161,7 +161,7 @@ namespace TaxiKmer.Core.Tests
         public void Default_EachZoneCenter_MapsToItsControl()
         {
             var layout = ControlLayout.Default();
-            Assert.AreEqual(6, layout.zones.Length);
+            Assert.AreEqual(7, layout.zones.Length, "Six commandes de conduite et la pause.");
             foreach (var z in layout.zones)
             {
                 var (x, y) = Center(z);
