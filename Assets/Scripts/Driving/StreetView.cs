@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Text;
 using TaxiKmer.Core.Day;
 using TaxiKmer.Core.Rides;
+using TaxiKmer.Core.Ux;
 using TaxiKmer.Core.World;
 using TaxiKmer.World;
 using UnityEngine;
@@ -40,6 +41,12 @@ namespace TaxiKmer.Driving
         private float _toastUntil;
         private bool _dayOverShown;
         private DaySummaryView _summaryView;
+        private Tutorial _tutorial;
+        private Image _tutorialPanel;
+        private Text _tutorialText;
+
+        /// <summary>Clé des préférences : le tutoriel de la première journée a été suivi jusqu'au bout.</summary>
+        public const string TutorialDoneKey = "tutoriel.fait";
         private MaterialPropertyBlock _block;
         private Camera _camera;
 
@@ -76,6 +83,7 @@ namespace TaxiKmer.Driving
             Street = new Street(Load("Data/street", new StreetConfig()), stops, factory, shift, _cum[_cum.Length - 1]);
 
             foreach (var stop in stops.stops) _stopMarkers[stop.id] = MakeStopMarker(stop);
+            _tutorial = new Tutorial(PlayerPrefs.GetInt(TutorialDoneKey, 0) == 0, shift.Ledger.Versement);
             BuildHud();
         }
 
@@ -134,10 +142,47 @@ namespace TaxiKmer.Driving
                 Toast("Fin de la journée : dépose tes passagers, ou arrête-toi pour terminer", 8f);
             }
             if (Street.DayFinished) ShowSummary();
+            UpdateTutorial(dt, state);
 
             SyncPeople();
             SyncStopMarkers();
             UpdateHud();
+        }
+
+        /// <summary>Tutoriel de la première journée : consigne sous le bouton contextuel, bouton concerné mis en avant.</summary>
+        private void UpdateTutorial(float dt, TaxiOnRoute state)
+        {
+            var wasActive = _tutorial.Active;
+            if (wasActive && !Street.DayFinished)
+            {
+                var accepted = false;
+                foreach (var c in Street.Waiting) accepted |= c.State == RoadsideState.Accepted;
+                _tutorial.Update(dt, new TutorialObservation
+                {
+                    SpeedKmh = state.SpeedKmh,
+                    HasAcceptedClient = accepted,
+                    Passengers = Street.Shift.Cabin.PassengerCount,
+                    RidesPaid = Street.Shift.Ledger.RideCount,
+                    ActionVisible = controls.ActionVisible,
+                });
+                if (!_tutorial.Active)
+                {
+                    PlayerPrefs.SetInt(TutorialDoneKey, 1);
+                    PlayerPrefs.Save();
+                }
+            }
+            var show = _tutorial.Active && !Street.DayFinished;
+            controls.Highlight = show ? _tutorial.Highlight : Core.Driving.DriveControl.None;
+            _tutorialPanel.gameObject.SetActive(show);
+            if (!show) return;
+            var h = Screen.height;
+            _tutorialText.text = _tutorial.Instruction;
+            _tutorialText.fontSize = Mathf.RoundToInt(h * 0.04f);
+            var w = Mathf.Min(Screen.width * 0.6f, h * 1.1f);
+            var r = _tutorialPanel.rectTransform;
+            r.anchorMin = r.anchorMax = r.pivot = new Vector2(0.5f, 1f);
+            r.anchoredPosition = new Vector2(0f, -h * 0.23f);
+            r.sizeDelta = new Vector2(w, Mathf.Max(h * 0.09f, _tutorialText.preferredHeight + h * 0.03f));
         }
 
         private void OnHonk(TaxiOnRoute state)
@@ -309,6 +354,11 @@ namespace TaxiKmer.Driving
             _toast = NewText(TextAnchor.MiddleCenter);
             var tr = _toast.rectTransform;
             tr.anchorMin = tr.anchorMax = tr.pivot = new Vector2(0.5f, 1f);
+
+            _tutorialPanel = UiKit.NewImage(controls.Overlay, "Tutoriel", new Color(0.05f, 0.05f, 0.07f, 0.82f), UiKit.Rounded);
+            _tutorialText = UiKit.NewText(_tutorialPanel.transform, controls.Font, TextAnchor.MiddleCenter, new Color(1f, 0.92f, 0.55f));
+            UiKit.Fill(_tutorialText.rectTransform, Screen.height * 0.015f);
+            _tutorialPanel.gameObject.SetActive(false);
         }
 
         private Text NewText(TextAnchor anchor)
@@ -385,7 +435,8 @@ namespace TaxiKmer.Driving
 
             _toast.enabled = Time.time < _toastUntil;
             _toast.fontSize = Mathf.RoundToInt(h * 0.045f);
-            _toast.rectTransform.anchoredPosition = new Vector2(0f, -h * 0.24f);
+            // Sous la consigne du tutoriel quand elle est affichée.
+            _toast.rectTransform.anchoredPosition = new Vector2(0f, _tutorialPanel.gameObject.activeSelf ? -h * 0.36f : -h * 0.24f);
             _toast.rectTransform.sizeDelta = new Vector2(h * 1.4f, h * 0.1f);
         }
 

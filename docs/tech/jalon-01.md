@@ -96,3 +96,9 @@ Réalisé le 2026-11-11 (tâche 1.2) : lieux et couverture OSM étendus jusqu'à
 - « Borne Fontaine » = le **Carrefour Bonne Fontaine** d'OSM. Il est **au sud d'Emana** : l'ordre sur la route est donc dispensaire → carrefour Messassi → pont d'Emana → Emana → Bonne Fontaine → Étoudi (et non Borne Fontaine avant le pont).
 - Dispensaire de Messassi = le **Centre Médical d'Arrondissement Yaoundé I Olembe** (seul centre de santé au nord du carrefour sur OSM), à 630 m au nord-est du carrefour.
 - Arrivée : l'itinéraire quitte la N1 au carrefour d'Étoudi et prend la rue Charles Bindzi vers l'ouest jusqu'au palais (3,2 km depuis Bonne Fontaine).
+
+## Interface et retours au joueur (branche `claude/ux15`, à essayer dans Unity)
+
+Écrit sans éditeur Unity : compilé hors moteur contre les assemblies de référence, logique testée par `tools/test_core.sh`, mais **rien n'a été exécuté dans Unity**. Valeurs par défaut à relire par Kevin :
+
+- Tutoriel de la première journée (`Core/Ux/Tutorial.cs`) : accélérer (10 km/h), klaxonner un client, s'arrêter et le faire monter, le déposer, puis une phrase de 9 s sur le versement ; consigne sous le bouton contextuel, bouton concerné qui pulse en jaune ; ne revient plus une fois terminé (préférence `tutoriel.fait`).

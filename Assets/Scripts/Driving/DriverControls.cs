@@ -43,10 +43,13 @@ namespace TaxiKmer.Driving
         public Font Font { get; private set; }
         /// <summary>Commandes bloquées (écran de bilan) : le taxi ne reçoit plus rien et les boutons sont cachés.</summary>
         public bool Locked { get; set; }
+        /// <summary>Commande mise en avant (tutoriel) : son bouton pulse en jaune. None : aucune.</summary>
+        public DriveControl Highlight { get; set; }
 
         private static readonly Color Idle = new Color(0f, 0f, 0f, 0.28f);
         private static readonly Color Pressed = new Color(1f, 0.82f, 0.1f, 0.55f);
         private static readonly Color ActionColor = new Color(0.1f, 0.45f, 0.2f, 0.75f);
+        private static readonly Color HighlightColor = new Color(1f, 0.82f, 0.1f, 0.75f);
 
         private void Awake()
         {
@@ -183,6 +186,10 @@ namespace TaxiKmer.Driving
             return t;
         }
 
+        /// <summary>Couleur de repos, ou pulsation vers le jaune si c'est la commande mise en avant.</summary>
+        private Color Highlighted(DriveControl control, Color rest)
+            => control == Highlight ? Color.Lerp(rest, HighlightColor, UiKit.Pulse()) : rest;
+
         private void UpdateView(DriveInput input)
         {
             var size = new Vector2Int(Screen.width, Screen.height);
@@ -222,10 +229,10 @@ namespace TaxiKmer.Driving
                     image.enabled = ActionVisible;
                     _actionLabel.enabled = ActionVisible;
                     _actionLabel.text = ActionLabel;
-                    image.color = on ? Pressed : ActionColor;
+                    image.color = on ? Pressed : Highlighted(zone.control, ActionColor);
                     continue;
                 }
-                image.color = on ? Pressed : Idle;
+                image.color = on ? Pressed : Highlighted(zone.control, Idle);
             }
 
             _speed.enabled = !Locked;
