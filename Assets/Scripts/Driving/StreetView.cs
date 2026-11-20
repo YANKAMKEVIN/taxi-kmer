@@ -44,6 +44,7 @@ namespace TaxiKmer.Driving
         private Tutorial _tutorial;
         private Image _tutorialPanel;
         private Text _tutorialText;
+        private RouteStripView _strip;
 
         /// <summary>Clé des préférences : le tutoriel de la première journée a été suivi jusqu'au bout.</summary>
         public const string TutorialDoneKey = "tutoriel.fait";
@@ -85,6 +86,7 @@ namespace TaxiKmer.Driving
             foreach (var stop in stops.stops) _stopMarkers[stop.id] = MakeStopMarker(stop);
             _tutorial = new Tutorial(PlayerPrefs.GetInt(TutorialDoneKey, 0) == 0, shift.Ledger.Versement);
             BuildHud();
+            _strip = new RouteStripView(controls.Overlay, controls.Font, stops.stops, _cum[_cum.Length - 1]);
         }
 
         private static T Load<T>(string resource, T fallback)
@@ -147,6 +149,7 @@ namespace TaxiKmer.Driving
             SyncPeople();
             SyncStopMarkers();
             UpdateHud();
+            _strip.Update(Street, state.Along, !Street.DayFinished);
         }
 
         /// <summary>Tutoriel de la première journée : consigne sous le bouton contextuel, bouton concerné mis en avant.</summary>
@@ -181,7 +184,7 @@ namespace TaxiKmer.Driving
             var w = Mathf.Min(Screen.width * 0.6f, h * 1.1f);
             var r = _tutorialPanel.rectTransform;
             r.anchorMin = r.anchorMax = r.pivot = new Vector2(0.5f, 1f);
-            r.anchoredPosition = new Vector2(0f, -h * 0.23f);
+            r.anchoredPosition = new Vector2(0f, -h * 0.30f);
             r.sizeDelta = new Vector2(w, Mathf.Max(h * 0.09f, _tutorialText.preferredHeight + h * 0.03f));
         }
 
@@ -436,7 +439,7 @@ namespace TaxiKmer.Driving
             _toast.enabled = Time.time < _toastUntil;
             _toast.fontSize = Mathf.RoundToInt(h * 0.045f);
             // Sous la consigne du tutoriel quand elle est affichée.
-            _toast.rectTransform.anchoredPosition = new Vector2(0f, _tutorialPanel.gameObject.activeSelf ? -h * 0.36f : -h * 0.24f);
+            _toast.rectTransform.anchoredPosition = new Vector2(0f, _tutorialPanel.gameObject.activeSelf ? -h * 0.42f : -h * 0.30f);
             _toast.rectTransform.sizeDelta = new Vector2(h * 1.4f, h * 0.1f);
         }
 
@@ -446,14 +449,7 @@ namespace TaxiKmer.Driving
             _toastUntil = Time.time + seconds;
         }
 
-        private string ShortName(string stopId)
-        {
-            var name = Street.FindStop(stopId)?.name ?? stopId;
-            var cut = name.IndexOf(" (", System.StringComparison.Ordinal);
-            if (cut > 0) name = name.Substring(0, cut);
-            cut = name.IndexOf(" / ", System.StringComparison.Ordinal);
-            return cut > 0 ? name.Substring(0, cut) : name;
-        }
+        private string ShortName(string stopId) => StopNames.Short(Street.FindStop(stopId)?.name ?? stopId);
 
         private static string CorpulenceLabel(Client c) => c.Corpulence switch
         {

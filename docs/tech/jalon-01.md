@@ -102,3 +102,4 @@ Réalisé le 2026-11-11 (tâche 1.2) : lieux et couverture OSM étendus jusqu'à
 Écrit sans éditeur Unity : compilé hors moteur contre les assemblies de référence, logique testée par `tools/test_core.sh`, mais **rien n'a été exécuté dans Unity**. Valeurs par défaut à relire par Kevin :
 
 - Tutoriel de la première journée (`Core/Ux/Tutorial.cs`) : accélérer (10 km/h), klaxonner un client, s'arrêter et le faire monter, le déposer, puis une phrase de 9 s sur le versement ; consigne sous le bouton contextuel, bouton concerné qui pulse en jaune ; ne revient plus une fois terminé (préférence `tutoriel.fait`).
+- Frise du trajet (`Core/Ux/RouteStrip.cs`) en haut de l'écran, entre le compteur et le klaxon : les six lieux (une couleur chacun), le taxi, une pastille numérotée par lieu où des passagers descendent, un point par client qui attend. Le bouton contextuel descend de 0,05 à 0,12 hauteur d'écran pour laisser la place à la frise (`driving.json`).

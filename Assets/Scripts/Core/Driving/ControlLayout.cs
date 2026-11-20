@@ -105,7 +105,7 @@ namespace TaxiKmer.Core.Driving
                     new ControlZone { control = DriveControl.Accelerate, corner = ScreenCorner.BottomRight, side = 0.04f, edge = 0.05f, width = 0.22f, height = 0.48f, label = "Accélérer" },
                     new ControlZone { control = DriveControl.Brake, corner = ScreenCorner.BottomRight, side = 0.30f, edge = 0.05f, width = 0.22f, height = 0.28f, label = "Frein\nArrière" },
                     new ControlZone { control = DriveControl.Horn, corner = ScreenCorner.TopRight, side = 0.04f, edge = 0.05f, width = 0.24f, height = 0.24f, label = "Klaxon" },
-                    new ControlZone { control = DriveControl.Action, corner = ScreenCorner.TopCenter, side = 0f, edge = 0.05f, width = 0.5f, height = 0.16f, label = "" },
+                    new ControlZone { control = DriveControl.Action, corner = ScreenCorner.TopCenter, side = 0f, edge = 0.12f, width = 0.5f, height = 0.16f, label = "" },
                 },
             };
         }

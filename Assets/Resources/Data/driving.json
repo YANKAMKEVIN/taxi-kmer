@@ -49,7 +49,7 @@
             { "control": 3, "corner": 1, "side": 0.04, "edge": 0.05, "width": 0.22, "height": 0.48, "label": "Accélérer" },
             { "control": 4, "corner": 1, "side": 0.30, "edge": 0.05, "width": 0.22, "height": 0.28, "label": "Frein\nArrière" },
             { "control": 5, "corner": 3, "side": 0.04, "edge": 0.05, "width": 0.24, "height": 0.24, "label": "Klaxon" },
-            { "control": 6, "corner": 4, "side": 0, "edge": 0.05, "width": 0.5, "height": 0.16, "label": "" }
+            { "control": 6, "corner": 4, "side": 0, "edge": 0.12, "width": 0.5, "height": 0.16, "label": "" }
         ]
     }
 }
