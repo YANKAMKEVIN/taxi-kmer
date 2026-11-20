@@ -46,6 +46,7 @@ namespace TaxiKmer.Driving
         private CabinPlanView _cabinView;
         private ShiftGaugesView _gauges;
         private GameMenu _menu;
+        private TaxiSounds _sounds;
         private GameMenuView _menuView;
         private readonly GameSettings _settings = new GameSettings();
         private bool _timeStopped;
@@ -108,6 +109,8 @@ namespace TaxiKmer.Driving
             Street = new Street(Load("Data/street", new StreetConfig()), stops, factory, shift, _cum[_cum.Length - 1]);
 
             foreach (var stop in stops.stops) _stopMarkers[stop.id] = MakeStopMarker(stop);
+            _sounds = taxi.GetComponent<TaxiSounds>();
+            if (_sounds == null) _sounds = taxi.gameObject.AddComponent<TaxiSounds>(); // pas de « ?? » avec un objet Unity
             _tutorial = new Tutorial(PlayerPrefs.GetInt(TutorialDoneKey, 0) == 0, shift.Ledger.Versement);
             BuildHud();
             _gauges = new ShiftGaugesView(controls.Overlay, controls.Font);
@@ -299,11 +302,14 @@ namespace TaxiKmer.Driving
             {
                 case StreetActionKind.Drop:
                     Toast($"+{Money(outcome.Paid)}");
+                    _sounds.PlayDoor();
+                    if (outcome.Paid > 0) _sounds.PlayCoins();
                     foreach (var c in outcome.Dropped) SpawnLeavingPerson(c);
                     break;
                 case StreetActionKind.Board:
                     if (outcome.Board == BoardResult.Boarded)
                     {
+                        _sounds.PlayDoor();
                         var moved = outcome.Moved != null ? "Un passager a changé de place. " : "";
                         Toast($"{moved}Monté : {ShortName(outcome.Boarded.DestinationStopId)}, {Money(outcome.Boarded.ProposedFare)}");
                     }
@@ -322,6 +328,7 @@ namespace TaxiKmer.Driving
             if (_summaryView != null) return;
             controls.Locked = true;
             controls.ActionVisible = false;
+            _sounds.Muted = true;
             _toast.enabled = false;
             _toastUntil = 0f;
             _summaryView = gameObject.AddComponent<DaySummaryView>();
