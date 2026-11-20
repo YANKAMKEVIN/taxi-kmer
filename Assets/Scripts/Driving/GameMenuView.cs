@@ -15,19 +15,20 @@ namespace TaxiKmer.Driving
         EndDay,
         VolumeDown,
         VolumeUp,
+        ToggleVibration,
     }
 
     /// <summary>
     /// Écran titre « Taxi Kmer » (Commencer la journée, Réglages), pause (Reprendre, Réglages, Terminer la journée) et
-    /// réglages (volume ; le choix de qualité de la tâche 1.7 viendra ici). Ne fait qu'afficher l'écran de
+    /// réglages (volume, vibrations ; le choix de qualité de la tâche 1.7 viendra ici). Ne fait qu'afficher l'écran de
     /// <see cref="GameMenu"/> (Core) et rapporter les appuis ; StreetView applique les choix.
     /// </summary>
     public sealed class GameMenuView
     {
         private readonly RectTransform _root;
         private readonly Text _title, _subtitle, _info;
-        private readonly Image _primary, _secondary, _tertiary, _minus, _plus;
-        private readonly Text _primaryText, _secondaryText, _tertiaryText;
+        private readonly Image _primary, _secondary, _tertiary, _minus, _plus, _toggle;
+        private readonly Text _primaryText, _secondaryText, _tertiaryText, _toggleText;
 
         private static readonly Color Green = new Color(0.1f, 0.45f, 0.2f, 0.95f);
         private static readonly Color Grey = new Color(0.22f, 0.22f, 0.26f, 0.95f);
@@ -53,6 +54,7 @@ namespace TaxiKmer.Driving
             _tertiary = UiKit.NewButton(_root, font, "", Red, out _tertiaryText);
             _minus = UiKit.NewButton(_root, font, "–", Grey, out _);
             _plus = UiKit.NewButton(_root, font, "+", Grey, out _);
+            _toggle = UiKit.NewButton(_root, font, "", Grey, out _toggleText);
         }
 
         public MenuChoice Update(MenuScreen screen, GameSettings settings, int passengersOnBoard)
@@ -78,6 +80,7 @@ namespace TaxiKmer.Driving
                     if (UiKit.Tapped(_primary.rectTransform) || back) return MenuChoice.CloseSettings;
                     if (UiKit.Tapped(_minus.rectTransform)) return MenuChoice.VolumeDown;
                     if (UiKit.Tapped(_plus.rectTransform)) return MenuChoice.VolumeUp;
+                    if (UiKit.Tapped(_toggle.rectTransform)) return MenuChoice.ToggleVibration;
                     break;
             }
             return MenuChoice.None;
@@ -103,6 +106,8 @@ namespace TaxiKmer.Driving
             _minus.gameObject.SetActive(screen == MenuScreen.Settings);
             _plus.gameObject.SetActive(screen == MenuScreen.Settings);
             _info.gameObject.SetActive(screen == MenuScreen.Settings);
+            _toggle.gameObject.SetActive(screen == MenuScreen.Settings);
+            _toggleText.fontSize = font;
 
             switch (screen)
             {
@@ -135,10 +140,12 @@ namespace TaxiKmer.Driving
                     UiKit.PlaceTopCenter(_plus.rectTransform, h * 0.34f, bh, bh);
                     _plus.rectTransform.anchoredPosition += new Vector2(side, 0f);
                     foreach (var t in new[] { _minus, _plus }) t.GetComponentInChildren<Text>().fontSize = Mathf.RoundToInt(h * 0.07f);
+                    _toggleText.text = settings.VibrationLabel;
+                    UiKit.PlaceTopCenter(_toggle.rectTransform, h * 0.49f, bw, bh);
                     _info.text = "Qualité graphique (bas / moyen / haut) : bientôt";
-                    UiKit.PlaceTopCenter(_info.rectTransform, h * 0.52f, Screen.width, h * 0.06f);
+                    UiKit.PlaceTopCenter(_info.rectTransform, h * 0.63f, Screen.width, h * 0.06f);
                     _primaryText.text = "Retour";
-                    UiKit.PlaceTopCenter(_primary.rectTransform, h * 0.68f, bw, bh);
+                    UiKit.PlaceTopCenter(_primary.rectTransform, h * 0.72f, bw, bh);
                     break;
             }
         }

@@ -60,6 +60,8 @@ namespace TaxiKmer.Driving
         public static bool TitleDone { get; set; }
         /// <summary>Clé des préférences : volume général (0 à 1).</summary>
         public const string VolumeKey = "reglages.volume";
+        /// <summary>Clé des préférences : vibrations (1 oui, 0 non).</summary>
+        public const string VibrationKey = "reglages.vibrations";
 
         /// <summary>Clé des préférences : le tutoriel de la première journée a été suivi jusqu'au bout.</summary>
         public const string TutorialDoneKey = "tutoriel.fait";
@@ -122,6 +124,8 @@ namespace TaxiKmer.Driving
             _menuView = new GameMenuView(transform, controls.Font);
             _settings.Volume = PlayerPrefs.GetFloat(VolumeKey, GameSettings.DefaultVolume);
             AudioListener.volume = _settings.Volume;
+            _settings.Vibration = PlayerPrefs.GetInt(VibrationKey, 1) == 1;
+            Haptics.Enabled = _settings.Vibration;
             _strip = new RouteStripView(controls.Overlay, controls.Font, stops.stops, _cum[_cum.Length - 1]);
             _cabinView = new CabinPlanView(controls.Overlay, controls.Font, stops.stops);
         }
@@ -169,7 +173,11 @@ namespace TaxiKmer.Driving
             var state = TaxiState();
             Street.Update(dt, state);
 
-            if (controls.HornTriggered) OnHonk(state);
+            if (controls.HornTriggered)
+            {
+                Haptics.Play(HapticEvent.Honk);
+                OnHonk(state);
+            }
             var action = Street.AvailableAction(state);
             if (controls.ActionTriggered && action.Kind != StreetActionKind.None) OnAction(state);
             action = Street.AvailableAction(state);
@@ -215,6 +223,13 @@ namespace TaxiKmer.Driving
                 case MenuChoice.CloseSettings: _menu.CloseSettings(); break;
                 case MenuChoice.EndDay:
                     if (_menu.EndDay()) Street.EndDayNow();
+                    break;
+                case MenuChoice.ToggleVibration:
+                    _settings.Vibration = !_settings.Vibration;
+                    Haptics.Enabled = _settings.Vibration;
+                    if (_settings.Vibration) Haptics.Play(HapticEvent.Board); // pour sentir que c'est revenu
+                    PlayerPrefs.SetInt(VibrationKey, _settings.Vibration ? 1 : 0);
+                    PlayerPrefs.Save();
                     break;
                 case MenuChoice.VolumeDown:
                 case MenuChoice.VolumeUp:
@@ -298,6 +313,7 @@ namespace TaxiKmer.Driving
                     break;
                 case HonkResult.NoRoom:
                     Toast($"Pas de place pour ce client ({CorpulenceLabel(client.Client)})");
+                    Haptics.Play(HapticEvent.Refused);
                     _cabinView.ShowRefused(client.Client);
                     break;
             }
@@ -312,13 +328,18 @@ namespace TaxiKmer.Driving
                 case StreetActionKind.Drop:
                     if (outcome.Paid > 0) StartPaymentPop(outcome.Paid);
                     _sounds.PlayDoor();
-                    if (outcome.Paid > 0) _sounds.PlayCoins();
+                    if (outcome.Paid > 0)
+                    {
+                        _sounds.PlayCoins();
+                        Haptics.Play(HapticEvent.Payment);
+                    }
                     foreach (var c in outcome.Dropped) SpawnLeavingPerson(c);
                     break;
                 case StreetActionKind.Board:
                     if (outcome.Board == BoardResult.Boarded)
                     {
                         _sounds.PlayDoor();
+                        Haptics.Play(HapticEvent.Board);
                         var moved = outcome.Moved != null ? "Un passager a changé de place. " : "";
                         Toast($"{moved}Monté : {ShortName(outcome.Boarded.DestinationStopId)}, {Money(outcome.Boarded.ProposedFare)}");
                     }
@@ -326,6 +347,7 @@ namespace TaxiKmer.Driving
                     else
                     {
                         Toast("Il ne rentre pas");
+                        Haptics.Play(HapticEvent.Refused);
                         if (candidate != null) _cabinView.ShowRefused(candidate.Client);
                     }
                     break;

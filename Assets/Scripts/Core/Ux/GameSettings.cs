@@ -2,7 +2,7 @@ using System;
 
 namespace TaxiKmer.Core.Ux
 {
-    /// <summary>Réglages du joueur (volume général), enregistrés par la présentation dans les préférences.</summary>
+    /// <summary>Réglages du joueur (volume général, vibrations), enregistrés par la présentation dans les préférences.</summary>
     public sealed class GameSettings
     {
         public const float VolumeStep = 0.1f;
@@ -19,6 +19,11 @@ namespace TaxiKmer.Core.Ux
 
         public void VolumeUp() => Volume = _volume + VolumeStep;
         public void VolumeDown() => Volume = _volume - VolumeStep;
+
+        /// <summary>Vibrations aux moments clés (klaxon, montée, paiement, refus).</summary>
+        public bool Vibration { get; set; } = true;
+
+        public string VibrationLabel => Vibration ? "Vibrations : oui" : "Vibrations : non";
 
         public string VolumeLabel => _volume <= 0f ? "Volume : coupé" : $"Volume : {(int)Math.Round(_volume * 100f)} %";
     }
