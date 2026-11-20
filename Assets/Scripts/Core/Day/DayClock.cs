@@ -17,6 +17,9 @@ namespace TaxiKmer.Core.Day
 
         public bool IsOver => _elapsedReal >= _config.dayLengthRealSeconds;
 
+        /// <summary>Part de la journée écoulée, de 0 (début) à 1 (heure de fin).</summary>
+        public float Progress => Math.Min(_elapsedReal / _config.dayLengthRealSeconds, 1f);
+
         /// <summary>Minutes de jeu écoulées depuis minuit.</summary>
         public int GameMinutes
         {
@@ -27,6 +30,9 @@ namespace TaxiKmer.Core.Day
                 return _config.startHour * 60 + (int)Math.Floor(t * span);
             }
         }
+
+        /// <summary>Minutes de jeu avant l'heure de fin (0 une fois atteinte).</summary>
+        public int MinutesLeft => _config.endHour * 60 - GameMinutes;
 
         public string Display => $"{GameMinutes / 60:00}:{GameMinutes % 60:00}";
 
