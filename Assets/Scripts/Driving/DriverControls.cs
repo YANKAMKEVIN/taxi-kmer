@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using TaxiKmer.Core.Driving;
+using TaxiKmer.Core.Ux;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -26,6 +27,8 @@ namespace TaxiKmer.Driving
         private RectTransform _canvas;
         private readonly List<(ControlZone zone, Image image, RectTransform rect)> _buttons = new List<(ControlZone, Image, RectTransform)>();
         private Text _speed;
+        private Image _reverseLight;
+        private readonly Dictionary<DriveControl, Image> _icons = new Dictionary<DriveControl, Image>();
         private Text _actionLabel;
         private Vector2Int _laidOutFor;
         private DriveInput _previous;
@@ -49,6 +52,7 @@ namespace TaxiKmer.Driving
         public DriveControl Highlight { get; set; }
 
         private static readonly Color Idle = new Color(0f, 0f, 0f, 0.28f);
+        private static readonly Color OutlineColor = new Color(1f, 1f, 1f, 0.45f);
         private static readonly Color Pressed = new Color(1f, 0.82f, 0.1f, 0.55f);
         private static readonly Color ActionColor = new Color(0.1f, 0.45f, 0.2f, 0.75f);
         private static readonly Color HighlightColor = new Color(1f, 0.82f, 0.1f, 0.75f);
@@ -160,12 +164,29 @@ namespace TaxiKmer.Driving
                 var img = go.GetComponent<Image>();
                 img.color = Idle;
                 img.raycastTarget = false;
+                img.sprite = UiKit.Rounded;
+                img.type = Image.Type.Sliced;
+                // Contour clair : le bouton reste visible sur une route claire.
+                var outline = UiKit.NewImage(rect, "Contour", OutlineColor, UiKit.Frame);
+                UiKit.Fill(outline.rectTransform);
+
+                // Pictogramme dessiné par le code ; les pédales et le klaxon gardent un petit libellé dessous.
+                var mask = Pictograms.For(zone.control, 128);
+                if (mask != null)
+                {
+                    var icon = UiKit.NewImage(rect, "Pictogramme", Color.white,
+                        UiKit.Cached("picto-" + zone.control, () => UiKit.ToSprite("Picto" + zone.control, mask, 128, 0f)));
+                    icon.preserveAspect = true;
+                    _icons[zone.control] = icon;
+                }
 
                 var label = NewText(rect, font, zone.label, TextAnchor.MiddleCenter);
                 var lr = (RectTransform)label.transform;
                 lr.anchorMin = Vector2.zero;
                 lr.anchorMax = Vector2.one;
                 lr.offsetMin = lr.offsetMax = Vector2.zero;
+                // Flèches et pause : le pictogramme suffit.
+                label.enabled = mask == null || zone.label.Length > 2;
                 _buttons.Add((zone, img, rect));
                 if (zone.control == DriveControl.Action) _actionLabel = label;
             }
@@ -173,6 +194,13 @@ namespace TaxiKmer.Driving
             _speed = NewText(_canvas, font, "", TextAnchor.UpperLeft);
             var sr = (RectTransform)_speed.transform;
             sr.anchorMin = sr.anchorMax = sr.pivot = new Vector2(0f, 1f);
+
+            // Voyant de marche arrière : pastille rouge « R » à droite du compteur.
+            _reverseLight = UiKit.NewImage(_canvas, "Marche arrière", new Color(0.85f, 0.12f, 0.1f, 0.95f), UiKit.Rounded);
+            var rl = NewText(_reverseLight.rectTransform, font, "R", TextAnchor.MiddleCenter);
+            rl.fontStyle = FontStyle.Bold;
+            UiKit.Fill(rl.rectTransform);
+            _reverseLight.gameObject.SetActive(false);
         }
 
         private static Text NewText(Transform parent, Font font, string text, TextAnchor anchor)
@@ -209,11 +237,31 @@ namespace TaxiKmer.Driving
                     var big = zone.label.Length > 0 && zone.label.Length <= 2;
                     var px = size.y * (big ? 0.12f : zone.control == DriveControl.Action ? 0.05f : 0.04f);
                     label.fontSize = Mathf.RoundToInt(Mathf.Min(px, r.Height * 0.55f));
+                    if (_icons.TryGetValue(zone.control, out var icon))
+                    {
+                        // Pictogramme au centre, ou dans le haut quand un libellé occupe le bas.
+                        var captioned = label.enabled;
+                        var side = Mathf.Min(r.Width, r.Height * (captioned ? 0.62f : 1f)) * (captioned ? 0.8f : 0.62f);
+                        var ir = icon.rectTransform;
+                        ir.anchorMin = ir.anchorMax = new Vector2(0.5f, captioned ? 1f : 0.5f);
+                        ir.pivot = new Vector2(0.5f, captioned ? 1f : 0.5f);
+                        ir.sizeDelta = new Vector2(side, side);
+                        ir.anchoredPosition = new Vector2(0f, captioned ? -r.Height * 0.06f : 0f);
+                        if (captioned)
+                        {
+                            label.fontSize = Mathf.RoundToInt(Mathf.Min(size.y * 0.032f, r.Height * 0.16f));
+                            label.alignment = TextAnchor.LowerCenter;
+                            var lr = label.rectTransform;
+                            lr.offsetMin = new Vector2(0f, r.Height * 0.06f);
+                        }
+                    }
                 }
                 var sr = (RectTransform)_speed.transform;
                 sr.anchoredPosition = new Vector2(size.y * 0.04f, -size.y * 0.04f);
-                sr.sizeDelta = new Vector2(size.y * 0.4f, size.y * 0.12f);
+                sr.sizeDelta = new Vector2(size.y * 0.3f, size.y * 0.12f);
                 _speed.fontSize = Mathf.RoundToInt(size.y * 0.07f);
+                UiKit.PlaceTopLeft(_reverseLight.rectTransform, size.y * 0.34f, size.y * 0.045f, size.y * 0.075f, size.y * 0.075f);
+                _reverseLight.GetComponentInChildren<Text>().fontSize = Mathf.RoundToInt(size.y * 0.055f);
             }
 
             foreach (var (zone, image, rect) in _buttons)
@@ -243,8 +291,10 @@ namespace TaxiKmer.Driving
             _speed.enabled = !Locked;
             if (taxi != null)
             {
-                var gear = taxi.Command.Gear == Gear.Reverse ? "  R" : "";
-                _speed.text = $"{Mathf.RoundToInt(taxi.SpeedKmh)} km/h{gear}";
+                _speed.text = $"{Mathf.RoundToInt(taxi.SpeedKmh)} km/h";
+                var reverse = taxi.Command.Gear == Gear.Reverse && !Locked;
+                _reverseLight.gameObject.SetActive(reverse);
+                if (reverse) _reverseLight.color = new Color(0.85f, 0.12f, 0.1f, 0.7f + 0.3f * UiKit.Pulse(8f));
             }
         }
     }
