@@ -11,14 +11,28 @@ namespace TaxiKmer.Core.Ux
     {
         /// <summary>Rectangle aux coins arrondis de rayon <paramref name="radius"/> pixels (pour un sprite découpé en 9).</summary>
         public static byte[] RoundedRect(int size, float radius)
+            => Draw(size, (x, y) => RoundedBox(x, y, 0f, size, radius));
+
+        /// <summary>Contour d'un rectangle arrondi, d'épaisseur <paramref name="thickness"/> pixels.</summary>
+        public static byte[] RoundedFrame(int size, float radius, float thickness)
         {
             return Draw(size, (x, y) =>
-            {
-                var r = Math.Min(radius, size / 2f);
-                var dx = Math.Max(Math.Max(r - x, x - (size - r)), 0f);
-                var dy = Math.Max(Math.Max(r - y, y - (size - r)), 0f);
-                return r - (float)Math.Sqrt(dx * dx + dy * dy);
-            });
+                Math.Min(RoundedBox(x, y, 0f, size, radius), -RoundedBox(x, y, thickness, size - thickness, Math.Max(0f, radius - thickness))));
+        }
+
+        /// <summary>Distance signée (positive dedans) au carré arrondi [lo, hi]² de rayon r.</summary>
+        private static float RoundedBox(float x, float y, float lo, float hi, float r)
+        {
+            var c = (lo + hi) / 2f;
+            var half = (hi - lo) / 2f;
+            r = Math.Min(r, half);
+            var qx = Math.Abs(x - c) - (half - r);
+            var qy = Math.Abs(y - c) - (half - r);
+            var ox = Math.Max(qx, 0f);
+            var oy = Math.Max(qy, 0f);
+            var outside = (float)Math.Sqrt(ox * ox + oy * oy);
+            var inside = Math.Min(Math.Max(qx, qy), 0f);
+            return r - (outside + inside);
         }
 
         /// <summary>Disque plein qui touche les bords.</summary>

@@ -45,6 +45,7 @@ namespace TaxiKmer.Driving
         private Image _tutorialPanel;
         private Text _tutorialText;
         private RouteStripView _strip;
+        private CabinPlanView _cabinView;
 
         /// <summary>Clé des préférences : le tutoriel de la première journée a été suivi jusqu'au bout.</summary>
         public const string TutorialDoneKey = "tutoriel.fait";
@@ -87,6 +88,7 @@ namespace TaxiKmer.Driving
             _tutorial = new Tutorial(PlayerPrefs.GetInt(TutorialDoneKey, 0) == 0, shift.Ledger.Versement);
             BuildHud();
             _strip = new RouteStripView(controls.Overlay, controls.Font, stops.stops, _cum[_cum.Length - 1]);
+            _cabinView = new CabinPlanView(controls.Overlay, controls.Font, stops.stops);
         }
 
         private static T Load<T>(string resource, T fallback)
@@ -150,6 +152,7 @@ namespace TaxiKmer.Driving
             SyncStopMarkers();
             UpdateHud();
             _strip.Update(Street, state.Along, !Street.DayFinished);
+            _cabinView.Update(Street.Shift.Cabin, !Street.DayFinished);
         }
 
         /// <summary>Tutoriel de la première journée : consigne sous le bouton contextuel, bouton concerné mis en avant.</summary>
@@ -201,12 +204,14 @@ namespace TaxiKmer.Driving
                     break;
                 case HonkResult.NoRoom:
                     Toast($"Pas de place pour ce client ({CorpulenceLabel(client.Client)})");
+                    _cabinView.ShowRefused(client.Client);
                     break;
             }
         }
 
         private void OnAction(TaxiOnRoute state)
         {
+            var candidate = Street.AvailableAction(state).Client;
             var outcome = Street.Perform(state);
             switch (outcome.Kind)
             {
@@ -221,7 +226,11 @@ namespace TaxiKmer.Driving
                         Toast($"{moved}Monté : {ShortName(outcome.Boarded.DestinationStopId)}, {Money(outcome.Boarded.ProposedFare)}");
                     }
                     else if (outcome.Board == BoardResult.DayOver) Toast("La journée est finie");
-                    else Toast("Il ne rentre pas");
+                    else
+                    {
+                        Toast("Il ne rentre pas");
+                        if (candidate != null) _cabinView.ShowRefused(candidate.Client);
+                    }
                     break;
             }
         }
@@ -422,18 +431,11 @@ namespace TaxiKmer.Driving
             var versement = shift.Ledger.Versement;
             sb.Append("Versement ").Append(Thousands(System.Math.Min(shift.Ledger.Revenue, versement)))
               .Append(" / ").Append(Thousands(versement))
-              .Append(shift.Ledger.Revenue >= versement ? " (atteint)" : "").Append('\n');
-            sb.Append("À bord ").Append(shift.Cabin.PassengerCount).Append("/5");
-            var first = true;
-            foreach (var p in shift.Cabin.Passengers)
-            {
-                sb.Append(first ? " : " : ", ").Append(ShortName(p.DestinationStopId));
-                first = false;
-            }
+              .Append(shift.Ledger.Revenue >= versement ? " (atteint)" : "");
             _status.text = sb.ToString();
             _status.fontSize = Mathf.RoundToInt(h * 0.04f);
             _status.rectTransform.anchoredPosition = new Vector2(h * 0.04f, -h * 0.12f);
-            _status.rectTransform.sizeDelta = new Vector2(h * 1.2f, h * 0.3f);
+            _status.rectTransform.sizeDelta = new Vector2(h * 1.2f, h * 0.11f);
             _status.enabled = !Street.DayFinished;
 
             _toast.enabled = Time.time < _toastUntil;
