@@ -62,6 +62,8 @@ namespace TaxiKmer.Driving
         private bool _policeWasActive;
         // Passagers qui parlent (dialogues.json ; créés seulement si enabled, jalon 5 activé le 21/11).
         private TalkView _talk;
+        // La route est dure (road.json ; créée seulement si enabled, jalon 6 activé le 21/11).
+        private RoadView _road;
         private DaySummaryView _summaryView;
         private Tutorial _tutorial;
         private Image _tutorialPanel;
@@ -199,6 +201,10 @@ namespace TaxiKmer.Driving
                 Street.FareDisputes = dialogues.FareRules();
                 Street.DisputeRandom = new System.Random(actualSeed + 59);
             }
+            var road = Load("Data/road", new Core.Road.RoadConfig());
+            if (road.enabled)
+                _road = new RoadView(controls.Overlay, controls.Font, road, _cum[_cum.Length - 1], Save.Data.career.vehicleDamage,
+                    dayCfg.startHour * 60, dayCfg.endHour * 60, Today.Month, actualSeed + 61);
             if (police.enabled)
                 _police = new PoliceView(controls.Overlay, controls.Font, police, Save.Career.DayNumber, _cum[_cum.Length - 1],
                     dayCfg.startHour * 60, dayCfg.endHour * 60, actualSeed + 47);
@@ -244,7 +250,8 @@ namespace TaxiKmer.Driving
 
         private void ApplyTrafficScale()
         {
-            var scale = (_quality != null ? _quality.Current.trafficScale : 1f) * (_calendar != null ? Today.TrafficFactor : 1f);
+            var scale = (_quality != null ? _quality.Current.trafficScale : 1f) * (_calendar != null ? Today.TrafficFactor : 1f)
+                * (_road != null ? _road.Road.Weather.TrafficFactor(Street.Shift.Clock.GameMinutes) : 1f);
             City.Traffic.DensityScale = scale;
             City.Pedestrians.DensityScale = scale;
         }
@@ -323,6 +330,14 @@ namespace TaxiKmer.Driving
                 if (policeDone.Length > 0) Toast(policeDone, 6f);
                 if (_police.Active && !_policeWasActive) _talk?.Say(Core.Talk.TalkTriggers.Control, TalkView.AnyPassenger(Street));
                 _policeWasActive = _police.Active;
+            }
+            if (_road != null)
+            {
+                var roadSays = _road.Update(Street, state, !_menu.Frozen && _summaryView == null);
+                if (roadSays.Length > 0) Toast(roadSays, 6f);
+                if (_road.RainStarted) _talk?.Say(Core.Talk.TalkTriggers.Rain, TalkView.AnyPassenger(Street));
+                if (_road.IncidentStarted) _talk?.Say(Core.Talk.TalkTriggers.Breakdown, TalkView.AnyPassenger(Street));
+                Street.SpawnRateScale = Today.ClientsFactor * _road.Road.Weather.ClientsFactor(shift.Clock.GameMinutes);
             }
             if (_talk != null)
             {
@@ -561,7 +576,7 @@ namespace TaxiKmer.Driving
         private void UpdateFuel(FuelTank tank)
         {
             if (tank == null) return;
-            taxi.SpeedCapKmh = tank.SpeedCapKmh;
+            taxi.SpeedCapKmh = Mathf.Min(tank.SpeedCapKmh, _road != null ? _road.Road.SpeedCapKmh : float.PositiveInfinity);
             if (Street.DayFinished) return;
             if (!tank.IsLow) _lowFuelShown = _emptyFuelShown = false;
             if (tank.IsLow && !_lowFuelShown) { _lowFuelShown = true; Toast(FuelGauge.LowMessage, 5f); }
@@ -644,6 +659,7 @@ namespace TaxiKmer.Driving
             _messages.Clear();
             foreach (var p in _pops) Destroy(p.text.gameObject);
             _pops.Clear();
+            if (_road != null) Save.Data.career.vehicleDamage = _road.Road.Car.Damage; // les dégâts passent d'un jour à l'autre
             var closure = Save.CloseDay();
             _summaryView = gameObject.AddComponent<DaySummaryView>();
             var reputation = Street.Reputation != null && Street.Reputation.Visible

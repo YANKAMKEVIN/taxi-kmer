@@ -37,7 +37,7 @@ Toutes cochées : **police (jalon 4)**, **passagers qui parlent (jalon 5)**, **r
 | Police (jalon 4) | **Activé le 21/11** (2ᵉ série de décisions de Kevin) : ton réaliste, papiers option A, contester / fuir / appeler option B, renvoi à la 2ᵉ fourrière, réputation inchangée ; panneau `PoliceView` (non exécuté) | En valeurs par défaut : sommes, fréquence, positions des postes (`jalon-04.md`) ; contacts du jalon 7 (crochet coupé) |
 | Passagers qui parlent (jalon 5) | **Activé le 21/11** : langues, 43 répliques proposées par Claude (à valider par Kevin), 6 personnages, petits sons « à fournir », négociation (A), refus de payer (C), réponses → réputation et pourboire ; `TalkView` (non exécuté) | Validation des répliques par Kevin ; sons de voix à fournir ; destinations et heures des personnages (`jalon-05.md`) |
 | Radio camerounaise | Mécanisme (stations, changement de station, silence hors du taxi et pendant les dialogues) | Radio (`radio.json`) : noms des stations, musique sous licence ou libre, animateurs, publicités (`radio.md`) ; aucun son fourni |
-| Route dure (jalon 6) | Panne sèche : pousser ou appeler un technicien du quartier (actif, jalon 3) | Imprévus (`road.json`) : question 1 (fréquence ; ≈ 8 crevaisons par semaine avec la journée de 35 min) et 3 (qui paie) ; 2, 4, 5, 6 ouvertes (`jalon-06.md`) |
+| Route dure (jalon 6) | Panne sèche (jalon 3) ; **activé le 21/11** : incidents rares (1 panne par mois, 1 crevaison par semaine), le chauffeur paie, pluie de saison, fuite du joueur (B), poursuite du fautif ; `RoadView` (non exécuté) | Garage sur la portion (question 5) ; accrochages avec le trafic à brancher (`jalon-06.md`) |
 
 ---
 

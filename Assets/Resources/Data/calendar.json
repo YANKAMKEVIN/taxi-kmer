@@ -1,6 +1,9 @@
 {
-    "_note": "Calendrier (jalon 3, valeurs par défaut à régler avec Kevin). firstWeekday : jour de la semaine du jour 1 (indice dans weekdays, 0 = lundi). clients : multiplie la cadence d'arrivée des clients ; traffic : multiplie la densité du trafic et des piétons ; market : jour de marché (annoncé). Jours de marché (mercredi et samedi) et dimanche plus calme (0,6) mais travaillé : validés par Kevin le 2026-11-21.",
+    "_note": "Calendrier (jalon 3, valeurs par défaut à régler avec Kevin). firstWeekday : jour de la semaine du jour 1 (indice dans weekdays, 0 = lundi). clients : multiplie la cadence d'arrivée des clients ; traffic : multiplie la densité du trafic et des piétons ; market : jour de marché (annoncé). firstYear / firstMonth / firstDayOfMonth : date du jour 1 (lundi 2 mars 2026 par défaut, choix de Claude) pour les saisons des pluies de Yaoundé (jalon 6, tranché par Kevin le 21/11). Jours de marché (mercredi et samedi) et dimanche plus calme (0,6) mais travaillé : validés par Kevin le 2026-11-21.",
     "firstWeekday": 0,
+    "firstYear": 2026,
+    "firstMonth": 3,
+    "firstDayOfMonth": 2,
     "marketName": "marché de Messassi",
     "weekdays": [
         { "name": "lundi", "clients": 1, "traffic": 1, "market": false },

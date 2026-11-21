@@ -191,6 +191,21 @@ namespace TaxiKmer.Core.Tests
         }
 
         [Test]
+        public void Version4File_UpgradesTo5_NoImpound_NoDamage()
+        {
+            // Version 5 (décisions de Kevin du 21/11) : fourrières comptées, dégâts du taxi qui passent d'un jour à l'autre.
+            var payload = "{\"version\":4,\"career\":{\"dayNumber\":3,\"impounds\":7,\"vehicleDamage\":-4}}";
+            var storage = new MemoryStorage();
+            storage.Files[SaveStore.MainFile] = Serializer.ToJson(new SaveEnvelope { version = 4, checksum = SaveStore.Checksum(payload), payload = payload });
+            var r = new SaveStore(storage, Serializer).Load();
+            Assert.AreEqual(LoadStatus.Loaded, r.Status);
+            Assert.AreEqual(5, SaveMigrations.CurrentVersion);
+            Assert.AreEqual(0, r.Data.career.impounds, "Avant la version 5 : aucune fourrière comptée.");
+            Assert.AreEqual(0f, r.Data.career.vehicleDamage);
+            Assert.AreEqual(3, r.Data.career.dayNumber);
+        }
+
+        [Test]
         public void Version2File_TankUnknown_StartsWithTheStartingTank()
         {
             // Version 2 : pas de réservoir ; le champ absent ne doit pas devenir « réservoir vide ».

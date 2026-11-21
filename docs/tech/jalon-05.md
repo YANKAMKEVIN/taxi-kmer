@@ -29,7 +29,7 @@ Tests : `Assets/Tests/EditMode/DialogueTests.cs` (9 tests, dont une journée de 
 - **Client qui refuse de payer, option C** : à l'arrivée, un passager refuse selon `refusesToPayChance` (**0,03**) ; il descend ; le joueur le **laisse partir** (course perdue, comptée « partis sans payer ») ou **appelle la police** (**30 min** de jeu perdues ; il paie **6 fois sur 10**, sinon rien).
 - **Effet des réponses du chauffeur** : sur la **réputation** (`replies[].reputation`, -1 à +1 dans les répliques proposées) et le **pourboire** (`replies[].tip`, payé avec la course, perdu s'il ne paie pas ; `DayLedger.Tips`, compris dans la recette, sans compter de course).
 - **Activé** (`enabled: true`). Silence : après **90 s** sans bulle avec un passager à bord, l'un d'eux rompt le silence (`silenceAfterSeconds`). Personnages : **6 passagers sur 10** sont un personnage type (`characterShare`), toujours le même pour un passager ; un passager quelconque ne dit pas les répliques d'un personnage.
-- Tests : `FareDisputeTests` (10 tests : contre-offre, accepter, refuser, sans règles, refus de payer et police, réponses et pourboire, sons et silence, règles depuis les données, personnages) ; `DialogueDayTests` (une journée de 35 min sur les vraies répliques) ; `DataInvariantsTests.Dialogues_Proposed_Readable_CoverKevinsCharactersAndSituations`.
+- Tests : `FareDisputeTests` (9 tests : contre-offre, accepter, refuser, sans règles, refus de payer et police, réponses et pourboire, sons et silence, règles depuis les données, personnages) ; `DialogueDayTests` (une journée de 35 min sur les vraies répliques) ; `DataInvariantsTests.Dialogues_Proposed_Readable_CoverKevinsCharactersAndSituations`.
 
 ## Répliques proposées (à valider par Kevin)
 

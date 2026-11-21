@@ -52,8 +52,8 @@ namespace TaxiKmer.Core.Save
                     if (data.day != null) { data.day.reputationDayStart = -1; data.day.reputation = -1; }
                     break;
                 case 4:
-                    // Version 5 : fourrières comptées (le propriétaire renvoie à la 2ᵉ). Avant : aucune.
-                    if (data.career != null) data.career.impounds = 0;
+                    // Version 5 : fourrières comptées (le propriétaire renvoie à la 2ᵉ) et dégâts du taxi (jalon 6). Avant : aucun.
+                    if (data.career != null) { data.career.impounds = 0; data.career.vehicleDamage = 0f; }
                     break;
             }
         }
@@ -71,6 +71,8 @@ namespace TaxiKmer.Core.Save
             if (data.day.elapsedRealSeconds < 0f) data.day.elapsedRealSeconds = 0f;
             if (data.day.taxiDirection != -1) data.day.taxiDirection = 1;
             if (data.career.impounds < 0) data.career.impounds = 0;
+            if (!(data.career.vehicleDamage >= 0f)) data.career.vehicleDamage = 0f;
+            if (data.career.vehicleDamage > 100f) data.career.vehicleDamage = 100f;
         }
     }
 }

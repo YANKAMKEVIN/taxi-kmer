@@ -633,6 +633,42 @@ namespace TaxiKmer.Core.Rides
             return passengers.Count;
         }
 
+        public const string HitAndRunFoundLabel = "Accident avec fuite : retrouvé par la police";
+        public const string AtFaultLabel = "Dégâts de l'autre véhicule";
+
+        /// <summary>
+        /// Accrochage (jalon 6) où le joueur est fautif : il paie les dégâts de l'autre, ou fuit (option B, tranché par Kevin
+        /// le 21/11 : réputation perdue, et s'il est retrouvé par la police, il paie plus et perd du temps).
+        /// </summary>
+        public void ApplyAtFaultCollision(Road.CollisionOutcome collision, bool fled, Road.PlayerFlightOutcome flight)
+        {
+            if (DayFinished || !collision.PlayerAtFault) return;
+            if (!fled || !flight.Fled)
+            {
+                _shift.Ledger.AddExpense(AtFaultLabel, Math.Max(0, collision.PaidToOther));
+                _shift.Clock.AdvanceGameMinutes(Math.Max(0, collision.LostMinutes));
+            }
+            else
+            {
+                Reputation?.Add(flight.ReputationDelta);
+                if (flight.Found)
+                {
+                    _shift.Ledger.AddExpense(HitAndRunFoundLabel, Math.Max(0, flight.Fine));
+                    _shift.Clock.AdvanceGameMinutes(flight.LostMinutes);
+                }
+            }
+            if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
+        }
+
+        /// <summary>Délit de fuite subi : résultat de la poursuite (temps perdu ; rattrapé, il paie les réparations).</summary>
+        public void ApplyChase(Road.ChaseOutcome chase)
+        {
+            if (DayFinished || !chase.Chased) return;
+            _shift.Clock.AdvanceGameMinutes(chase.LostMinutes);
+            if (chase.Caught && chase.Received > 0) _shift.Ledger.AddCompensation(chase.Received);
+            if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
+        }
+
         public Stop FindStop(string id) => _factory.FindStop(id);
 
         private int CountAt(Stop stop)

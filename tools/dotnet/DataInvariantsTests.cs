@@ -383,11 +383,18 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
-        public void Road_MatchesDefaults_Off_Sane()
+        public void Road_MatchesDefaults_On_KevinDecisions()
         {
             var r = Load<TaxiKmer.Core.Road.RoadConfig>("road.json");
             Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Road.RoadConfig(), Opts), JsonSerializer.Serialize(r, Opts));
-            Assert.IsFalse(r.enabled, "Coupé tant que Kevin n'a pas fixé fréquence et qui paie (jalon-06.md).");
+            Assert.IsTrue(r.enabled, "Jalon 6 activé le 21/11 (jalon-06.md).");
+            Assert.AreEqual(1f, r.driverShareOfRepairs, "Le chauffeur paie les réparations (Kevin, 21/11).");
+            Assert.AreEqual(12, r.rainChanceByMonth.Length, "Pluie selon les mois (saisons de Yaoundé).");
+            foreach (var x in r.rainChanceByMonth) Assert.That(x, Is.InRange(0f, 1f));
+            Assert.IsTrue(r.playerCanFlee, "Fuite du joueur : option B.");
+            Assert.Less(r.playerFleeReputation, 0, "… avec perte de réputation.");
+            Assert.That(r.playerFleeFoundChance, Is.InRange(0.01f, 1f), "… et risque d'être retrouvé.");
+            Assert.That(r.chaseCatchChance, Is.InRange(0.01f, 1f), "Délit de fuite subi : on peut poursuivre.");
             foreach (var x in new[] { r.potholePunctureChance, r.potholeHitChance, r.rainChancePerDay, r.driverShareOfRepairs, r.rainGrip })
                 Assert.That(x, Is.InRange(0f, 1f));
             Assert.LessOrEqual(r.rainMinMinutes, r.rainMaxMinutes);

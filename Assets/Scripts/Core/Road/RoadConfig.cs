@@ -17,13 +17,14 @@ namespace TaxiKmer.Core.Road
     /// <summary>
     /// Imprévus de la route (jalon 6, feuille de route ; données : Assets/Resources/Data/road.json) : état du véhicule,
     /// accrochages (le fautif s'arrête, négocie ou fuit), pannes, crevaisons, nids-de-poule, pluie, garage. Les fréquences
-    /// et les montants sont provisoires (question 1 du jalon 6 : fréquence voulue ; question 3 : qui paie) ;
-    /// <see cref="enabled"/> reste à false tant que Kevin ne les a pas fixés.
+    /// et les montants sont des valeurs par défaut. Décisions de Kevin du 21/11 : incidents rares et marquants (≈ 1 panne
+    /// par mois de jeu, 1 crevaison par semaine), le chauffeur paie les réparations, pluie selon les saisons de Yaoundé,
+    /// fuite du joueur possible (option B), délit de fuite subi : on peut poursuivre le fautif. Activé le 21/11.
     /// </summary>
     [Serializable]
     public class RoadConfig
     {
-        public bool enabled;
+        public bool enabled = true;
 
         // État du véhicule (0 = neuf, 100 = épave)
         /// <summary>Dégâts par km/h au choc lors d'un accrochage.</summary>
@@ -38,9 +39,12 @@ namespace TaxiKmer.Core.Road
         /// <summary>Sans danger en dessous de … km/h.</summary>
         public float potholeSafeKmh = 20f;
         /// <summary>Dégâts par km/h au-dessus de la vitesse sans danger.</summary>
-        public float potholeDamagePerKmh = 0.05f;
-        /// <summary>Chance de crever par nid-de-poule pris au-dessus de la vitesse sans danger.</summary>
-        public float potholePunctureChance = 0.03f;
+        public float potholeDamagePerKmh = 0.005f;
+        /// <summary>
+        /// Chance de crever par nid-de-poule pris au-dessus de la vitesse sans danger. Recalculée pour ≈ 1 crevaison par
+        /// semaine de jeu (Kevin, 21/11) avec la journée de 35 min : ≈ 23 km et ≈ 35 nids-de-poule pris par jour à 40 km/h.
+        /// </summary>
+        public float potholePunctureChance = 0.0044f;
         /// <summary>Un nid-de-poule couvre … m de route (largeur de passage).</summary>
         public float potholeLengthMeters = 2f;
         /// <summary>Part de la chaussée occupée : chance de passer dessus en roulant sur sa voie.</summary>
@@ -51,13 +55,22 @@ namespace TaxiKmer.Core.Road
         public float flatMaxKmh = 15f;
         /// <summary>Changer la roue soi-même : minutes de jeu.</summary>
         public int spareWheelMinutes = 20;
-        /// <summary>Chance de panne par km roulé, plus … par point de dégâts.</summary>
-        public float breakdownPerKm = 0.03f;
-        public float breakdownPerKmPerDamage = 0.0003f;
+        /// <summary>
+        /// Chance de panne par km roulé, plus … par point de dégâts. Recalculée pour ≈ 1 panne par mois de jeu (Kevin,
+        /// 21/11) avec la journée de 35 min (≈ 23 km par jour) : 1 - (1 - 1/30)^(1/23) ≈ 0,0014 par km.
+        /// </summary>
+        public float breakdownPerKm = 0.0013f;
+        public float breakdownPerKmPerDamage = 0.00001f;
 
         // Pluie
-        /// <summary>Chance qu'il pleuve dans la journée.</summary>
+        /// <summary>Chance qu'il pleuve dans la journée quand le mois n'est pas connu.</summary>
         public float rainChancePerDay = 0.3f;
+        /// <summary>
+        /// Chance qu'il pleuve dans la journée selon le mois (janvier à décembre) : saisons des pluies de Yaoundé, mars à
+        /// juin et septembre à novembre (tranché par Kevin le 21/11) ; petite saison sèche (juillet-août) et grande saison
+        /// sèche (décembre-février) plus rares. Valeurs par défaut de Claude.
+        /// </summary>
+        public float[] rainChanceByMonth = { 0.05f, 0.1f, 0.4f, 0.5f, 0.5f, 0.4f, 0.15f, 0.2f, 0.5f, 0.6f, 0.4f, 0.05f };
         /// <summary>Durée d'une averse (minutes de jeu), entre … et ….</summary>
         public int rainMinMinutes = 60;
         public int rainMaxMinutes = 180;
@@ -78,6 +91,24 @@ namespace TaxiKmer.Core.Road
         public int otherDamagePerKmh = 1000;
         public int atFaultLostMinutes = 30;
 
+        /// <summary>
+        /// Fuite du joueur après un accrochage où il est fautif (option B, tranché par Kevin le 21/11) : il ne paie rien sur
+        /// le moment, perd de la réputation, et la police le retrouve avec cette chance : il paie alors les dégâts de l'autre
+        /// multipliés par … et perd … minutes de jeu (convocation).
+        /// </summary>
+        public bool playerCanFlee = true;
+        public int playerFleeReputation = -10;
+        public float playerFleeFoundChance = 0.5f;
+        public float playerFleeFoundFactor = 1.5f;
+        public int playerFleeFoundMinutes = 90;
+
+        /// <summary>
+        /// Délit de fuite subi (tranché par Kevin le 21/11 : on peut poursuivre le fautif) : la poursuite prend … minutes
+        /// de jeu ; avec cette chance on le rattrape et il paie les réparations.
+        /// </summary>
+        public int chaseMinutes = 20;
+        public float chaseCatchChance = 0.4f;
+
         // Garage / mécanicien de quartier
         /// <summary>Réparation : … FCFA par point de dégâts.</summary>
         public int repairCostPerDamage = 500;
@@ -88,9 +119,11 @@ namespace TaxiKmer.Core.Road
         public int breakdownRepairCost = 10000;
         public int breakdownRepairMinutes = 120;
         /// <summary>
-        /// Qui paie les réparations tant que le taxi est au propriétaire (question 3 du jalon 6) : part payée par le
-        /// chauffeur (1 = tout, 0 = le propriétaire paie). Provisoire.
+        /// Qui paie les réparations tant que le taxi est au propriétaire : **le chauffeur** (tranché par Kevin le 21/11) ;
+        /// part payée par le chauffeur (1 = tout).
         /// </summary>
         public float driverShareOfRepairs = 1f;
+        /// <summary>Mécanicien de quartier appelé sur place (panne) : prix du déplacement (FCFA), en plus de la réparation.</summary>
+        public int mechanicCallFee = 2000;
     }
 }
