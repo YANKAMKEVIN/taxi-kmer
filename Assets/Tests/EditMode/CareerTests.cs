@@ -10,7 +10,7 @@ namespace TaxiKmer.Core.Tests
         /// <summary>Bilan d'une journée : recette, distance (carburant), frais imprévus.</summary>
         private static DaySummary Day(int revenue, float meters = 0f, int expenses = 0, bool seized = false)
         {
-            var ledger = new DayLedger(new DayConfig());
+            var ledger = new DayLedger(new DayConfig { versement = 10000 });
             if (revenue > 0) ledger.AddFare(revenue);
             ledger.AddDistance(meters);
             ledger.AddExpense("Soins", expenses);

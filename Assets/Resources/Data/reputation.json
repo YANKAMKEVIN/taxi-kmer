@@ -1,5 +1,5 @@
 {
-    "_note": "Réputation du chauffeur (jalon 3). visible : le joueur la voit (HUD et bilan) — décision de Kevin du 2026-11-21 (false la cacherait). Points gagnés et perdus : valeurs par défaut à régler avec Kevin. roughSpeedKmh / roughSecondsPerPoint : avec des passagers, au-delà de cette vitesse on perd un point toutes les N secondes réelles. Ses effets sur le jeu ne sont pas encore décidés (question pour Kevin).",
+    "_note": "Réputation du chauffeur (jalon 3). visible : le joueur la voit (HUD et bilan) — décision de Kevin du 2026-11-21 (false la cacherait). Points gagnés et perdus : valeurs par défaut à régler avec Kevin. roughSpeedKmh / roughSecondsPerPoint : avec des passagers, au-delà de cette vitesse on perd un point toutes les N secondes réelles. effects : effets sur le jeu tranchés par Kevin le 21/11 (clients plus ou moins patients, prix acceptés, attitude du propriétaire, contrôles de police) ; facteur = 1 + (score - neutral) × parPoint, borné par min / max ; ownerLenientFrom : le propriétaire tolère un versement manqué de plus à partir de ce score, ownerStrictBelow : un de moins en dessous. Coefficients par défaut de Claude, à régler avec Kevin.",
     "visible": true,
     "start": 50,
     "min": 0,
@@ -17,5 +17,20 @@
         { "min": 40, "label": "correcte" },
         { "min": 60, "label": "bonne" },
         { "min": 80, "label": "excellente" }
-    ]
+    ],
+    "effects": {
+        "enabled": true,
+        "neutral": 50,
+        "patiencePerPoint": 0.01,
+        "patienceMin": 0.5,
+        "patienceMax": 1.5,
+        "hagglePerPoint": -0.012,
+        "haggleMin": 0.4,
+        "haggleMax": 1.6,
+        "ownerLenientFrom": 80,
+        "ownerStrictBelow": 20,
+        "policeStopPerPoint": -0.006,
+        "policeStopMin": 0.7,
+        "policeStopMax": 1.3
+    }
 }

@@ -92,11 +92,22 @@ namespace TaxiKmer.Core.Career
             return n;
         }
 
+        /// <summary>Versements manqués avant le renvoi, avec l'attitude du propriétaire selon la réputation du bilan.</summary>
+        public int MissesBeforeFired(DaySummary summary, ReputationEffectsConfig effects)
+        {
+            var tolerance = summary != null && summary.Reputation >= 0 ? ReputationEffects.OwnerTolerance(effects, summary.Reputation) : 0;
+            return Math.Max(1, _owner.missesBeforeFired + tolerance);
+        }
+
         /// <summary>
         /// Clôt la journée : recettes moins carburant et frais imprévus, versement payé (complété par l'épargne si
         /// permis), reste ajouté à l'épargne ; manque → menace, ou renvoi au bout de trop de manques. Puis jour suivant.
         /// </summary>
-        public DayClosure CloseDay(DaySummary summary)
+        /// <param name="effects">
+        /// Effets de la réputation (décision de Kevin du 2026-11-21 : attitude du propriétaire) : avec le score du bilan,
+        /// le propriétaire tolère un manque de plus (bonne réputation) ou de moins (mauvaise). Null : aucun effet.
+        /// </param>
+        public DayClosure CloseDay(DaySummary summary, ReputationEffectsConfig effects = null)
         {
             if (summary == null) throw new ArgumentNullException(nameof(summary));
             if (Fired) throw new InvalidOperationException("Le chauffeur a été renvoyé : plus de journée.");
@@ -119,7 +130,7 @@ namespace TaxiKmer.Core.Career
             if (missing > 0)
             {
                 _missedDays.Add(DayNumber);
-                mood = MissesInWindow(DayNumber) >= _owner.missesBeforeFired ? OwnerMood.Fired : OwnerMood.Threatens;
+                mood = MissesInWindow(DayNumber) >= MissesBeforeFired(summary, effects) ? OwnerMood.Fired : OwnerMood.Threatens;
             }
             // Arrêté et taxi saisi par la gendarmerie : le propriétaire le renvoie aussi (son taxi est à la fourrière).
             if (summary.VehicleSeized) mood = OwnerMood.Fired;
@@ -134,7 +145,7 @@ namespace TaxiKmer.Core.Career
                 TakenFromSavings = fromSavings,
                 Mood = mood,
                 RecentMisses = MissesInWindow(DayNumber),
-                MissesBeforeFired = _owner.missesBeforeFired,
+                MissesBeforeFired = MissesBeforeFired(summary, effects),
             };
             if (mood == OwnerMood.Fired) Fired = true;
             DayNumber++;

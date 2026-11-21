@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using NUnit.Framework;
+using TaxiKmer.Core.Career;
 using TaxiKmer.Core.Day;
 using TaxiKmer.Core.Driving;
 using TaxiKmer.Core.Fuel;
@@ -208,6 +209,50 @@ namespace TaxiKmer.Core.Tests
             Assert.IsTrue(street.DayFinished);
             Assert.AreEqual(6200, street.Summary.ExpensesTotal);
             Assert.IsFalse(street.DryTankChoice(At(300f)), "Journée finie : plus de choix.");
+        }
+
+        /// <summary>Décision de Kevin du 21/11 : en panne sèche, les passagers descendent sans payer.</summary>
+        [Test]
+        public void DryTank_PassengersLeaveWithoutPaying()
+        {
+            var street = NewStreet(Fuel(), 5f);
+            street.Reputation = new DriverReputation(new ReputationConfig());
+            var c = street.Waiting.First(x => x.Pickup.id == "a" && x.Direction == 1);
+            var near = new TaxiOnRoute { Along = c.Along - 30f, Direction = 1, Lateral = 2f };
+            street.Update(0.1f, near);
+            street.Honk(near, out _);
+            Assert.AreEqual(BoardResult.Boarded, street.Perform(new TaxiOnRoute { Along = c.Along, Direction = 1, Lateral = 2f }).Board);
+            var fare = c.Client.ProposedFare;
+            street.Update(0.1f, At(100f));
+            Assert.AreEqual(0, street.DryTankLeft, "Avec du carburant, personne ne descend.");
+
+            street.Shift.Tank.Consume(1e6f);
+            street.Update(0.1f, At(300f));
+            Assert.AreEqual(1, street.DryTankLeft);
+            Assert.AreEqual(0, street.Shift.Cabin.PassengerCount, "Ils descendent…");
+            Assert.AreEqual(0, street.Shift.Ledger.Revenue, "… sans payer.");
+            Assert.AreEqual(fare, street.LeftUnpaidFares);
+            Assert.AreEqual(50 - 2, street.Reputation.Score, "Comptés comme passagers non déposés.");
+            street.Update(0.1f, At(300f));
+            Assert.AreEqual(0, street.DryTankLeft, "Le message ne revient pas.");
+            StringAssert.Contains("sans payer", FuelGauge.PassengersLeftMessage(1));
+            StringAssert.Contains("3 passagers", FuelGauge.PassengersLeftMessage(3));
+        }
+
+        [Test]
+        public void DryTank_PassengersStay_WhenRuleOff()
+        {
+            var fuel = Fuel();
+            fuel.passengersLeaveWhenDry = false;
+            var street = NewStreet(fuel, 5f);
+            var c = street.Waiting.First(x => x.Pickup.id == "a" && x.Direction == 1);
+            var near = new TaxiOnRoute { Along = c.Along - 30f, Direction = 1, Lateral = 2f };
+            street.Update(0.1f, near);
+            street.Honk(near, out _);
+            street.Perform(new TaxiOnRoute { Along = c.Along, Direction = 1, Lateral = 2f });
+            street.Shift.Tank.Consume(1e6f);
+            street.Update(0.1f, At(300f));
+            Assert.AreEqual(1, street.Shift.Cabin.PassengerCount);
         }
 
         [Test]

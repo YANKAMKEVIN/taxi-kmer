@@ -151,5 +151,77 @@ namespace TaxiKmer.Core.Tests
             Assert.AreEqual(20f, r.Data.career.fuelLitres, "Le réservoir de la version 3 est gardé.");
             Assert.AreEqual(50, SaveSnapshot.LoadReputation(r.Data, new ReputationConfig()).Score);
         }
+
+        // Effets de la réputation (décision de Kevin du 21/11) : patience, prix acceptés, propriétaire, police.
+
+        [TestCase(50, 1f, 1f, 1f, 0)]
+        [TestCase(100, 1.5f, 0.4f, 0.7f, 1)]
+        [TestCase(0, 0.5f, 1.6f, 1.3f, -1)]
+        [TestCase(70, 1.2f, 0.76f, 0.88f, 0)]
+        public void Effects_FollowTheScore_Bounded(int score, float patience, float haggle, float police, int owner)
+        {
+            var e = new ReputationEffectsConfig();
+            Assert.AreEqual(patience, ReputationEffects.Patience(e, score), 1e-4);
+            Assert.AreEqual(haggle, ReputationEffects.Haggle(e, score), 1e-4);
+            Assert.AreEqual(police, ReputationEffects.PoliceStop(e, score), 1e-4);
+            Assert.AreEqual(owner, ReputationEffects.OwnerTolerance(e, score));
+            var r = new DriverReputation(new ReputationConfig(), score);
+            Assert.AreEqual(patience, r.PatienceFactor, 1e-4);
+            Assert.AreEqual(owner, r.OwnerTolerance);
+        }
+
+        [Test]
+        public void Effects_Off_ChangeNothing()
+        {
+            var e = new ReputationEffectsConfig { enabled = false };
+            Assert.AreEqual(1f, ReputationEffects.Patience(e, 0));
+            Assert.AreEqual(1f, ReputationEffects.Haggle(e, 0));
+            Assert.AreEqual(1f, ReputationEffects.PoliceStop(e, 100));
+            Assert.AreEqual(0, ReputationEffects.OwnerTolerance(e, 100));
+            Assert.AreEqual(1f, ReputationEffects.Patience(null, 0));
+        }
+
+        [Test]
+        public void GoodReputation_ClientsWaitLonger_BadOnesGiveUpSooner()
+        {
+            foreach (var (score, gaveUp) in new[] { (100, false), (0, true) })
+            {
+                var street = NewStreet(out var cfg);
+                street.Reputation.Restore(score, score);
+                var c = street.Waiting.First(x => x.Pickup.id == "b" && x.Direction == 1);
+                var at = new TaxiOnRoute { Along = c.Along - 30f, Direction = 1, Lateral = 2f };
+                street.Update(0.1f, at);
+                Assert.AreEqual(HonkResult.Accepted, street.Honk(at, out _));
+                var lost = false;
+                for (var t = 0f; t < cfg.acceptedPatienceSeconds; t += 0.5f)
+                {
+                    street.Update(0.5f, at);
+                    lost |= street.Lost.Any(l => l.Client == c && l.Reason == ClientLostReason.GaveUp);
+                }
+                Assert.AreEqual(gaveUp, lost, $"score {score}");
+                Assert.AreEqual(cfg.acceptedPatienceSeconds * (score == 100 ? 1.5f : 0.5f), street.AcceptedPatienceSeconds, 1e-3);
+            }
+        }
+
+        [Test]
+        public void OwnerAttitude_DependsOnReputation()
+        {
+            var effects = new ReputationEffectsConfig();
+            var owner = new OwnerConfig(); // 3 manques sur 7 jours
+            foreach (var (score, firedOn) in new[] { (50, 3), (90, 4), (10, 2) })
+            {
+                var career = new DriverCareer(new OwnerConfig { payShortfallFromSavings = false });
+                var day = 0;
+                while (!career.Fired && day < 10)
+                {
+                    day++;
+                    var ledger = new DayLedger(new DayConfig { versement = 10000 });
+                    var s = DaySummary.From(ledger, 0, 0, reputation: score, reputationChange: 0);
+                    career.CloseDay(s, effects);
+                }
+                Assert.AreEqual(firedOn, day, $"réputation {score}");
+            }
+            Assert.AreEqual(owner.missesBeforeFired, new DriverCareer(owner).MissesBeforeFired(null, effects));
+        }
     }
 }

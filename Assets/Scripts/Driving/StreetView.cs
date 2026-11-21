@@ -299,6 +299,7 @@ namespace TaxiKmer.Driving
                 Haptics.Play(HapticEvent.Honk);
                 OnHonk(state);
             }
+            if (Street.DryTankLeft > 0) Toast(FuelGauge.PassengersLeftMessage(Street.DryTankLeft), 6f);
             UpdateDryTank(state);
             // La radio se tait en pause et au bilan ; pas encore de bulles de dialogue dans Unity (jalon 5 coupé).
             _radio?.Update(dt, !Street.DayFinished && !_menu.Frozen && _summaryView == null, false);

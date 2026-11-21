@@ -59,7 +59,11 @@ namespace TaxiKmer.Core.Police
         /// Le taxi est passé de <paramref name="fromAlong"/> à <paramref name="toAlong"/> à cette minute : rend le contrôle
         /// en place qui l'arrête (tiré selon la chance d'arrêt, pas deux fois au même endroit trop vite), sinon null.
         /// </summary>
-        public ControlPost Update(float fromAlong, float toAlong, int minute)
+        /// <param name="stopFactor">
+        /// Multiplie la chance d'arrêt : effet de la réputation (décision de Kevin du 21/11,
+        /// <see cref="TaxiKmer.Core.Career.ReputationEffects.PoliceStop"/>) ; 1 par défaut.
+        /// </param>
+        public ControlPost Update(float fromAlong, float toAlong, int minute, float stopFactor = 1f)
         {
             if (!_config.enabled) return null;
             var lo = Math.Min(fromAlong, toAlong);
@@ -69,7 +73,7 @@ namespace TaxiKmer.Core.Police
             {
                 if (!p.ActiveAt(minute) || p.Along < lo || p.Along >= hi) continue;
                 if (p.LastStopMinute != int.MinValue && minute - p.LastStopMinute < _config.checkpointCooldownMinutes) continue;
-                var chance = p.Flying ? _config.flyingStopChance : _config.checkpointStopChance;
+                var chance = (p.Flying ? _config.flyingStopChance : _config.checkpointStopChance) * Math.Max(0f, stopFactor);
                 if (_random.NextDouble() >= chance) continue;
                 p.LastStopMinute = minute;
                 return p;

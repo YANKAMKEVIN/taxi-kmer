@@ -185,6 +185,22 @@ namespace TaxiKmer.Core.Rides
         public Career.DriverReputation Reputation { get; set; }
 
         /// <summary>
+        /// Patience d'un client accepté (s réelles) : celle des données, multipliée par l'effet de la réputation
+        /// (décision de Kevin du 2026-11-21 : clients plus ou moins patients) et par <see cref="PatienceScale"/>.
+        /// </summary>
+        public float AcceptedPatienceSeconds =>
+            _config.acceptedPatienceSeconds * (Reputation?.PatienceFactor ?? 1f) * Math.Max(0f, PatienceScale);
+
+        /// <summary>Autre facteur de patience (pluie du jalon 6) ; 1 par défaut.</summary>
+        public float PatienceScale { get; set; } = 1f;
+
+        /// <summary>
+        /// Passagers descendus sans payer à cause d'une panne sèche pendant le dernier <see cref="Update"/> (décision de
+        /// Kevin du 2026-11-21), pour le message à l'écran ; 0 sinon.
+        /// </summary>
+        public int DryTankLeft { get; private set; }
+
+        /// <summary>
         /// La journée est terminée et le bilan est arrêté : à l'heure de fin dès que le taxi est vide,
         /// ou quand le joueur choisit de terminer avec des passagers à bord (<see cref="StreetActionKind.EndDay"/>).
         /// </summary>
@@ -225,6 +241,10 @@ namespace TaxiKmer.Core.Rides
                 }
             }
 
+            DryTankLeft = 0;
+            var tank = _shift.Tank;
+            if (tank != null && tank.IsEmpty && tank.Config.passengersLeaveWhenDry && _shift.Cabin.PassengerCount > 0)
+                DryTankLeft = LeaveUnpaid(); // panne sèche (décision de Kevin du 2026-11-21) : ils descendent sans payer
             Reputation?.Drive(dt, taxi.SpeedKmh, _shift.Cabin.PassengerCount);
             var onRoute = Math.Abs(taxi.Lateral) <= _config.maxLateralMeters;
             foreach (var c in _waiting)
@@ -235,7 +255,7 @@ namespace TaxiKmer.Core.Rides
                 if (c.State == RoadsideState.Accepted)
                 {
                     c.AcceptedSeconds += dt;
-                    if (c.AcceptedSeconds > _config.acceptedPatienceSeconds)
+                    if (c.AcceptedSeconds > AcceptedPatienceSeconds)
                     {
                         c.State = RoadsideState.Waiting;
                         _lost.Add(new ClientLost { Client = c, Reason = ClientLostReason.GaveUp, WasAccepted = true });
@@ -499,6 +519,20 @@ namespace TaxiKmer.Core.Rides
             }
             if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
             return true;
+        }
+
+        /// <summary>Tous les passagers descendent sans payer (comptés au bilan, réputation) ; rend leur nombre.</summary>
+        private int LeaveUnpaid()
+        {
+            var passengers = new List<Client>(_shift.Cabin.Passengers);
+            Reputation?.PassengersNotDelivered(passengers.Count);
+            foreach (var p in passengers)
+            {
+                _leftUnpaid++;
+                _leftUnpaidFares += p.ProposedFare;
+                _shift.Cabin.Remove(p);
+            }
+            return passengers.Count;
         }
 
         public Stop FindStop(string id) => _factory.FindStop(id);
