@@ -91,5 +91,47 @@ namespace TaxiKmer.Core.Tests
             WorldGeometry.SampleAlong(line, cum, 999f, out x, out z, out _, out _);
             Assert.AreEqual(100f, x, 1e-3);
         }
+
+        [Test]
+        public void WallStrip_IsClosedBox_FacesPointOutward()
+        {
+            var mesh = new MeshData();
+            WorldGeometry.AddWallStrip(mesh, new float[] { 0, 0, 0, 10, 0, 20 }, 0.5f, 0.8f);
+            // 2 segments × (2 flancs + dessus) + 2 bouts = 8 quadrilatères = 16 triangles.
+            Assert.AreEqual(16, mesh.TriangleCount);
+            AssertOutward(mesh, 0f, 10f, 0.4f);
+            foreach (var v in mesh.Vertices)
+            {
+                Assert.That(v.X, Is.InRange(-0.25f - 1e-4f, 0.25f + 1e-4f));
+                Assert.That(v.Y, Is.InRange(0f, 0.8f));
+            }
+        }
+
+        [Test]
+        public void Box_IsOrientedAndFacesOutward()
+        {
+            var mesh = new MeshData();
+            WorldGeometry.AddBox(mesh, 5f, 1f, 5f, 0.2f, 2f, 4f, 1f, 0f); // longueur selon x
+            Assert.AreEqual(10, mesh.TriangleCount);
+            float minX = float.MaxValue, maxX = float.MinValue, minZ = float.MaxValue, maxZ = float.MinValue;
+            foreach (var v in mesh.Vertices) { minX = System.Math.Min(minX, v.X); maxX = System.Math.Max(maxX, v.X); minZ = System.Math.Min(minZ, v.Z); maxZ = System.Math.Max(maxZ, v.Z); }
+            Assert.AreEqual(4f, maxX - minX, 1e-4f);
+            Assert.AreEqual(0.2f, maxZ - minZ, 1e-4f);
+            AssertOutward(mesh, 5f, 5f, 1f);
+        }
+
+        /// <summary>Chaque triangle (sauf ceux du sol) tourne sa face vers l'extérieur du centre donné.</summary>
+        private static void AssertOutward(MeshData mesh, float cx, float cz, float cy)
+        {
+            for (var t = 0; t < mesh.TriangleCount; t++)
+            {
+                var a = mesh.Vertices[mesh.Triangles[t * 3]];
+                var b = mesh.Vertices[mesh.Triangles[t * 3 + 1]];
+                var c = mesh.Vertices[mesh.Triangles[t * 3 + 2]];
+                var n = Vec3.Cross(b - a, c - a);
+                var mid = new Vec3((a.X + b.X + c.X) / 3f - cx, (a.Y + b.Y + c.Y) / 3f - cy, (a.Z + b.Z + c.Z) / 3f - cz);
+                Assert.Greater(Vec3.Dot(n, mid), 0f, $"triangle {t}");
+            }
+        }
     }
 }

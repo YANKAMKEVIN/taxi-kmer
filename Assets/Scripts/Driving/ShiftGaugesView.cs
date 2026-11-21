@@ -7,7 +7,8 @@ using UnityEngine.UI;
 namespace TaxiKmer.Driving
 {
     /// <summary>
-    /// Coin haut gauche du HUD, sous le compteur de vitesse : l'heure avec une fine barre de journée qui se vide, puis la
+    /// Coin haut gauche du HUD, sous le compteur de vitesse : l'heure avec une fine barre de journée qui se vide (et le
+    /// numéro du jour à sa droite, jalon 3), puis la
     /// jauge de versement qui se remplit jusqu'au montant dû (recette écrite dedans) et passe au vert une fois couvert.
     /// Valeurs et textes calculés par <see cref="HudGauges"/> (Core).
     /// </summary>
@@ -15,6 +16,7 @@ namespace TaxiKmer.Driving
     {
         private readonly RectTransform _root;
         private readonly Text _clock;
+        private readonly Text _day;
         private readonly Image _dayTrack, _dayFill;
         private readonly Text _caption;
         private readonly Image _gaugeTrack, _gaugeFill;
@@ -38,6 +40,7 @@ namespace TaxiKmer.Driving
             _clock = Label(font, TextAnchor.UpperLeft, Color.white);
             _dayTrack = UiKit.NewImage(_root, "Journée", Track, UiKit.Rounded);
             _dayFill = UiKit.NewImage(_dayTrack.transform, "Reste", DayColor, UiKit.Rounded);
+            _day = Label(font, TextAnchor.MiddleLeft, Color.white);
             _caption = Label(font, TextAnchor.LowerLeft, Color.white);
             _gaugeTrack = UiKit.NewImage(_root, "Versement", Track, UiKit.Rounded);
             _gaugeFill = UiKit.NewImage(_gaugeTrack.transform, "Recette", Filling, UiKit.Rounded);
@@ -58,7 +61,7 @@ namespace TaxiKmer.Driving
         /// <summary>Texte de l'heure (la fin de journée le colore et le fait battre).</summary>
         public Text Clock => _clock;
 
-        public void Update(Shift shift, int shownRevenue, bool visible)
+        public void Update(Shift shift, int dayNumber, int shownRevenue, bool visible)
         {
             _root.gameObject.SetActive(visible);
             if (!visible) return;
@@ -76,6 +79,10 @@ namespace TaxiKmer.Driving
             UiKit.PlaceTopLeft(_clock.rectTransform, x, h * 0.115f, w, h * 0.06f);
             UiKit.PlaceTopLeft(_dayTrack.rectTransform, x, h * 0.175f, w * 0.6f, h * 0.012f);
             Fill(_dayFill.rectTransform, HudGauges.DayLeft(shift.Clock));
+            // « Jour 3 » dans la place libre à droite de la barre de journée (les journées s'enchaînent, jalon 3).
+            _day.text = $"Jour {dayNumber}";
+            _day.fontSize = Mathf.RoundToInt(h * 0.028f);
+            UiKit.PlaceTopLeft(_day.rectTransform, x + w * 0.64f, h * 0.162f, w * 0.36f, h * 0.038f);
 
             var versement = shift.Ledger.Versement;
             var revenue = shownRevenue; // le compteur défile : la jauge et la légende suivent ce qu'il affiche

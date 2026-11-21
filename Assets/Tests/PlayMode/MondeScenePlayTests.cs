@@ -15,6 +15,24 @@ namespace TaxiKmer.PlayModeTests
     /// </summary>
     public class MondeScenePlayTests
     {
+        private string _saveDir;
+
+        [SetUp]
+        public void IsolateSaves()
+        {
+            // Les tests n'écrivent jamais dans la vraie sauvegarde de l'éditeur.
+            _saveDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "taxikmer-tests-" + System.Guid.NewGuid());
+            SaveService.DirectoryForTests = _saveDir;
+        }
+
+        [TearDown]
+        public void CleanSaves()
+        {
+            SaveService.DirectoryForTests = null;
+            SaveService.ConfigForTests = null;
+            if (System.IO.Directory.Exists(_saveDir)) System.IO.Directory.Delete(_saveDir, true);
+        }
+
         [UnityTearDown]
         public IEnumerator UnloadMonde()
         {
@@ -88,6 +106,9 @@ namespace TaxiKmer.PlayModeTests
             var s = view.Street.Summary;
             Assert.AreEqual(500, s.Revenue);
             Assert.AreEqual(s.Revenue - s.Versement - s.FuelCost, s.Remaining);
+            var closure = view.Save.Closure.Value;
+            Assert.AreEqual(TaxiKmer.Core.Career.OwnerMood.Threatens, closure.Mood, "500 FCFA : versement manqué, le propriétaire menace");
+            Assert.AreEqual(1, closure.DayNumber);
             var meters = ledger.MetersDriven;
             yield return new WaitForSeconds(0.3f);
             Assert.AreEqual(meters, ledger.MetersDriven, "Plus de distance comptée après le bilan");
@@ -100,6 +121,96 @@ namespace TaxiKmer.PlayModeTests
             Assert.IsFalse(fresh.Street.DayFinished, "Nouvelle journée");
             Assert.AreEqual(0, fresh.Street.Shift.Ledger.Revenue);
             Assert.AreEqual("06:00", fresh.Street.Shift.Clock.Display);
+            Assert.AreEqual(2, fresh.Save.Career.DayNumber, "Jour suivant (carrière sauvegardée)");
+            Assert.AreEqual(1, fresh.Save.Career.MissesInWindow(1), "Le versement manqué est retenu");
+        }
+
+        [UnityTest]
+        public IEnumerator Monde_QualityButton_CyclesLevels_AndKeepsChoice()
+        {
+            PlayerPrefs.DeleteKey(QualityView.PrefKey);
+            SceneManager.LoadScene("Monde");
+            yield return null;
+            yield return null;
+            var quality = Object.FindFirstObjectByType<QualityView>();
+            Assert.IsNotNull(quality, "QualityView ajouté par les commandes");
+            Assert.AreEqual("Moyen", quality.Current.name, "Moyen par défaut");
+            Assert.AreEqual("Moyen", QualitySettings.names[QualitySettings.GetQualityLevel()]);
+            Assert.AreEqual(quality.Current.drawDistance, Camera.main.farClipPlane, 0.01f);
+            Assert.AreEqual(30, Application.targetFrameRate);
+
+            quality.Apply(2, save: true);
+            yield return null;
+            Assert.AreEqual("Haut", QualitySettings.names[QualitySettings.GetQualityLevel()]);
+            Assert.AreEqual(60, Application.targetFrameRate);
+            Assert.AreEqual(600f, Camera.main.farClipPlane, 0.01f);
+            StringAssert.StartsWith("Qualité : Haut", Object.FindFirstObjectByType<DriverControls>().QualityLabel);
+
+            // Nouvelle partie : le choix est gardé.
+            SceneManager.LoadScene("Monde");
+            yield return null;
+            yield return null;
+            Assert.AreEqual("Haut", Object.FindFirstObjectByType<QualityView>().Current.name);
+            PlayerPrefs.DeleteKey(QualityView.PrefKey);
+        }
+
+        [UnityTest]
+        public IEnumerator Monde_CityIsAlive_TrafficAndPedestriansShown()
+        {
+            SceneManager.LoadScene("Monde");
+            yield return null;
+            yield return new WaitForSeconds(2f);
+            var view = Object.FindFirstObjectByType<StreetView>();
+            Assert.IsNotNull(view.City, "La ville est créée");
+            var traffic = view.City.Traffic.Vehicles;
+            Assert.Greater(traffic.Count, 4, "Du trafic autour du taxi au départ (6 h)");
+            Assert.Greater(view.City.Pedestrians.People.Count, 0, "Des piétons");
+            var shown = Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)
+                .Count(t => t.gameObject.activeInHierarchy && (t.name == "Voiture" || t.name == "Taxi concurrent" || t.name == "Mototaxi"));
+            // L'affichage suit en LateUpdate : à 2 apparitions près (celles de l'image en cours).
+            Assert.That(shown, Is.InRange(traffic.Count - 2, traffic.Count + 2), "Un objet affiché par véhicule");
+
+            // Les véhicules avancent.
+            var before = traffic.ToDictionary(v => v.Id, v => v.Along);
+            yield return new WaitForSeconds(1f);
+            Assert.IsTrue(view.City.Traffic.Vehicles.Any(v => before.TryGetValue(v.Id, out var a) && v.Along > a + 1f));
+        }
+
+        [UnityTest]
+        public IEnumerator Monde_SaveDay_ThenRelaunch_ResumesIt()
+        {
+            var dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "taxikmer-test-" + System.Guid.NewGuid());
+            SaveService.DirectoryForTests = dir;
+            SaveService.ConfigForTests = new SaveConfig { autosaveSeconds = 0f, saveOnPause = false, resumeOnStart = true };
+            try
+            {
+                SceneManager.LoadScene("Monde");
+                yield return null;
+                yield return new WaitForSeconds(0.5f);
+                var view = Object.FindFirstObjectByType<StreetView>();
+                Assert.IsFalse(view.Save.Resumed, "Rien à reprendre au premier lancement");
+                view.Street.Shift.Clock.Advance(120f);
+                view.Street.Shift.Ledger.AddFare(700);
+                var minutes = view.Street.Shift.Clock.GameMinutes;
+                view.Save.SaveDayNow();
+                Assert.IsTrue(System.IO.File.Exists(System.IO.Path.Combine(dir, TaxiKmer.Core.Save.SaveStore.MainFile)));
+
+                // « Relance » : on recharge la scène, la journée reprend.
+                SceneManager.LoadScene("Monde");
+                yield return null;
+                yield return new WaitForSeconds(0.5f);
+                view = Object.FindFirstObjectByType<StreetView>();
+                Assert.AreEqual(TaxiKmer.Core.Save.LoadStatus.Loaded, view.Save.LastLoad.Status);
+                Assert.IsTrue(view.Save.Resumed);
+                Assert.AreEqual(700, view.Street.Shift.Ledger.Revenue);
+                Assert.That(view.Street.Shift.Clock.GameMinutes, Is.InRange(minutes, minutes + 2));
+            }
+            finally
+            {
+                SaveService.DirectoryForTests = null;
+                SaveService.ConfigForTests = null;
+                if (System.IO.Directory.Exists(dir)) System.IO.Directory.Delete(dir, true);
+            }
         }
     }
 }

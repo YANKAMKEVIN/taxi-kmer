@@ -43,6 +43,10 @@ ExportedObj/
 *.csproj
 # sauf le projet dotnet des tests hors Unity
 !tools/dotnet/*.csproj
+# et le projet qui compile le code Unity hors Unity (tools/check_unity_compile.sh)
+!tools/unity_check/*.csproj
+tools/unity_check/obj/
+tools/unity_check/bin/
 *.unityproj
 *.sln
 *.slnx

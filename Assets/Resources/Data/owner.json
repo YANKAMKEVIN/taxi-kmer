@@ -1,0 +1,6 @@
+{
+    "_note": "Le propriétaire du taxi (jalon 3, décision de Kevin du 2026-11-15 : versement non atteint → menace, renvoi au bout d'un certain temps). Valeurs par défaut à régler avec Kevin : renvoyé après missesBeforeFired versements manqués sur les windowDays derniers jours ; payShortfallFromSavings : le chauffeur complète un versement incomplet avec son épargne.",
+    "missesBeforeFired": 3,
+    "windowDays": 7,
+    "payShortfallFromSavings": true
+}

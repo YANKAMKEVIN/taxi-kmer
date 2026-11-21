@@ -45,8 +45,8 @@ Le taxi prend 5 passagers : 3 derrière et 2 devant. La corpulence compte : à c
 ### 4.1 ter Interactions entre clients (décision de Kevin, 2026-11-11)
 Les passagers interagissent entre eux pendant le trajet (discussions, disputes, plaintes sur la place, sur le prix, sur le détour…). Inspiration : les nombreuses scènes de taxi camerounais sur internet ; les dialogues du jeu sont écrits pour le jeu, jamais recopiés. Prévu après le jalon 1.
 
-### 4.2 Le versement [proposition]
-Tant qu'il conduit le taxi d'un autre, le joueur doit reverser chaque jour une somme fixe au propriétaire. S'il ne l'atteint pas, la relation avec le propriétaire se dégrade.
+### 4.2 Le versement (décision de Kevin, 2026-11-15)
+Tant qu'il conduit le taxi d'un autre, le joueur doit reverser chaque jour une somme fixe au propriétaire. S'il ne l'atteint pas, le propriétaire le menace ; s'il n'y arrive pas au bout d'un certain temps, il est renvoyé. L'argent qui reste au chauffeur passe d'un jour à l'autre. Au début, le joueur ne choisit pas ses horaires : il cherche l'argent et suit les horaires que lui donne son patron.
 
 ### 4.3 Bilan du jour
 - **Recettes** : les courses.

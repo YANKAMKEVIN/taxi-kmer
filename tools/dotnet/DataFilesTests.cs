@@ -59,6 +59,55 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void Quality_MatchesDefaults()
+        {
+            var q = Load<TaxiKmer.Core.Quality.QualityConfig>("quality.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Quality.QualityConfig(), Opts), JsonSerializer.Serialize(q, Opts));
+        }
+
+        [Test]
+        public void Traffic_MatchesDefaults()
+        {
+            var t = Load<TaxiKmer.Core.Traffic.CityConfig>("traffic.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Traffic.CityConfig(), Opts), JsonSerializer.Serialize(t, Opts));
+            Assert.AreEqual(24, t.vehicles.vehiclesPerKmByHour.Length);
+            Assert.AreEqual(24, t.pedestrians.perKmBySideByHour.Length);
+        }
+
+        [Test]
+        public void World_TrafficPaths_FollowTheRoute()
+        {
+            var w = Load<TaxiKmer.Core.World.WorldData>("world_messassi_etoudi.json");
+            var route = new TaxiKmer.Core.Traffic.TrafficPath(w.route.xz);
+            foreach (var data in new[] { w.traffic.forward, w.traffic.backward })
+            {
+                Assert.GreaterOrEqual(data.xz.Length, 4);
+                Assert.AreEqual(data.xz.Length / 2 - 1, data.twoWay.Length);
+                var path = TaxiKmer.Core.Traffic.TrafficPath.From(data);
+                Assert.AreEqual(route.Length, path.Length, 300f, "Même longueur à quelques centaines de mètres près.");
+                for (var i = 0; i < data.xz.Length; i += 2)
+                {
+                    route.Project(data.xz[i], data.xz[i + 1], out _, out var lateral);
+                    Assert.Less(System.Math.Abs(lateral), 20f, $"point {i / 2} à moins de 20 m de l'itinéraire");
+                }
+            }
+        }
+
+        [Test]
+        public void Accidents_MatchDefaults()
+        {
+            var a = Load<TaxiKmer.Core.Incidents.AccidentConfig>("accidents.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Incidents.AccidentConfig(), Opts), JsonSerializer.Serialize(a, Opts));
+        }
+
+        [Test]
+        public void Owner_MatchesDefaults()
+        {
+            var o = Load<TaxiKmer.Core.Career.OwnerConfig>("owner.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Career.OwnerConfig(), Opts), JsonSerializer.Serialize(o, Opts));
+        }
+
+        [Test]
         public void World_MessassiEtoudi_IsUsable()
         {
             var w = Load<TaxiKmer.Core.World.WorldData>("world_messassi_etoudi.json");

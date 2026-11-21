@@ -31,7 +31,7 @@ Android : identifiant `com.yankamkevin.taxikmer`, Android 8 minimum (API 26), IL
 ## Arborescence
 
 ```
-Assets/Scripts/Core/     logique pure C# (asmdef sans moteur Unity), testable hors Unity ; Core/World = géométrie du monde
+Assets/Scripts/Core/     logique pure C# (asmdef sans moteur Unity), testable hors Unity ; Core/World = géométrie du monde, Core/Traffic = trafic et piétons, Core/Save = sauvegarde
 Assets/Scripts/World/    construction du monde OSM dans Unity (WorldBuilder), caméra provisoire, crédit OSM
 Assets/Editor/           outils d'éditeur (configuration du projet, build Android)
 Assets/Settings/         assets URP par niveau de qualité
@@ -48,6 +48,7 @@ docs/tech/               état du projet, plans de jalons
 
 ```bash
 tools/test_core.sh                     # tests de la logique hors Unity (dotnet 8 + NUnit), aussi lancés par la CI
+tools/check_unity_compile.sh           # compile le code Unity hors Unity (références UnityEngine 2021.3 + stubs) : pour les sessions cloud
 U=/Applications/Unity/Hub/Editor/6000.3.28f1/Unity.app/Contents/MacOS/Unity
 $U -batchmode -nographics -projectPath . -runTests -testPlatform EditMode -testResults Logs/editmode.xml -logFile Logs/tests.log
 $U -batchmode -nographics -projectPath . -buildTarget Android -executeMethod TaxiKmer.EditorTools.BuildAndroid.Run -quit -logFile Logs/build.log   # → build/android/TaxiKmer.apk
@@ -58,6 +59,7 @@ Q=$(python3 -c "import sys;sys.path.insert(0,'tools/osm');import osm_roads;print
 curl -s -f -A taxi-kmer-osm-import --data-urlencode "data=$Q" https://overpass-api.de/api/interpreter -o build/osm/messassi_etoudi.osm.json
 python3 tools/osm/osm_roads.py convert build/osm/messassi_etoudi.osm.json -o build/osm/roads_full.json
 python3 tools/osm/osm_route.py build/osm/roads_full.json tools/osm/landmarks_messassi_etoudi.json --stops Assets/Resources/Data/stops_messassi_etoudi.json --world Assets/Resources/Data/world_messassi_etoudi.json --corridor 250
+python3 tools/osm/osm_traffic.py Assets/Resources/Data/world_messassi_etoudi.json --lights tools/osm/traffic_lights_messassi_etoudi.json   # trafic par sens, carrefours, feux (à relancer après osm_route.py)
 $U -batchmode -projectPath . -executeMethod TaxiKmer.EditorTools.WorldSnapshots.Run -quit -logFile Logs/snap.log   # captures dans build/snapshots (sans -nographics)
 ```
 

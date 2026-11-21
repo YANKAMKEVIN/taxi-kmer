@@ -20,7 +20,7 @@ namespace TaxiKmer.Driving
 
     /// <summary>
     /// Écran titre « Taxi Kmer » (Commencer la journée, Réglages), pause (Reprendre, Réglages, Terminer la journée) et
-    /// réglages (volume, vibrations ; le choix de qualité de la tâche 1.7 viendra ici). Ne fait qu'afficher l'écran de
+    /// réglages (volume, vibrations ; la qualité graphique de la tâche 1.7 se choisit avec son bouton de conduite). Ne fait qu'afficher l'écran de
     /// <see cref="GameMenu"/> (Core) et rapporter les appuis ; StreetView applique les choix.
     /// </summary>
     public sealed class GameMenuView
@@ -142,7 +142,7 @@ namespace TaxiKmer.Driving
                     foreach (var t in new[] { _minus, _plus }) t.GetComponentInChildren<Text>().fontSize = Mathf.RoundToInt(h * 0.07f);
                     _toggleText.text = settings.VibrationLabel;
                     UiKit.PlaceTopCenter(_toggle.rectTransform, h * 0.49f, bw, bh);
-                    _info.text = "Qualité graphique (bas / moyen / haut) : bientôt";
+                    _info.text = "Qualité graphique : bouton « Qualité » à gauche pendant la conduite (touche G)";
                     UiKit.PlaceTopCenter(_info.rectTransform, h * 0.63f, Screen.width, h * 0.06f);
                     _primaryText.text = "Retour";
                     UiKit.PlaceTopCenter(_primary.rectTransform, h * 0.72f, bw, bh);

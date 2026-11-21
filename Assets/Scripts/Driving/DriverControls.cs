@@ -10,7 +10,8 @@ namespace TaxiKmer.Driving
     /// Commandes du joueur : écran tactile (flèches à gauche, pédales à droite, klaxon en haut à droite, glisser ailleurs
     /// pour tourner la caméra), souris et clavier pour l'éditeur. Dessine les boutons et le compteur de vitesse.
     /// Clavier : ← → / Q D / A (tourner), ↑ / Z / W (accélérer), ↓ / S / espace (frein, marche arrière), H (klaxon),
-    /// E ou Entrée (bouton contextuel), R (remettre sur la route), Échap ou Retour Android (pause).
+    /// E ou Entrée (bouton contextuel), R (remettre sur la route), Échap ou Retour Android (pause),
+    /// G (qualité graphique suivante).
     /// </summary>
     [DefaultExecutionOrder(-10)]
     public sealed class DriverControls : MonoBehaviour
@@ -30,6 +31,7 @@ namespace TaxiKmer.Driving
         private Image _reverseLight;
         private readonly Dictionary<DriveControl, Image> _icons = new Dictionary<DriveControl, Image>();
         private Text _actionLabel;
+        private Text _qualityLabel;
         private Vector2Int _laidOutFor;
         private DriveInput _previous;
 
@@ -43,6 +45,10 @@ namespace TaxiKmer.Driving
         public bool HornTriggered { get; private set; }
         /// <summary>Le bouton pause (ou Échap / Retour Android) vient d'être pressé (cette image seulement).</summary>
         public bool PauseTriggered { get; private set; }
+        /// <summary>Le bouton de qualité vient d'être pressé (cette image seulement) ; lu par <see cref="QualityView"/>.</summary>
+        public bool QualityTriggered { get; private set; }
+        /// <summary>Texte du bouton de qualité (« Qualité : Moyen · 30 i/s »), posé par <see cref="QualityView"/>.</summary>
+        public string QualityLabel { get; set; } = "Qualité";
         /// <summary>Calque d'interface où le jeu peut ajouter ses propres textes.</summary>
         public RectTransform Overlay => _canvas;
         public Font Font { get; private set; }
@@ -63,6 +69,7 @@ namespace TaxiKmer.Driving
             UnityEngine.Input.multiTouchEnabled = true;
             _layout = DriveData.Load().layout;
             BuildView();
+            gameObject.AddComponent<QualityView>().controls = this;
         }
 
         private void Update()
@@ -73,6 +80,7 @@ namespace TaxiKmer.Driving
             ActionTriggered = input.Action && !_previous.Action;
             HornTriggered = input.Horn && !_previous.Horn;
             PauseTriggered = input.Pause && !_previous.Pause;
+            QualityTriggered = input.Quality && !_previous.Quality;
             _previous = input;
             if (taxi != null)
             {
@@ -94,6 +102,7 @@ namespace TaxiKmer.Driving
                 Horn = Key(KeyCode.H),
                 Action = Key(KeyCode.E) || Key(KeyCode.Return),
                 Pause = Key(KeyCode.Escape), // aussi le bouton Retour d'Android
+                Quality = Key(KeyCode.G),
             };
         }
 
@@ -189,6 +198,7 @@ namespace TaxiKmer.Driving
                 label.enabled = mask == null || zone.label.Length > 2;
                 _buttons.Add((zone, img, rect));
                 if (zone.control == DriveControl.Action) _actionLabel = label;
+                if (zone.control == DriveControl.Quality) _qualityLabel = label;
             }
 
             _speed = NewText(_canvas, font, "", TextAnchor.UpperLeft);
@@ -235,7 +245,10 @@ namespace TaxiKmer.Driving
                     rect.sizeDelta = new Vector2(r.Width, r.Height);
                     var label = rect.GetComponentInChildren<Text>();
                     var big = zone.label.Length > 0 && zone.label.Length <= 2;
-                    var px = size.y * (big ? 0.12f : zone.control == DriveControl.Action ? 0.05f : 0.04f);
+                    // Le bouton Qualité n'a pas de pictogramme : son libellé dynamique (« Qualité : Moyen · 30 i/s ») reste en petit.
+                    var px = size.y * (big ? 0.12f
+                        : zone.control == DriveControl.Action ? 0.05f
+                        : zone.control == DriveControl.Quality ? 0.032f : 0.04f);
                     label.fontSize = Mathf.RoundToInt(Mathf.Min(px, r.Height * 0.55f));
                     if (_icons.TryGetValue(zone.control, out var icon))
                     {
@@ -275,6 +288,8 @@ namespace TaxiKmer.Driving
                     DriveControl.Brake => input.Brake,
                     DriveControl.Horn => input.Horn,
                     DriveControl.Action => input.Action,
+                    DriveControl.Pause => input.Pause,
+                    DriveControl.Quality => input.Quality,
                     _ => false,
                 };
                 if (zone.control == DriveControl.Action)
@@ -285,6 +300,7 @@ namespace TaxiKmer.Driving
                     image.color = on ? Pressed : Highlighted(zone.control, ActionColor);
                     continue;
                 }
+                if (zone.control == DriveControl.Quality && _qualityLabel != null) _qualityLabel.text = QualityLabel;
                 image.color = on ? Pressed : Highlighted(zone.control, Idle);
             }
 

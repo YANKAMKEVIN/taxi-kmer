@@ -20,6 +20,13 @@ namespace TaxiKmer.Core.Day
         /// <summary>Part de la journée écoulée, de 0 (début) à 1 (heure de fin).</summary>
         public float Progress => Math.Min(_elapsedReal / _config.dayLengthRealSeconds, 1f);
 
+        /// <summary>Temps réel écoulé depuis le début de la journée (s), pour la sauvegarde.</summary>
+        public float ElapsedRealSeconds => _elapsedReal;
+
+        /// <summary>Reprend la journée à ce point (sauvegarde), borné à la durée de la journée.</summary>
+        internal void Restore(float elapsedRealSeconds) =>
+            _elapsedReal = Math.Max(0f, Math.Min(elapsedRealSeconds, _config.dayLengthRealSeconds));
+
         /// <summary>Minutes de jeu écoulées depuis minuit.</summary>
         public int GameMinutes
         {
@@ -35,6 +42,14 @@ namespace TaxiKmer.Core.Day
         public int MinutesLeft => _config.endHour * 60 - GameMinutes;
 
         public string Display => $"{GameMinutes / 60:00}:{GameMinutes % 60:00}";
+
+        /// <summary>Fait passer <paramref name="minutes"/> minutes de jeu d'un coup (temps perdu : hôpital…).</summary>
+        public void AdvanceGameMinutes(int minutes)
+        {
+            if (minutes <= 0) return;
+            var span = (_config.endHour - _config.startHour) * 60f;
+            Advance(minutes / span * _config.dayLengthRealSeconds);
+        }
 
         public void Advance(float realSeconds)
         {
