@@ -56,6 +56,7 @@ namespace TaxiKmer.Core.DotnetTests
             ["street.json"] = typeof(StreetConfig),
             ["traffic.json"] = typeof(CityConfig),
             ["world_messassi_etoudi.json"] = typeof(TaxiKmer.Core.World.WorldData),
+            ["police.json"] = typeof(TaxiKmer.Core.Police.PoliceConfig),
         };
 
         [Test]
@@ -220,6 +221,25 @@ namespace TaxiKmer.Core.DotnetTests
             Assert.Greater(r.ridePaid, 0);
             Assert.Less(r.acceptedClientGaveUp, 0);
             Assert.Less(r.pedestrianSerious, r.pedestrianLight);
+        }
+
+        [Test]
+        public void Police_MatchesDefaults_StaysOffUntilKevinDecides()
+        {
+            var p = Load<TaxiKmer.Core.Police.PoliceConfig>("police.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Police.PoliceConfig(), Opts), JsonSerializer.Serialize(p, Opts));
+            Assert.IsFalse(p.enabled, "Contrôles coupés tant que Kevin n'a pas fixé montants et issues (jalon-04.md).");
+            var stops = Load<StopsConfig>("stops_messassi_etoudi.json");
+            var end = stops.stops[stops.stops.Length - 1].distanceAlongRouteMeters;
+            foreach (var c in p.checkpoints) Assert.That(c.distanceAlongRouteMeters, Is.InRange(0f, end), c.id);
+            Assert.AreEqual(p.papers.Length, p.papers.Select(x => x.id).Distinct().Count());
+            foreach (var x in p.papers) Assert.LessOrEqual(x.startDaysLeft, x.validityDays, x.id);
+            foreach (var x in new[] { p.checkpointStopChance, p.flyingStopChance, p.inventChanceWhenInOrder, p.negotiateFailChance, p.negotiateDiscount })
+                Assert.That(x, Is.InRange(0f, 1f));
+            Assert.LessOrEqual(p.demandInventedMin, p.demandInventedMax);
+            foreach (var o in p.contestOutcomes.Concat(p.callOutcomes)) Assert.GreaterOrEqual(o.weight, 0f, o.id);
+            Assert.Greater(p.contestOutcomes.Sum(o => o.weight), 0f);
+            Assert.Greater(p.callOutcomes.Sum(o => o.weight), 0f);
         }
 
         [Test]

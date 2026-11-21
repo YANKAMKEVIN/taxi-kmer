@@ -28,6 +28,8 @@ namespace TaxiKmer.Core.Day
         public bool Arrested { get; private set; }
         /// <summary>Le taxi a été saisi par la gendarmerie.</summary>
         public bool VehicleSeized { get; private set; }
+        /// <summary>Le taxi est parti à la fourrière après un contrôle de police (jalon 4).</summary>
+        public bool Impounded { get; private set; }
         /// <summary>Carburant dans le réservoir à la fin de la journée (L) ; -1 sans réservoir.</summary>
         public float TankLitres { get; private set; } = -1f;
         /// <summary>Réputation à la fin de la journée (-1 si elle n'est pas suivie) et sa variation du jour.</summary>
@@ -46,7 +48,7 @@ namespace TaxiKmer.Core.Day
 
         public static DaySummary From(DayLedger ledger, int unpaidPassengers = 0, int unpaidFares = 0,
             bool arrested = false, bool vehicleSeized = false, float tankLitres = -1f,
-            int reputation = -1, int reputationChange = 0)
+            int reputation = -1, int reputationChange = 0, bool impounded = false)
         {
             if (ledger == null) throw new ArgumentNullException(nameof(ledger));
             return new DaySummary
@@ -58,6 +60,7 @@ namespace TaxiKmer.Core.Day
                 Reputation = reputation,
                 ReputationChange = reputationChange,
                 VehicleSeized = vehicleSeized,
+                Impounded = impounded,
                 Revenue = ledger.Revenue,
                 RideCount = ledger.RideCount,
                 Versement = ledger.Versement,

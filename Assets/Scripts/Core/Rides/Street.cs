@@ -395,14 +395,14 @@ namespace TaxiKmer.Core.Rides
             _leftUnpaidFares = Math.Max(0, fares);
         }
 
-        private void Finish(bool arrested = false, bool seized = false)
+        private void Finish(bool arrested = false, bool seized = false, bool impounded = false)
         {
             var unpaid = _leftUnpaidFares;
             foreach (var p in _shift.Cabin.Passengers) unpaid += p.ProposedFare;
             Reputation?.PassengersNotDelivered(_shift.Cabin.PassengerCount);
             Summary = DaySummary.From(_shift.Ledger, _shift.Cabin.PassengerCount + _leftUnpaid, unpaid, arrested, seized,
                 _shift.Tank != null ? _shift.Tank.Litres : -1f,
-                Reputation?.Score ?? -1, Reputation?.ChangeToday ?? 0);
+                Reputation?.Score ?? -1, Reputation?.ChangeToday ?? 0, impounded);
             foreach (var c in _waiting) c.Calling = false;
         }
 
@@ -436,6 +436,39 @@ namespace TaxiKmer.Core.Rides
             if (outcome.Arrested) Finish(arrested: true, seized: outcome.VehicleSeized);
             else if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
             return outcome;
+        }
+
+        /// <summary>Libellé de la dépense d'un contrôle de police dans le bilan (« amendes et arrangements », vision 4.3).</summary>
+        public const string PoliceExpenseLabel = "Contrôle de police";
+        public const string ImpoundExpenseLabel = "Fourrière";
+
+        /// <summary>
+        /// Applique à la journée un contrôle de police terminé (jalon 4) : somme payée (dépense du bilan), temps perdu,
+        /// réputation ; fourrière → frais de fourrière, les passagers descendent sans payer et la journée s'arrête.
+        /// Rend false si le contrôle n'est pas terminé ou si la journée l'est déjà.
+        /// </summary>
+        public bool ApplyPoliceControl(Police.PoliceControl control, int impoundFee)
+        {
+            if (control == null || !control.Closed || DayFinished) return false;
+            _shift.Ledger.AddExpense(PoliceExpenseLabel, control.Paid);
+            Reputation?.Add(control.ReputationDelta);
+            _shift.Clock.AdvanceGameMinutes(control.LostMinutes);
+            if (control.Impounded)
+            {
+                _shift.Ledger.AddExpense(ImpoundExpenseLabel, Math.Max(0, impoundFee));
+                var passengers = new List<Client>(_shift.Cabin.Passengers);
+                Reputation?.PassengersNotDelivered(passengers.Count);
+                foreach (var p in passengers)
+                {
+                    _leftUnpaid++;
+                    _leftUnpaidFares += p.ProposedFare;
+                    _shift.Cabin.Remove(p);
+                }
+                Finish(impounded: true);
+                return true;
+            }
+            if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
+            return true;
         }
 
         public Stop FindStop(string id) => _factory.FindStop(id);

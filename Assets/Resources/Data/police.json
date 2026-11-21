@@ -1,0 +1,50 @@
+{
+    "_note": "Contrôles de police (jalon 4, docs/tech/jalon-04.md). enabled = false : rien n'est actif dans le jeu tant que Kevin n'a pas fixé les montants et l'issue des choix (questions du jalon 4). Positions des postes fixes : provisoires (m le long de l'itinéraire). Chances entre 0 et 1, sommes en FCFA, durées en minutes de jeu. contestOutcomes / callOutcomes : issues tirées selon weight ; une issue de poids 0 n'arrive jamais (« gagne » et « arrange » attendent la décision de Kevin). payFactor : part de la somme demandée que le chauffeur paie. Les prétextes et les coûts de renouvellement des papiers sont des exemples à remplacer.",
+    "enabled": false,
+    "checkpoints": [
+        { "id": "poste-messassi", "name": "Poste de contrôle de Messassi", "distanceAlongRouteMeters": 900 },
+        { "id": "poste-etoudi", "name": "Poste de contrôle d'Étoudi", "distanceAlongRouteMeters": 5200 }
+    ],
+    "checkpointStopChance": 0.5,
+    "checkpointCooldownMinutes": 120,
+    "flyingChecksPerDay": 2,
+    "flyingDurationMinutes": 60,
+    "flyingStopChance": 0.7,
+    "checkMinutes": 10,
+    "legalMaxPassengers": 4,
+    "legalMaxFront": 1,
+    "inventChanceWhenInOrder": 0.5,
+    "demandExpiredPaper": 5000,
+    "demandOverload": 3000,
+    "demandInventedMin": 1000,
+    "demandInventedMax": 3000,
+    "roundTo": 500,
+    "negotiateDiscount": 0.3,
+    "negotiateFailChance": 0.3,
+    "negotiateHarden": 0.2,
+    "negotiateMinutes": 5,
+    "maxNegotiations": 2,
+    "negotiateFloor": 500,
+    "contestOutcomes": [
+        { "id": "perd", "weight": 1, "payFactor": 1.5, "lostMinutes": 60, "impound": false, "reputation": 0 },
+        { "id": "fourriere", "weight": 0, "payFactor": 0, "lostMinutes": 0, "impound": true, "reputation": 0 },
+        { "id": "gagne", "weight": 0, "payFactor": 0, "lostMinutes": 30, "impound": false, "reputation": 0 }
+    ],
+    "callOutcomes": [
+        { "id": "personne", "weight": 1, "payFactor": 1, "lostMinutes": 20, "impound": false, "reputation": 0 },
+        { "id": "arrange", "weight": 0, "payFactor": 0, "lostMinutes": 20, "impound": false, "reputation": 0 }
+    ],
+    "impoundFee": 15000,
+    "reputationPaid": 0,
+    "papers": [
+        { "id": "permis", "name": "Permis de conduire", "validityDays": 0, "startDaysLeft": 0, "renewalCost": 0 },
+        { "id": "carte-grise", "name": "Carte grise", "validityDays": 0, "startDaysLeft": 0, "renewalCost": 0 },
+        { "id": "assurance", "name": "Assurance", "validityDays": 30, "startDaysLeft": 12, "renewalCost": 0 },
+        { "id": "visite-technique", "name": "Visite technique", "validityDays": 60, "startDaysLeft": 25, "renewalCost": 0 },
+        { "id": "licence-taxi", "name": "Licence de taxi", "validityDays": 90, "startDaysLeft": 40, "renewalCost": 0 }
+    ],
+    "pretexts": [
+        { "id": "extincteur", "label": "Extincteur introuvable (exemple à remplacer)" },
+        { "id": "triangle", "label": "Pas de triangle de signalisation (exemple à remplacer)" }
+    ]
+}
