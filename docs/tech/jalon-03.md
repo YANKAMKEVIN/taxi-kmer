@@ -78,6 +78,8 @@ Kevin a retenu les quatre pistes : **clients plus ou moins patients, prix accept
 
 ## Versement de 7 000 FCFA (tranché par Kevin le 21/11)
 
+> Suite : étude complète par simulation, tous les systèmes actifs, dans `equilibrage.md` (2026-11-21).
+
 `day.json` → `versement: 7000` (et la valeur par défaut de `DayConfig`). Carburant, prix et durée inchangés. Simulation refaite (`tools/test_core.sh Balance`, même chauffeur automatique, 30 journées par durée, 40 km/h, réservoir plein, carburant de `fuel.json` ×8) :
 
 | Durée | Recette moy. (min - max) | Carburant brûlé | Reste après carburant | **Versement de 7 000 atteint, carburant compris** | Recette seule ≥ 7 000 |
@@ -170,5 +172,5 @@ Pistes à trancher par Kevin (une seule suffit, toutes se règlent dans les donn
 3. ~~Panne sèche~~ → **« On pousse, ou on appelle un technicien du quartier »** (Kevin, 2026-11-21), fait ; **les passagers descendent sans payer** (tranché par Kevin le 21/11), fait. Reste à régler : vitesse en poussant, délai et prix du technicien (`fuel.json`).
 4. **Station-service** : laquelle, et où, sur la portion Messassi → Étoudi ?
 5. ~~Jours de marché et jour de repos~~ → **calendrier par défaut validé par Kevin** (2026-11-21) : marché le mercredi et le samedi, dimanche plus calme mais travaillé.
-6. ~~Équilibre recettes / carburant / versement : piste A, B ou C~~ → **piste B, journée de 35 min, carburant inchangé** (Kevin, 2026-11-21) ; **versement d'environ 7 000 FCFA** (tranché par Kevin le 21/11), appliqué. **Reste ouvert** : la recette seule couvre 7 000 dans 97 % des journées, mais recette et carburant compris, 0 % (le carburant ×8 coûte ≈ 540 FCFA par km pour ≈ 400 de recette) : baisser `consumptionScale` ou monter les prix ? Voir « Versement de 7 000 FCFA ».
+6. ~~Équilibre recettes / carburant / versement : piste A, B ou C~~ → **piste B, journée de 35 min, carburant inchangé** (Kevin, 2026-11-21) ; **versement d'environ 7 000 FCFA** (tranché par Kevin le 21/11), appliqué. **Reste ouvert** : la recette seule couvre 7 000 dans 97 % des journées, mais recette et carburant compris, 0 % (le carburant ×8 coûte ≈ 540 FCFA par km pour ≈ 400 de recette) : baisser `consumptionScale` ou monter les prix ? Voir « Versement de 7 000 FCFA ». **Étude par simulation (21/11)** : `equilibrage.md` (proposé : carburant ×1, prix ×2, versement 6 000 ; ou alléger les contrôles pour garder les vrais prix).
 7. Niveau de concurrence des taxis (question 4 du jalon 2) : réglable dans `traffic.json`.
