@@ -58,6 +58,7 @@ namespace TaxiKmer.Core.DotnetTests
             ["world_messassi_etoudi.json"] = typeof(TaxiKmer.Core.World.WorldData),
             ["police.json"] = typeof(TaxiKmer.Core.Police.PoliceConfig),
             ["dialogues.json"] = typeof(TaxiKmer.Core.Talk.DialogueConfig),
+            ["road.json"] = typeof(TaxiKmer.Core.Road.RoadConfig),
         };
 
         [Test]
@@ -261,6 +262,21 @@ namespace TaxiKmer.Core.DotnetTests
             }
             Assert.Greater(d.minShowSeconds, 0f);
             Assert.Greater(d.charsPerSecond, 0f);
+        }
+
+        [Test]
+        public void Road_MatchesDefaults_Off_Sane()
+        {
+            var r = Load<TaxiKmer.Core.Road.RoadConfig>("road.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Road.RoadConfig(), Opts), JsonSerializer.Serialize(r, Opts));
+            Assert.IsFalse(r.enabled, "Coupé tant que Kevin n'a pas fixé fréquence et qui paie (jalon-06.md).");
+            foreach (var x in new[] { r.potholePunctureChance, r.potholeHitChance, r.rainChancePerDay, r.driverShareOfRepairs, r.rainGrip })
+                Assert.That(x, Is.InRange(0f, 1f));
+            Assert.LessOrEqual(r.rainMinMinutes, r.rainMaxMinutes);
+            Assert.Less(r.flatMaxKmh, r.damagedMaxKmh);
+            Assert.That(r.damagedThreshold, Is.InRange(0f, 100f));
+            Assert.AreEqual(r.otherDriverAtFault.Length, r.otherDriverAtFault.Select(o => o.id).Distinct().Count());
+            Assert.IsTrue(r.otherDriverAtFault.Any(o => o.id == "fuit"), "Délit de fuite : feuille de route.");
         }
 
         [Test]
