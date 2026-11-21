@@ -5,7 +5,8 @@ namespace TaxiKmer.Driving
 {
     /// <summary>
     /// Sur le taxi du joueur : signale quand il touche un piéton (zone de contact des piétons, voir TrafficView),
-    /// avec la vitesse du taxi au moment du choc (km/h).
+    /// avec la vitesse du taxi au moment du choc (km/h) ; et quand il heurte un véhicule du trafic (collider cinématique
+    /// marqué <see cref="TrafficVehicleMarker"/>, voir TrafficView), avec l'identifiant du véhicule.
     /// </summary>
     public sealed class TaxiHitDetector : MonoBehaviour
     {
@@ -14,11 +15,21 @@ namespace TaxiKmer.Driving
         /// <summary>(identifiant du piéton, vitesse au choc en km/h).</summary>
         public event Action<int, float> PedestrianHit;
 
+        /// <summary>(identifiant du véhicule du trafic heurté). Vitesse et fautif : calculés par la logique (CollisionFault).</summary>
+        public event Action<int> VehicleHit;
+
         private void OnTriggerEnter(Collider other)
         {
             var marker = other.GetComponentInParent<PedestrianMarker>();
             if (marker == null || taxi == null) return;
             PedestrianHit?.Invoke(marker.Id, taxi.SpeedKmh);
+        }
+
+        private void OnCollisionEnter(Collision collision)
+        {
+            var marker = collision.collider != null ? collision.collider.GetComponentInParent<TrafficVehicleMarker>() : null;
+            if (marker == null || taxi == null) return;
+            VehicleHit?.Invoke(marker.Id);
         }
     }
 }

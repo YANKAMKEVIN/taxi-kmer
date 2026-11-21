@@ -9,7 +9,8 @@ namespace TaxiKmer.Driving
     /// mototaxis avec leur conducteur, piétons en silhouettes), placés chaque image d'après <see cref="CityLife"/>.
     /// Les objets sont réutilisés (réserve par type) ; les véhicules ont un collider cinématique pour que le taxi du
     /// joueur les heurte. Les piétons ont une zone de contact (déclencheur) : le taxi qui les touche les renverse
-    /// (voir <see cref="TaxiHitDetector"/> et la règle de Kevin dans Core/Incidents).
+    /// (voir <see cref="TaxiHitDetector"/> et la règle de Kevin dans Core/Incidents). Chaque véhicule porte un
+    /// <see cref="TrafficVehicleMarker"/> : un choc avec le taxi devient un accrochage (jalon 6, Core/Road/TrafficCrash).
     /// </summary>
     public sealed class TrafficView : MonoBehaviour
     {
@@ -139,6 +140,7 @@ namespace TaxiKmer.Driving
                 {
                     body = TakeVehicle(v.Kind);
                     _vehicles[v.Id] = body;
+                    body.Root.GetComponent<TrafficVehicleMarker>().Id = v.Id;
                     var paint = v.Kind == VehicleKind.Taxi ? TaxiYellow : CarPaints[v.Id % CarPaints.Length];
                     if (body.Paint != null) body.Paint.sharedMaterial = MaterialFor(paint);
                     if (body.Shirt != null) body.Shirt.sharedMaterial = MaterialFor(Shirts[v.Id % Shirts.Length]);
@@ -215,6 +217,7 @@ namespace TaxiKmer.Driving
 
         private static void AddKinematicBox(GameObject root, Vector3 center, Vector3 size)
         {
+            root.AddComponent<TrafficVehicleMarker>(); // le taxi qui le heurte sait lequel (accrochages, jalon 6)
             var col = root.AddComponent<BoxCollider>();
             col.center = center;
             col.size = size;

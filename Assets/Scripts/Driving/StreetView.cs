@@ -164,6 +164,7 @@ namespace TaxiKmer.Driving
             var detector = taxi.gameObject.AddComponent<TaxiHitDetector>();
             detector.taxi = taxi;
             detector.PedestrianHit += OnPedestrianHit;
+            detector.VehicleHit += OnVehicleHit;
             Save = gameObject.AddComponent<SaveService>();
             Save.street = this;
             Save.taxi = taxi;
@@ -509,6 +510,24 @@ namespace TaxiKmer.Driving
             var who = outcome.Severity == InjurySeverity.Light ? "blessé léger" : "blessé grave";
             var hours = outcome.LostGameMinutes >= 60 ? $"{outcome.LostGameMinutes / 60} h {outcome.LostGameMinutes % 60:00}" : $"{outcome.LostGameMinutes} min";
             Toast($"Piéton renversé ({who}) : hôpital et soins -{Money(outcome.CareCost)}, {hours} perdues, tes passagers sont partis sans payer", 9f);
+        }
+
+        /// <summary>
+        /// Le taxi a heurté un véhicule du trafic (jalon 6) : vitesse au choc et fautif d'après la simulation, puis la règle
+        /// de Kevin (fuite option B si le joueur est fautif, poursuite si l'autre fuit) dans <see cref="RoadView"/>.
+        /// </summary>
+        private void OnVehicleHit(int vehicleId)
+        {
+            if (_road == null || Street == null || Street.DayFinished || City == null) return;
+            foreach (var v in City.Traffic.Vehicles)
+            {
+                if (v.Id != vehicleId) continue;
+                var said = _road.ReportCrash(Street, vehicleId, Core.Road.CollisionFault.Judge(PlayerState(), v));
+                if (said.Length == 0) return;
+                Haptics.Play(HapticEvent.Refused);
+                Toast(said, 8f);
+                return;
+            }
         }
 
         /// <summary>Un client n'attend plus : on le dit au joueur si c'était le sien, ou s'il était tout près.</summary>
