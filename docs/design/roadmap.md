@@ -84,7 +84,7 @@ Après le jalon 11 : l'entreprise de taxis, le reste de Yaoundé, puis Douala, l
 **Accepté si** : une dizaine de contrôles variés dans une journée de test ; les règles sont dans les données et testées.
 
 **Questions pour Kevin**
-1. Le ton exact : satirique, dramatique, ou les deux selon les situations ?
+1. ~~Le ton exact : satirique, dramatique, ou les deux selon les situations ?~~ → **Tranché** (2026-11-21) : **réaliste**, on suggère la corruption sans la montrer crûment.
 2. Liste des papiers à gérer et leur coût de renouvellement.
 3. Contester peut-il parfois gagner ? Si oui, à quelles conditions ?
 4. Le joueur peut-il fuir un contrôle ?

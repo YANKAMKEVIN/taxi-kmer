@@ -277,5 +277,35 @@ namespace TaxiKmer.Core.Tests
             var street = new Street(new StreetConfig(), stops, new ClientFactory(stops, FareConfig.Default(), 1), shift, 3000f);
             return (street, shift);
         }
+
+        [Test]
+        public void Texts_RealisticTone_SuggestWithoutShowing()
+        {
+            // Ton réaliste (Kevin, 2026-11-21) : même phrase pour un problème réel et un prétexte inventé, sans mot cru.
+            var config = Enabled();
+            var real = new PoliceControl(config, new PaperSet(config), 13, 0, 0, new Random(2)); // assurance expirée
+            Assert.IsTrue(real.Finding.Real);
+            StringAssert.Contains("Le policier parle de", PoliceTexts.Demand(real));
+            StringAssert.Contains("expirée", PoliceTexts.Demand(real));
+
+            config.inventChanceWhenInOrder = 1f;
+            var invented = new PoliceControl(config, new PaperSet(config), 1, 0, 0, new Random(2));
+            Assert.AreEqual(ControlFindingKind.Invented, invented.Finding.Kind);
+            StringAssert.Contains("Le policier parle de", PoliceTexts.Demand(invented), "Même phrase : au joueur de comprendre.");
+
+            config.inventChanceWhenInOrder = 0f;
+            var inOrder = new PoliceControl(config, new PaperSet(config), 1, 0, 0, new Random(2));
+            Assert.AreEqual("Le policier regarde les papiers, longtemps.", PoliceTexts.Demand(inOrder));
+
+            invented.Choose(ControlChoice.Pay);
+            Assert.AreEqual($"{DaySummary.Money(invented.Paid)} laissés au contrôle. Bonne route.", PoliceTexts.Closed(invented));
+            Assert.AreEqual("Appeler quelqu'un", PoliceTexts.Choice(ControlChoice.Call));
+
+            foreach (var text in new[] { PoliceTexts.Demand(real), PoliceTexts.Demand(invented), PoliceTexts.Closed(invented),
+                         PoliceTexts.Choice(ControlChoice.Pay), PoliceTexts.Choice(ControlChoice.Negotiate), PoliceTexts.Choice(ControlChoice.Contest),
+                         Street.PoliceExpenseLabel, Street.ImpoundExpenseLabel })
+                Assert.IsFalse(PoliceTexts.IsCrude(text), text);
+            Assert.IsTrue(PoliceTexts.IsCrude("Un pot-de-vin"));
+        }
     }
 }

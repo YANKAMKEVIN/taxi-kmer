@@ -254,6 +254,16 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void Police_Texts_RealisticTone_NoCrudeWords()
+        {
+            // Ton réaliste (décision de Kevin, 2026-11-21) : on suggère la corruption sans la montrer crûment.
+            var p = Load<TaxiKmer.Core.Police.PoliceConfig>("police.json");
+            foreach (var t in p.pretexts) Assert.IsFalse(TaxiKmer.Core.Police.PoliceTexts.IsCrude(t.label), t.label);
+            foreach (var c in p.checkpoints) Assert.IsFalse(TaxiKmer.Core.Police.PoliceTexts.IsCrude(c.name), c.name);
+            foreach (var paper in p.papers) Assert.IsFalse(TaxiKmer.Core.Police.PoliceTexts.IsCrude(paper.name), paper.name);
+        }
+
+        [Test]
         public void Police_MatchesDefaults_StaysOffUntilKevinDecides()
         {
             var p = Load<TaxiKmer.Core.Police.PoliceConfig>("police.json");
