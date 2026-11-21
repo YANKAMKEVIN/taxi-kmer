@@ -1,4 +1,5 @@
 using TaxiKmer.Core.Day;
+using TaxiKmer.Core.Fuel;
 using TaxiKmer.Core.Rides;
 using TaxiKmer.Core.Ux;
 using UnityEngine;
@@ -21,6 +22,11 @@ namespace TaxiKmer.Driving
         private readonly Text _caption;
         private readonly Image _gaugeTrack, _gaugeFill;
         private readonly Text _revenue;
+        private readonly Image _fuelTrack, _fuelFill;
+        private readonly Text _fuel;
+        private readonly Text _reputation;
+        private static readonly Color FuelColor = new Color(1f, 1f, 1f, 0.85f);
+        private static readonly Color FuelLow = new Color(1f, 0.3f, 0.25f, 1f);
 
         private static readonly Color Track = new Color(0f, 0f, 0f, 0.45f);
         private static readonly Color DayColor = new Color(1f, 1f, 1f, 0.85f);
@@ -48,6 +54,10 @@ namespace TaxiKmer.Driving
             _revenue.horizontalOverflow = HorizontalWrapMode.Overflow;
             _revenue.gameObject.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.8f);
             UiKit.Fill(_revenue.rectTransform);
+            _fuelTrack = UiKit.NewImage(_root, "Carburant", Track, UiKit.Rounded);
+            _fuelFill = UiKit.NewImage(_fuelTrack.transform, "Réservoir", FuelColor, UiKit.Rounded);
+            _fuel = Label(font, TextAnchor.MiddleLeft, Color.white);
+            _reputation = Label(font, TextAnchor.MiddleLeft, Color.white);
         }
 
         private Text Label(Font font, TextAnchor anchor, Color color)
@@ -61,7 +71,7 @@ namespace TaxiKmer.Driving
         /// <summary>Texte de l'heure (la fin de journée le colore et le fait battre).</summary>
         public Text Clock => _clock;
 
-        public void Update(Shift shift, int dayNumber, int shownRevenue, bool visible)
+        public void Update(Shift shift, string dayLabel, int shownRevenue, bool visible, string reputationLabel = "")
         {
             _root.gameObject.SetActive(visible);
             if (!visible) return;
@@ -79,23 +89,46 @@ namespace TaxiKmer.Driving
             UiKit.PlaceTopLeft(_clock.rectTransform, x, h * 0.115f, w, h * 0.06f);
             UiKit.PlaceTopLeft(_dayTrack.rectTransform, x, h * 0.175f, w * 0.6f, h * 0.012f);
             Fill(_dayFill.rectTransform, HudGauges.DayLeft(shift.Clock));
-            // « Jour 3 » dans la place libre à droite de la barre de journée (les journées s'enchaînent, jalon 3).
-            _day.text = $"Jour {dayNumber}";
+            // « Jour 3 · mer. » dans la place libre à droite de la barre de journée (jours et calendrier, jalon 3).
+            _day.text = dayLabel;
             _day.fontSize = Mathf.RoundToInt(h * 0.028f);
             UiKit.PlaceTopLeft(_day.rectTransform, x + w * 0.64f, h * 0.162f, w * 0.36f, h * 0.038f);
 
             var versement = shift.Ledger.Versement;
-            var revenue = shownRevenue; // le compteur défile : la jauge et la légende suivent ce qu'il affiche
-            var covered = HudGauges.VersementCovered(revenue, versement);
-            _caption.text = HudGauges.VersementCaption(revenue, versement);
+            // Le compteur défile : la jauge et la légende suivent ce qu'il affiche, moins le carburant et les frais
+            // déjà payés dans la journée (ils passent avant le versement, comme au bilan).
+            var spent = shift.Ledger.FuelCost + shift.Ledger.ExpensesTotal;
+            var toward = HudGauges.TowardVersement(shownRevenue, shift.Ledger.FuelCost, shift.Ledger.ExpensesTotal);
+            var covered = HudGauges.VersementCovered(toward, versement);
+            _caption.text = HudGauges.VersementCaption(toward, versement, spent);
             _caption.fontSize = Mathf.RoundToInt(h * 0.028f);
             _caption.color = covered ? Covered : Color.white;
             UiKit.PlaceTopLeft(_caption.rectTransform, x, h * 0.19f, w, h * 0.034f);
             UiKit.PlaceTopLeft(_gaugeTrack.rectTransform, x, h * 0.225f, w, h * 0.045f);
-            Fill(_gaugeFill.rectTransform, HudGauges.VersementFill(shownRevenue, versement));
+            Fill(_gaugeFill.rectTransform, HudGauges.VersementFill(toward, versement));
             _gaugeFill.color = covered ? Covered : Filling;
             _revenue.text = DaySummary.Money(shownRevenue);
             _revenue.fontSize = Mathf.RoundToInt(h * 0.03f);
+
+            // Réputation (jalon 3) à droite de la jauge de versement, si elle est visible (reputation.json).
+            _reputation.enabled = !string.IsNullOrEmpty(reputationLabel);
+            _reputation.text = reputationLabel;
+            _reputation.fontSize = Mathf.RoundToInt(h * 0.026f);
+            UiKit.PlaceTopLeft(_reputation.rectTransform, x + w + h * 0.015f, h * 0.225f, w * 0.6f, h * 0.045f);
+
+            // Jauge de carburant (jalon 3) à droite de l'heure : se vide en roulant, rouge sur la réserve.
+            var tank = shift.Tank;
+            _fuelTrack.gameObject.SetActive(tank != null);
+            _fuel.enabled = tank != null;
+            if (tank == null) return;
+            var low = tank.IsLow;
+            UiKit.PlaceTopLeft(_fuelTrack.rectTransform, x + w * 0.45f, h * 0.135f, w * 0.32f, h * 0.022f);
+            Fill(_fuelFill.rectTransform, tank.Fraction);
+            _fuelFill.color = low ? FuelLow : FuelColor;
+            _fuel.text = FuelGauge.Label(tank);
+            _fuel.color = low ? FuelLow : Color.white;
+            _fuel.fontSize = Mathf.RoundToInt(h * 0.026f);
+            UiKit.PlaceTopLeft(_fuel.rectTransform, x + w * 0.8f, h * 0.125f, w * 0.4f, h * 0.04f);
         }
 
         /// <summary>Centre du compteur de recette, en pixels d'écran (le montant payé y file).</summary>

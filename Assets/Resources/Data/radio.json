@@ -1,0 +1,28 @@
+{
+    "_note": "Radio du taxi (priorité de Kevin du 2026-11-21, docs/tech/radio.md). Mécanisme prêt, coupé (enabled = false) : noms des stations, fréquences, musiques, animateurs et publicités sont à fournir par Kevin. AUCUN SON N'EST FOURNI : chaque piste est un emplacement vide (clip = chemin du son sous Resources, sans extension ; vide = silence). frequencyMHz = 0 : fréquence à fournir (affichée « FM ? »). seconds = 0 : durée par défaut (defaultProgramSeconds). kind : musique, emission, publicite ou flash. Le bouton fait défiler : coupée → station 1 → station 2 → coupée ; la radio se tait hors du taxi (pause, bilan) et quand un passager parle ; chaque station est en direct (sa grille avance même quand on ne l'écoute pas).",
+    "enabled": false,
+    "startsOn": false,
+    "defaultProgramSeconds": 180,
+    "volume": 0.6,
+    "stations": [
+        {
+            "id": "station-1",
+            "name": "Station 1 (nom à fournir par Kevin)",
+            "frequencyMHz": 0,
+            "programmes": [
+                { "id": "piste-1", "title": "Piste 1 (à fournir par Kevin)", "kind": "musique", "clip": "", "seconds": 0 },
+                { "id": "piste-2", "title": "Piste 2 (à fournir par Kevin)", "kind": "musique", "clip": "", "seconds": 0 },
+                { "id": "emission-1", "title": "Émission (à fournir par Kevin)", "kind": "emission", "clip": "", "seconds": 0 }
+            ]
+        },
+        {
+            "id": "station-2",
+            "name": "Station 2 (nom à fournir par Kevin)",
+            "frequencyMHz": 0,
+            "programmes": [
+                { "id": "piste-1", "title": "Piste 1 (à fournir par Kevin)", "kind": "musique", "clip": "", "seconds": 0 },
+                { "id": "publicite-1", "title": "Publicité locale (à fournir par Kevin)", "kind": "publicite", "clip": "", "seconds": 30 }
+            ]
+        }
+    ]
+}

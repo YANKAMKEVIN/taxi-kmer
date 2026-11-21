@@ -6,7 +6,7 @@ namespace TaxiKmer.Core.Day
     [Serializable]
     public class DayConfig
     {
-        public float dayLengthRealSeconds = 600f;
+        public float dayLengthRealSeconds = 2100f;
         public int startHour = 6;
         public int endHour = 20;
         public int versement = 10000;

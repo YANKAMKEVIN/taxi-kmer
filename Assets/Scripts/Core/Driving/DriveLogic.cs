@@ -77,6 +77,9 @@ namespace TaxiKmer.Core.Driving
 
         public Gear Gear { get; private set; } = Gear.Forward;
 
+        /// <summary>Vitesse maximale imposée (km/h), en plus du limiteur, en marche avant comme en arrière : panne sèche (jalon 3), panne.</summary>
+        public float SpeedCapKmh { get; set; } = float.PositiveInfinity;
+
         public DriveLogic(DriveConfig config)
         {
             if (config == null) throw new ArgumentNullException(nameof(config));
@@ -112,13 +115,13 @@ namespace TaxiKmer.Core.Driving
                 _holdTimer = 0f;
                 Gear = Gear.Forward;
                 if (speedKmh < -_pedals.stoppedKmh) cmd.Brake = 1f; // on recule encore : on freine d'abord
-                else cmd.Throttle = Limiter(speedKmh, _pedals.maxForwardKmh);
+                else cmd.Throttle = Limiter(speedKmh, Math.Min(_pedals.maxForwardKmh, SpeedCapKmh));
             }
             else if (input.Brake)
             {
                 if (Gear == Gear.Reverse && speedKmh <= _pedals.stoppedKmh)
                 {
-                    cmd.Throttle = -Limiter(-speedKmh, _pedals.maxReverseKmh);
+                    cmd.Throttle = -Limiter(-speedKmh, Math.Min(_pedals.maxReverseKmh, SpeedCapKmh));
                 }
                 else if (!stopped)
                 {
@@ -131,7 +134,7 @@ namespace TaxiKmer.Core.Driving
                     if (_holdTimer >= _pedals.reverseHoldSeconds)
                     {
                         Gear = Gear.Reverse;
-                        cmd.Throttle = -Limiter(-speedKmh, _pedals.maxReverseKmh);
+                        cmd.Throttle = -Limiter(-speedKmh, Math.Min(_pedals.maxReverseKmh, SpeedCapKmh));
                     }
                     else cmd.Brake = 1f;
                 }
@@ -149,6 +152,7 @@ namespace TaxiKmer.Core.Driving
         /// <summary>Gaz plein jusqu'à la bande du limiteur, puis décroissance linéaire jusqu'à 0 à la vitesse maximale.</summary>
         private float Limiter(float speedKmh, float maxKmh)
         {
+            if (maxKmh <= 0f) return 0f;
             var band = Math.Max(0.5f, maxKmh * _pedals.limiterBand);
             return Clamp01((maxKmh - speedKmh) / band);
         }

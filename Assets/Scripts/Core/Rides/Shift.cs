@@ -1,4 +1,6 @@
+using System;
 using TaxiKmer.Core.Day;
+using TaxiKmer.Core.Fuel;
 
 namespace TaxiKmer.Core.Rides
 {
@@ -28,11 +30,58 @@ namespace TaxiKmer.Core.Rides
         public DayLedger Ledger { get; }
         public TaxiCabin Cabin { get; }
 
-        public Shift(DayConfig day, SeatingConfig seating)
+        /// <summary>Réservoir du taxi (jalon 3) ; null sans réglages de carburant (carburant compté à la distance).</summary>
+        public FuelTank Tank { get; }
+
+        public Shift(DayConfig day, SeatingConfig seating, FuelConfig fuel = null, float? startLitres = null)
         {
             Clock = new DayClock(day);
             Ledger = new DayLedger(day);
             Cabin = new TaxiCabin(seating);
+            if (fuel != null)
+            {
+                Tank = new FuelTank(fuel, day, startLitres ?? fuel.startLitres);
+                Ledger.UsesFuelPurchases = true;
+            }
+        }
+
+        /// <summary>Le taxi a roulé <paramref name="meters"/> m : kilomètres du jour et réservoir qui se vide.</summary>
+        public void Drive(float meters)
+        {
+            Ledger.AddDistance(meters);
+            Tank?.Consume(meters);
+        }
+
+        /// <summary>
+        /// À la station : achète du carburant pour <paramref name="fcfa"/> FCFA (sans dépasser le plein), payé sur la
+        /// journée. Rend les litres achetés (0 si pas de réservoir ou déjà plein) et leur prix.
+        /// </summary>
+        public float BuyFuel(int fcfa, out int cost)
+        {
+            cost = 0;
+            if (Tank == null || Tank.IsFull) return 0f;
+            var litres = Tank.LitresFor(fcfa, Ledger.FuelPricePerLitre);
+            if (litres <= 1e-4f) return 0f;
+            cost = FuelTank.Cost(litres, Ledger.FuelPricePerLitre);
+            Tank.Add(litres);
+            Ledger.BuyFuel(litres, cost);
+            return litres;
+        }
+
+        /// <summary>
+        /// Panne sèche : un technicien du quartier vient (décision de Kevin) ; il verse du carburant, son prix
+        /// (déplacement + carburant) est une dépense de la journée, et le temps de son arrivée passe. False s'il reste
+        /// du carburant (ou sans réservoir).
+        /// </summary>
+        public bool CallTechnician(out TechnicianCall call)
+        {
+            call = default;
+            if (Tank == null || !Tank.IsEmpty) return false;
+            call = TechnicianCall.Quote(Tank, Ledger.FuelPricePerLitre);
+            Tank.Add(call.Litres);
+            Ledger.AddExpense(FuelGauge.TechnicianExpenseLabel, call.Cost);
+            Clock.AdvanceGameMinutes(call.DelayMinutes);
+            return true;
         }
 
         public BoardResult Board(Client client, out BenchSide side)

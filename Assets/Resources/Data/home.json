@@ -1,0 +1,21 @@
+{
+    "_note": "La vie à la maison (jalon 7, docs/tech/jalon-07.md). enabled = false. Montants à 0 et événements à 0 % : les charges types à Yaoundé, les situations familiales et les événements de vie sont des décisions de Kevin (questions du jalon 7 ; propositions chiffrées dans jalon-07.md). charges : amount en FCFA, dû tous les everyDays jours (1 = chaque soir, 30 = chaque mois), perChild = par enfant. lifeEvents : chancePerDay entre 0 et 1, cooldownDays = délai avant de revenir. tontine : join = le chauffeur en fait partie ; cotisation tous les everyDays jours ; il reçoit le pot (contribution × members) à son tour playerTurn.",
+    "enabled": false,
+    "startSituation": "celibataire",
+    "situations": [
+        { "id": "celibataire", "name": "Célibataire", "children": 0, "charges": [
+            { "id": "loyer", "label": "Loyer", "amount": 0, "everyDays": 30, "perChild": false },
+            { "id": "nourriture", "label": "Nourriture", "amount": 0, "everyDays": 1, "perChild": false }
+        ] },
+        { "id": "famille", "name": "En couple, deux enfants", "children": 2, "charges": [
+            { "id": "loyer", "label": "Loyer", "amount": 0, "everyDays": 30, "perChild": false },
+            { "id": "nourriture", "label": "Nourriture", "amount": 0, "everyDays": 1, "perChild": false },
+            { "id": "scolarite", "label": "Scolarité", "amount": 0, "everyDays": 30, "perChild": true }
+        ] }
+    ],
+    "lifeEvents": [
+        { "id": "enfant-malade", "label": "Un enfant est malade", "cost": 0, "chancePerDay": 0, "needsChildren": true, "cooldownDays": 30 },
+        { "id": "deuil", "label": "Deuil dans la famille", "cost": 0, "chancePerDay": 0, "needsChildren": false, "cooldownDays": 30 }
+    ],
+    "tontine": { "join": false, "members": 10, "contribution": 5000, "everyDays": 7, "playerTurn": 5 }
+}

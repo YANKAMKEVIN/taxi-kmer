@@ -15,7 +15,7 @@ Unity 6 LTS (URP), C# ; Android avec réglages bas / moyen / haut ; monde libre 
 | Portion du tronçon | **Dispensaire de Messassi → Étoudi** (décision de Kevin, 2026-11-11), tracé issu d'OpenStreetMap |
 | Places passagers | **5** (décision de Kevin) : 3 derrière, 2 devant **selon la corpulence** (voir ci-dessous) |
 | Corpulence (décision de Kevin : elle compte) | chaque client a une largeur : mince = 2, normal = 3, costaud = 4. Banquette avant = 6, arrière = 9. Exemples : costaud + mince devant ✓, costaud + normal devant ✗, trois normaux derrière ✓, deux costauds + un mince derrière ✗ |
-| Durée d'une journée de jeu | **10 minutes** réelles (6 h → 20 h) (décision de Kevin) |
+| Durée d'une journée de jeu | **10 minutes** réelles (6 h → 20 h) (décision de Kevin) ; **35 minutes** depuis le 2026-11-21 (décision de Kevin, piste B de l'équilibrage, `jalon-03.md`) |
 | Prix d'une course partagée | **proposé par le client selon la distance : 300 à 800 FCFA** (décision de Kevin) |
 | Versement journalier | **10 000 FCFA** (validé par Kevin) |
 | Carburant | jauge simple ; plein payé en fin de journée |

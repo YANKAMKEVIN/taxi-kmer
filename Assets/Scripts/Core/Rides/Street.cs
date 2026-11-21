@@ -98,6 +98,8 @@ namespace TaxiKmer.Core.Rides
         Drop,
         /// <summary>Après l'heure de fin, avec des passagers encore à bord : terminer quand même (ils ne paient pas).</summary>
         EndDay,
+        /// <summary>Arrêté à la station-service, réservoir pas plein : acheter du carburant (jalon 3).</summary>
+        Refuel,
     }
 
     /// <summary>Action proposée par le bouton contextuel.</summary>
@@ -112,6 +114,10 @@ namespace TaxiKmer.Core.Rides
         public Stop Stop;
         /// <summary>Drop : nombre de passagers qui descendent ici.</summary>
         public int Count;
+        /// <summary>Refuel : la station, et ce qu'un appui achèterait (litres, prix).</summary>
+        public Fuel.StationData Station;
+        public float FuelLitres;
+        public int FuelCost;
     }
 
     /// <summary>Pourquoi un client n'attend plus le joueur (pour le message à l'écran).</summary>
@@ -141,6 +147,9 @@ namespace TaxiKmer.Core.Rides
         public Client Moved;
         public int Paid;
         public List<Client> Dropped;
+        /// <summary>Refuel : litres achetés et prix payé.</summary>
+        public float FuelLitres;
+        public int FuelCost;
     }
 
     /// <summary>
@@ -165,6 +174,15 @@ namespace TaxiKmer.Core.Rides
         /// <summary>Clients perdus depuis le dernier <see cref="Update"/> (abandon, autre taxi).</summary>
         public IReadOnlyList<ClientLost> Lost => _lost;
         public Shift Shift => _shift;
+
+        /// <summary>
+        /// Cadence d'arrivée des clients (1 = <see cref="StreetConfig.spawnIntervalSeconds"/>) : le calendrier la
+        /// règle selon le jour (dimanche plus calme, jours de marché).
+        /// </summary>
+        public float SpawnRateScale { get; set; } = 1f;
+
+        /// <summary>Réputation du chauffeur (jalon 3) : les courses, les clients laissés en plan et la conduite la font bouger. Null : pas suivie.</summary>
+        public Career.DriverReputation Reputation { get; set; }
 
         /// <summary>
         /// La journée est terminée et le bilan est arrêté : à l'heure de fin dès que le taxi est vide,
@@ -198,7 +216,7 @@ namespace TaxiKmer.Core.Rides
                 {
                     var stop = _stops.stops[i];
                     if (CountAt(stop) >= _config.maxWaitingPerStop) { _spawnTimers[i] = 0f; continue; }
-                    _spawnTimers[i] += dt;
+                    _spawnTimers[i] += dt * Math.Max(0f, SpawnRateScale);
                     if (_spawnTimers[i] >= _config.spawnIntervalSeconds)
                     {
                         _spawnTimers[i] = 0f;
@@ -207,6 +225,7 @@ namespace TaxiKmer.Core.Rides
                 }
             }
 
+            Reputation?.Drive(dt, taxi.SpeedKmh, _shift.Cabin.PassengerCount);
             var onRoute = Math.Abs(taxi.Lateral) <= _config.maxLateralMeters;
             foreach (var c in _waiting)
             {
@@ -220,6 +239,7 @@ namespace TaxiKmer.Core.Rides
                     {
                         c.State = RoadsideState.Waiting;
                         _lost.Add(new ClientLost { Client = c, Reason = ClientLostReason.GaveUp, WasAccepted = true });
+                        Reputation?.AcceptedClientGaveUp();
                     }
                 }
                 c.Calling = c.State == RoadsideState.Waiting && onRoute && !_shift.Clock.IsOver
@@ -286,22 +306,40 @@ namespace TaxiKmer.Core.Rides
                 if (count > 0) return new StreetAction { Kind = StreetActionKind.Drop, Stop = stop, Count = count };
             }
 
-            if (_shift.Clock.IsOver)
-                return _shift.Cabin.PassengerCount > 0
-                    ? new StreetAction { Kind = StreetActionKind.EndDay, Count = _shift.Cabin.PassengerCount }
-                    : none;
-
-            RoadsideClient nearest = null;
-            var best = float.MaxValue;
-            foreach (var c in _waiting)
+            if (!_shift.Clock.IsOver)
             {
-                if (c.State != RoadsideState.Accepted || !OnClientSide(c, taxi)) continue;
-                var d = Math.Abs(c.Along - taxi.Along);
-                if (d <= _config.boardDistanceMeters && d < best) { best = d; nearest = c; }
+                RoadsideClient nearest = null;
+                var best = float.MaxValue;
+                foreach (var c in _waiting)
+                {
+                    if (c.State != RoadsideState.Accepted || !OnClientSide(c, taxi)) continue;
+                    var d = Math.Abs(c.Along - taxi.Along);
+                    if (d <= _config.boardDistanceMeters && d < best) { best = d; nearest = c; }
+                }
+                if (nearest != null)
+                {
+                    var move = _shift.Cabin.CanBoard(nearest.Client) ? null : _shift.Cabin.FindMoveToFit(nearest.Client);
+                    return new StreetAction { Kind = StreetActionKind.Board, Client = nearest, MoveFirst = move };
+                }
             }
-            if (nearest == null) return none;
-            var move = _shift.Cabin.CanBoard(nearest.Client) ? null : _shift.Cabin.FindMoveToFit(nearest.Client);
-            return new StreetAction { Kind = StreetActionKind.Board, Client = nearest, MoveFirst = move };
+
+            var tank = _shift.Tank;
+            var station = tank?.StationAt(taxi.Along);
+            if (station != null && !tank.IsFull)
+            {
+                var litres = tank.LitresFor(tank.Config.refuelStepFcfa, _shift.Ledger.FuelPricePerLitre);
+                return new StreetAction
+                {
+                    Kind = StreetActionKind.Refuel,
+                    Station = station,
+                    FuelLitres = litres,
+                    FuelCost = Fuel.FuelTank.Cost(litres, _shift.Ledger.FuelPricePerLitre),
+                };
+            }
+
+            return _shift.Clock.IsOver && _shift.Cabin.PassengerCount > 0
+                ? new StreetAction { Kind = StreetActionKind.EndDay, Count = _shift.Cabin.PassengerCount }
+                : none;
         }
 
         /// <summary>Le joueur appuie sur le bouton contextuel.</summary>
@@ -314,6 +352,7 @@ namespace TaxiKmer.Core.Rides
                 case StreetActionKind.Drop:
                     outcome.Dropped = _shift.Cabin.PassengersFor(action.Stop.id);
                     outcome.Paid = _shift.DropAllAt(action.Stop.id);
+                    if (outcome.Paid > 0) Reputation?.RidesPaid(outcome.Dropped.Count);
                     break;
                 case StreetActionKind.Board:
                     var c = action.Client;
@@ -329,6 +368,9 @@ namespace TaxiKmer.Core.Rides
                 case StreetActionKind.EndDay:
                     Finish();
                     break;
+                case StreetActionKind.Refuel:
+                    outcome.FuelLitres = _shift.BuyFuel(_shift.Tank.Config.refuelStepFcfa, out outcome.FuelCost);
+                    break;
             }
             if (!DayFinished && _shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
             return outcome;
@@ -343,6 +385,36 @@ namespace TaxiKmer.Core.Rides
             if (!DayFinished) Finish();
         }
 
+        /// <summary>
+        /// Panne sèche (décision de Kevin) : le taxi est arrêté sans carburant hors de la station-service, le joueur doit
+        /// choisir entre <see cref="PushTaxi"/> et <see cref="CallTechnician"/>. À la station, le bouton contextuel
+        /// propose d'acheter du carburant.
+        /// </summary>
+        public bool DryTankChoice(TaxiOnRoute taxi)
+        {
+            var tank = _shift.Tank;
+            return !DayFinished && tank != null && tank.Stranded && tank.StationAt(taxi.Along) == null;
+        }
+
+        /// <summary>Devis du technicien du quartier pour le réservoir actuel.</summary>
+        public Fuel.TechnicianCall TechnicianQuote() =>
+            _shift.Tank == null ? default : Fuel.TechnicianCall.Quote(_shift.Tank, _shift.Ledger.FuelPricePerLitre);
+
+        /// <summary>Panne sèche : le chauffeur pousse le taxi (au pas, jusqu'à la station). False si rien à pousser.</summary>
+        public bool PushTaxi() => !DayFinished && _shift.Tank != null && _shift.Tank.StartPushing();
+
+        /// <summary>
+        /// Panne sèche : le technicien du quartier arrive après son délai, verse du carburant et se fait payer ; si
+        /// l'heure de fin est passée pendant l'attente et que le taxi est vide, la journée se termine.
+        /// </summary>
+        public bool CallTechnician(out Fuel.TechnicianCall call)
+        {
+            call = default;
+            if (DayFinished || !_shift.CallTechnician(out call)) return false;
+            if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
+            return true;
+        }
+
         /// <summary>Passagers descendus sans payer plus tôt dans la journée (pour la sauvegarde).</summary>
         public int LeftUnpaid => _leftUnpaid;
         public int LeftUnpaidFares => _leftUnpaidFares;
@@ -353,11 +425,14 @@ namespace TaxiKmer.Core.Rides
             _leftUnpaidFares = Math.Max(0, fares);
         }
 
-        private void Finish(bool arrested = false, bool seized = false)
+        private void Finish(bool arrested = false, bool seized = false, bool impounded = false)
         {
             var unpaid = _leftUnpaidFares;
             foreach (var p in _shift.Cabin.Passengers) unpaid += p.ProposedFare;
-            Summary = DaySummary.From(_shift.Ledger, _shift.Cabin.PassengerCount + _leftUnpaid, unpaid, arrested, seized);
+            Reputation?.PassengersNotDelivered(_shift.Cabin.PassengerCount);
+            Summary = DaySummary.From(_shift.Ledger, _shift.Cabin.PassengerCount + _leftUnpaid, unpaid, arrested, seized,
+                _shift.Tank != null ? _shift.Tank.Litres : -1f,
+                Reputation?.Score ?? -1, Reputation?.ChangeToday ?? 0, impounded);
             foreach (var c in _waiting) c.Calling = false;
         }
 
@@ -372,9 +447,11 @@ namespace TaxiKmer.Core.Rides
             var outcome = PedestrianAccident.Resolve(config, impactKmh, random);
             if (outcome.Severity == InjurySeverity.None) return outcome;
 
+            Reputation?.PedestrianHit(outcome.Severity == InjurySeverity.Serious);
             if (outcome.PassengersLeave)
             {
                 var passengers = new List<Client>(_shift.Cabin.Passengers);
+                Reputation?.PassengersNotDelivered(passengers.Count);
                 foreach (var p in passengers)
                 {
                     _leftUnpaid++;
@@ -389,6 +466,39 @@ namespace TaxiKmer.Core.Rides
             if (outcome.Arrested) Finish(arrested: true, seized: outcome.VehicleSeized);
             else if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
             return outcome;
+        }
+
+        /// <summary>Libellé de la dépense d'un contrôle de police dans le bilan (« amendes et arrangements », vision 4.3).</summary>
+        public const string PoliceExpenseLabel = "Contrôle de police";
+        public const string ImpoundExpenseLabel = "Fourrière";
+
+        /// <summary>
+        /// Applique à la journée un contrôle de police terminé (jalon 4) : somme payée (dépense du bilan), temps perdu,
+        /// réputation ; fourrière → frais de fourrière, les passagers descendent sans payer et la journée s'arrête.
+        /// Rend false si le contrôle n'est pas terminé ou si la journée l'est déjà.
+        /// </summary>
+        public bool ApplyPoliceControl(Police.PoliceControl control, int impoundFee)
+        {
+            if (control == null || !control.Closed || DayFinished) return false;
+            _shift.Ledger.AddExpense(PoliceExpenseLabel, control.Paid);
+            Reputation?.Add(control.ReputationDelta);
+            _shift.Clock.AdvanceGameMinutes(control.LostMinutes);
+            if (control.Impounded)
+            {
+                _shift.Ledger.AddExpense(ImpoundExpenseLabel, Math.Max(0, impoundFee));
+                var passengers = new List<Client>(_shift.Cabin.Passengers);
+                Reputation?.PassengersNotDelivered(passengers.Count);
+                foreach (var p in passengers)
+                {
+                    _leftUnpaid++;
+                    _leftUnpaidFares += p.ProposedFare;
+                    _shift.Cabin.Remove(p);
+                }
+                Finish(impounded: true);
+                return true;
+            }
+            if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
+            return true;
         }
 
         public Stop FindStop(string id) => _factory.FindStop(id);

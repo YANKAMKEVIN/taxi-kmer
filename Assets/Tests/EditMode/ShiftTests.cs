@@ -49,7 +49,7 @@ namespace TaxiKmer.Core.Tests
         [Test]
         public void NoBoardingAfterDayEnds()
         {
-            _shift.Clock.Advance(600f);
+            _shift.Clock.Advance(new DayConfig().dayLengthRealSeconds);
             Assert.AreEqual(BoardResult.DayOver, _shift.Board(new Client("a", "emana", 1000, 300, Corpulence.Normal), out _));
         }
     }

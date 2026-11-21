@@ -90,16 +90,19 @@ namespace TaxiKmer.Core.Rides
         public Client FindMoveToFit(Client newcomer)
         {
             if (CanBoard(newcomer)) return null;
-            foreach (var p in Passengers)
+            // Copie : l'essai déplace les passagers d'une banquette à l'autre, ce qui interdit d'énumérer les banquettes
+            // elles-mêmes (exception dès que le premier essai échouait, au klaxon avec un taxi presque plein).
+            foreach (var p in new List<Client>(Passengers))
             {
                 var from = BenchOf(p);
                 var to = Other(from);
                 if (!to.CanSeat(p)) continue;
+                var index = from.IndexOf(p);
                 from.Remove(p);
                 to.Seat(p);
                 var fits = CanBoard(newcomer);
                 to.Remove(p);
-                from.Seat(p);
+                from.SeatAt(index, p); // remis à sa place exacte : l'ordre des banquettes ne change pas
                 if (fits) return p;
             }
             return null;

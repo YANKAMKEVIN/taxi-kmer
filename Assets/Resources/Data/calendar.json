@@ -1,0 +1,14 @@
+{
+    "_note": "Calendrier (jalon 3, valeurs par défaut à régler avec Kevin). firstWeekday : jour de la semaine du jour 1 (indice dans weekdays, 0 = lundi). clients : multiplie la cadence d'arrivée des clients ; traffic : multiplie la densité du trafic et des piétons ; market : jour de marché (annoncé). Jours de marché (mercredi et samedi) et dimanche plus calme (0,6) mais travaillé : validés par Kevin le 2026-11-21.",
+    "firstWeekday": 0,
+    "marketName": "marché de Messassi",
+    "weekdays": [
+        { "name": "lundi", "clients": 1, "traffic": 1, "market": false },
+        { "name": "mardi", "clients": 1, "traffic": 1, "market": false },
+        { "name": "mercredi", "clients": 1.25, "traffic": 1.15, "market": true },
+        { "name": "jeudi", "clients": 1, "traffic": 1, "market": false },
+        { "name": "vendredi", "clients": 1, "traffic": 1, "market": false },
+        { "name": "samedi", "clients": 1.25, "traffic": 1.15, "market": true },
+        { "name": "dimanche", "clients": 0.6, "traffic": 0.6, "market": false }
+    ]
+}

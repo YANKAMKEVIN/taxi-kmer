@@ -28,14 +28,27 @@ namespace TaxiKmer.Core.Day
         public bool Arrested { get; private set; }
         /// <summary>Le taxi a été saisi par la gendarmerie.</summary>
         public bool VehicleSeized { get; private set; }
+        /// <summary>Le taxi est parti à la fourrière après un contrôle de police (jalon 4).</summary>
+        public bool Impounded { get; private set; }
+        /// <summary>Carburant dans le réservoir à la fin de la journée (L) ; -1 sans réservoir.</summary>
+        public float TankLitres { get; private set; } = -1f;
+        /// <summary>Réputation à la fin de la journée (-1 si elle n'est pas suivie) et sa variation du jour.</summary>
+        public int Reputation { get; private set; } = -1;
+        public int ReputationChange { get; private set; }
 
-        /// <summary>Le versement est couvert par les recettes.</summary>
-        public bool VersementReached => Revenue >= Versement;
-        /// <summary>Ce qui manque aux recettes pour couvrir le versement (0 s'il est couvert).</summary>
-        public int VersementShortfall => Math.Max(0, Versement - Revenue);
+        /// <summary>
+        /// Recette qui reste pour le versement une fois payés le carburant et les frais imprévus de la journée (ils se
+        /// paient d'abord, comme dans <see cref="Career.DriverCareer.CloseDay"/>) ; peut être négative.
+        /// </summary>
+        public int TowardVersement => Revenue - FuelCost - ExpensesTotal;
+        /// <summary>Le versement est couvert par la journée seule (recettes moins carburant et frais), sans l'épargne.</summary>
+        public bool VersementReached => TowardVersement >= Versement;
+        /// <summary>Ce qui manque à la journée seule pour couvrir le versement (0 s'il est couvert), avant l'épargne.</summary>
+        public int VersementShortfall => Versement - Math.Max(0, Math.Min(Versement, TowardVersement));
 
         public static DaySummary From(DayLedger ledger, int unpaidPassengers = 0, int unpaidFares = 0,
-            bool arrested = false, bool vehicleSeized = false)
+            bool arrested = false, bool vehicleSeized = false, float tankLitres = -1f,
+            int reputation = -1, int reputationChange = 0, bool impounded = false)
         {
             if (ledger == null) throw new ArgumentNullException(nameof(ledger));
             return new DaySummary
@@ -43,7 +56,11 @@ namespace TaxiKmer.Core.Day
                 Expenses = new List<Expense>(ledger.Expenses),
                 ExpensesTotal = ledger.ExpensesTotal,
                 Arrested = arrested,
+                TankLitres = tankLitres,
+                Reputation = reputation,
+                ReputationChange = reputationChange,
                 VehicleSeized = vehicleSeized,
+                Impounded = impounded,
                 Revenue = ledger.Revenue,
                 RideCount = ledger.RideCount,
                 Versement = ledger.Versement,

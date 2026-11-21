@@ -28,6 +28,17 @@
 
 Après le jalon 11 : l'entreprise de taxis, le reste de Yaoundé, puis Douala, la démo web.
 
+## Priorités suivantes (cochées par Kevin le 2026-11-21)
+
+Toutes cochées : **police (jalon 4)**, **passagers qui parlent (jalon 5)**, **radio camerounaise**, **route dure (jalon 6)**. Ce qui est entièrement décidé est actif ; le reste est prêt mais coupé (`enabled: false`) :
+
+| Priorité | Décidé et actif | Prêt mais coupé, en attendant |
+|---|---|---|
+| Police (jalon 4) | Ton réaliste : textes du contrôle (`PoliceTexts`), sans affichage tant que le contrôle est coupé | Contrôles (`police.json`) : questions 2 (papiers et coûts), 3 (contester), 5 (appeler), 6 (sommes et fréquence), 7 (fourrière), 9 (postes) ; 4 (fuir) et 8 (réputation) restent ouvertes (`jalon-04.md`) |
+| Passagers qui parlent (jalon 5) | Langues : français, camfranglais, pidgin (champ `register`, choix par passager) | Dialogues (`dialogues.json`) : question 3 (qui écrit les répliques) et 4 (personnages types) ; 2, 5, 6, 7 ouvertes (`jalon-05.md`) |
+| Radio camerounaise | Mécanisme (stations, changement de station, silence hors du taxi et pendant les dialogues) | Radio (`radio.json`) : noms des stations, musique sous licence ou libre, animateurs, publicités (`radio.md`) ; aucun son fourni |
+| Route dure (jalon 6) | Panne sèche : pousser ou appeler un technicien du quartier (actif, jalon 3) | Imprévus (`road.json`) : question 1 (fréquence ; ≈ 8 crevaisons par semaine avec la journée de 35 min) et 3 (qui paie) ; 2, 4, 5, 6 ouvertes (`jalon-06.md`) |
+
 ---
 
 ## Jalon 2 — La ville vit
@@ -65,7 +76,9 @@ Après le jalon 11 : l'entreprise de taxis, le reste de Yaoundé, puis Douala, l
 **Questions pour Kevin**
 1. ~~Que se passe-t-il si le versement n'est pas atteint ?~~ → **Tranché** (2026-11-15) : le propriétaire menace, puis renvoie le chauffeur s'il n'y arrive pas au bout d'un certain temps.
 2. ~~Le joueur choisit-il ses heures ?~~ → **Tranché** : au début non, il suit les horaires de son patron (il cherche l'argent).
-3. Réputation : visible pour le joueur, ou cachée ?
+3. ~~Réputation : visible pour le joueur, ou cachée ?~~ → **Tranché** (2026-11-21) : **visible** (`visible: true` dans `reputation.json`). Ses effets sur le jeu restent à décider.
+5. *(tranché aussi, 2026-11-21)* Calendrier par défaut accepté : marché le mercredi et le samedi, dimanche plus calme mais travaillé.
+6. *(tranché aussi, 2026-11-21)* Équilibrage : journée de 35 min réelles (30 à 40), carburant réaliste gardé ; panne sèche : on pousse, ou on appelle un technicien du quartier.
 4. *(tranché aussi)* L'argent qui reste passe d'un jour à l'autre.
 
 ## Jalon 4 — Le contrôle
@@ -82,7 +95,7 @@ Après le jalon 11 : l'entreprise de taxis, le reste de Yaoundé, puis Douala, l
 **Accepté si** : une dizaine de contrôles variés dans une journée de test ; les règles sont dans les données et testées.
 
 **Questions pour Kevin**
-1. Le ton exact : satirique, dramatique, ou les deux selon les situations ?
+1. ~~Le ton exact : satirique, dramatique, ou les deux selon les situations ?~~ → **Tranché** (2026-11-21) : **réaliste**, on suggère la corruption sans la montrer crûment.
 2. Liste des papiers à gérer et leur coût de renouvellement.
 3. Contester peut-il parfois gagner ? Si oui, à quelles conditions ?
 4. Le joueur peut-il fuir un contrôle ?
@@ -95,13 +108,13 @@ Après le jalon 11 : l'entreprise de taxis, le reste de Yaoundé, puis Douala, l
 - Système de dialogues dans les données (personnages types, sujets, réactions).
 - Interactions entre passagers : discussions, disputes de place, plaintes sur le détour, négociation du prix, clients qui ne veulent pas payer.
 - Réponses du chauffeur (choix rapides qui ne bloquent pas la conduite).
-- Radio du taxi.
+- Radio du taxi. *(mécanisme fait le 2026-11-21, coupé ; questions : `docs/tech/radio.md`)*
 - Ambiance sonore : klaxons, appels des clients (« Emana, 300 ! »), marché.
 
 **Accepté si** : sur une journée, les dialogues ne se répètent pas trop et restent lisibles en conduisant.
 
 **Questions pour Kevin**
-1. Langues à l'écran : français, camfranglais, pidgin, langues locales (sous-titrées) ?
+1. ~~Langues à l'écran : français, camfranglais, pidgin, langues locales (sous-titrées) ?~~ → **Tranché** (2026-11-21) : **français, camfranglais et pidgin**.
 2. Voix enregistrées ou texte seul (au moins au début) ?
 3. Qui écrit les dialogues : Kevin, Claude à partir de situations données par Kevin, ou les deux ?
 

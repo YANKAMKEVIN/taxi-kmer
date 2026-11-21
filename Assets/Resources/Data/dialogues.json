@@ -1,0 +1,31 @@
+{
+    "_note": "Dialogues des passagers (jalon 5, docs/tech/jalon-05.md). Mécanisme prêt, coupé (enabled = false) : les répliques sont le contenu de Kevin (question 3 du jalon 5) ; les trois lignes ci-dessous sont des EXEMPLES À REMPLACER. trigger : montee, discussion, place, detour, paiement, negociation, refus-paiement. character : id d'un personnage type (vide = n'importe quel passager). Lecture en conduisant : minShowSeconds, charsPerSecond, maxChars ; minGapSeconds = silence entre deux bulles ; noRepeatWithin = une réplique ne revient pas avant N autres ; replySeconds = durée des réponses rapides ; detourMeters = plainte quand le taxi s'éloigne d'autant de la destination ; haggleChance / refusesToPayChance = 0 tant que Kevin n'a pas décidé des conséquences. Langues (décision de Kevin du 2026-11-21) : français, camfranglais et pidgin. register d'une réplique : fr, camfranglais ou pidgin (vide = tout passager) ; chaque passager reçoit un registre selon registers (weight = part des passagers, choix de Claude à régler par Kevin) et ne dit que les répliques de son registre ; fallbackRegister : registre utilisé quand il n'existe aucune réplique dans le sien (vide = il se tait). register d'un personnage type : registre imposé.",
+    "enabled": false,
+    "minShowSeconds": 2.5,
+    "charsPerSecond": 14,
+    "maxChars": 90,
+    "minGapSeconds": 6,
+    "noRepeatWithin": 12,
+    "replySeconds": 4,
+    "chatEverySeconds": 45,
+    "detourMeters": 150,
+    "haggleChance": 0,
+    "refusesToPayChance": 0,
+    "registers": [
+        { "id": "fr", "name": "français", "weight": 0.5 },
+        { "id": "camfranglais", "name": "camfranglais", "weight": 0.35 },
+        { "id": "pidgin", "name": "pidgin", "weight": 0.15 }
+    ],
+    "fallbackRegister": "fr",
+    "characters": [],
+    "lines": [
+        { "id": "exemple-montee", "trigger": "montee", "character": "", "register": "fr", "text": "Bonjour chauffeur ! (exemple à remplacer)", "replies": [] },
+        { "id": "exemple-montee-camfranglais", "trigger": "montee", "character": "", "register": "camfranglais", "text": "(exemple à remplacer : salut en camfranglais)", "replies": [] },
+        { "id": "exemple-montee-pidgin", "trigger": "montee", "character": "", "register": "pidgin", "text": "(exemple à remplacer : salut en pidgin)", "replies": [] },
+        { "id": "exemple-detour", "trigger": "detour", "character": "", "register": "fr", "text": "Chauffeur, ce n'est pas la route ! (exemple à remplacer)", "replies": [
+            { "id": "rassurer", "text": "On arrive (exemple)", "reputation": 0 },
+            { "id": "ignorer", "text": "… (exemple)", "reputation": 0 }
+        ] },
+        { "id": "exemple-place", "trigger": "place", "character": "", "register": "", "text": "Je dois encore bouger ? (exemple à remplacer)", "replies": [] }
+    ]
+}

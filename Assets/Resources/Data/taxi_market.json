@@ -1,0 +1,7 @@
+{
+    "_note": "Devenir propriétaire (jalon 9, docs/tech/jalon-09.md). enabled = false ; aucune offre : modèles fictifs et prix sont des décisions de Kevin (question 2). loan : apport minimum (part du prix), intérêts totaux, durée en jours de jeu — provisoires. maintenancePerKm (FCFA) = 0 tant que Kevin n'a pas fixé les charges du propriétaire.",
+    "enabled": false,
+    "offers": [],
+    "loan": { "minDownPayment": 0.3, "interest": 0.2, "days": 60 },
+    "maintenancePerKm": 0
+}

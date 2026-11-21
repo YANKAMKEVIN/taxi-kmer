@@ -38,6 +38,8 @@ namespace TaxiKmer.Driving
         public float ForwardSpeedMs { get; private set; }
         public float SpeedKmh => Mathf.Abs(ForwardSpeedMs) * 3.6f;
         public DriveConfig Config { get; private set; }
+        /// <summary>Vitesse maximale imposée (km/h) : réservoir vide (jalon 3). Infinie par défaut.</summary>
+        public float SpeedCapKmh { get; set; } = float.PositiveInfinity;
 
         private Rigidbody _rb;
         private DriveLogic _logic;
@@ -91,6 +93,7 @@ namespace TaxiKmer.Driving
         {
             var dt = Time.fixedDeltaTime;
             ForwardSpeedMs = Vector3.Dot(_rb.linearVelocity, transform.forward);
+            _logic.SpeedCapKmh = SpeedCapKmh;
             var cmd = _logic.Step(Controls, ForwardSpeedMs, dt);
             Command = cmd;
             var car = Config.car;

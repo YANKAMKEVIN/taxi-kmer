@@ -31,6 +31,20 @@ namespace TaxiKmer.Core.Ux
             return $"Journée finie : dépose {who}, ou arrête-toi pour terminer";
         }
 
+        /// <summary>
+        /// Ce qui compte pour le versement pendant la journée : la recette moins le carburant acheté et les frais
+        /// imprévus, qui se paient d'abord (même règle que le bilan et le propriétaire). Sans cela, la jauge
+        /// annonçait « Versement couvert » alors que le bilan disait « Il manque … » après le plein.
+        /// </summary>
+        public static int TowardVersement(int revenue, int fuelCost, int expenses) => revenue - Math.Max(0, fuelCost) - Math.Max(0, expenses);
+
+        /// <summary>Légende quand des dépenses ont été déduites et que le versement n'est pas encore couvert : « Versement 10 000 · -2 000 dépensés ».</summary>
+        public static string VersementCaption(int towardVersement, int versement, int spent)
+        {
+            if (spent <= 0 || VersementCovered(towardVersement, versement)) return VersementCaption(towardVersement, versement);
+            return $"Versement {Amount(versement)} · -{Amount(spent)} dépensés";
+        }
+
         /// <summary>Remplissage de la jauge de versement, de 0 à 1.</summary>
         public static float VersementFill(int revenue, int versement)
         {

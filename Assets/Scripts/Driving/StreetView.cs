@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using TaxiKmer.Core.Day;
+using TaxiKmer.Core.Fuel;
 using TaxiKmer.Core.Incidents;
 using TaxiKmer.Core.Rides;
 using TaxiKmer.Core.Traffic;
@@ -51,6 +52,11 @@ namespace TaxiKmer.Driving
         private bool _dayOverShown;
         private bool _lastHourShown;
         private Text _endReminder;
+        // Panne sèche : choix « pousser » ou « appeler un technicien du quartier » (décision de Kevin, 2026-11-21).
+        private Image _pushButton, _technicianButton;
+        private Text _pushText, _technicianText;
+        // Radio du taxi (radio.json ; créée seulement si enabled).
+        private RadioView _radio;
         private DaySummaryView _summaryView;
         private Tutorial _tutorial;
         private Image _tutorialPanel;
@@ -79,6 +85,12 @@ namespace TaxiKmer.Driving
         private QualityView _quality;
         private bool _cityPopulated;
         private AccidentConfig _accidents;
+        private Calendar _calendar;
+        private FuelConfig _fuel;
+        private bool _lowFuelShown, _emptyFuelShown;
+        private StreetActionKind _actionKind;
+        /// <summary>Jour de la semaine de la journée en cours (calendrier, jalon 3).</summary>
+        public CalendarDay Today { get; private set; }
         private System.Random _random;
 
         /// <summary>Bulle d'un client : fond sombre arrondi, pointe, bordure (rentre / à déplacer / ne rentre pas), carrure, texte.</summary>
@@ -126,7 +138,8 @@ namespace TaxiKmer.Driving
 
             var stops = Load("Data/stops_messassi_etoudi", new StopsConfig());
             var fares = Load("Data/fares", FareConfig.Default());
-            var shift = new Shift(Load("Data/day", new DayConfig()), Load("Data/seating", new SeatingConfig()));
+            _fuel = Load("Data/fuel", new FuelConfig());
+            var shift = new Shift(Load("Data/day", new DayConfig()), Load("Data/seating", new SeatingConfig()), _fuel);
             var actualSeed = seed != 0 ? seed : System.Environment.TickCount;
             var factory = new ClientFactory(stops, fares, actualSeed);
             Street = new Street(Load("Data/street", new StreetConfig()), stops, factory, shift, _cum[_cum.Length - 1]);
@@ -144,6 +157,15 @@ namespace TaxiKmer.Driving
             Save.street = this;
             Save.taxi = taxi;
             Save.Initialize(actualSeed, Load("Data/save", new SaveConfig()), Load("Data/owner", new Core.Career.OwnerConfig()));
+            // Calendrier : le jour de la semaine règle les clients et le trafic (dimanche plus calme, jours de marché).
+            _calendar = new Calendar(Load("Data/calendar", new CalendarConfig()));
+            Today = _calendar.For(Save.Career.DayNumber);
+            // Carburant : le réservoir laissé la veille (ou celui du départ d'une carrière).
+            shift.Tank.Set(Core.Save.SaveSnapshot.TankAtDayStart(Save.Data, _fuel));
+            // Réputation : celle de la veille (visible ou cachée selon reputation.json, question ouverte de Kevin).
+            Street.Reputation = Core.Save.SaveSnapshot.LoadReputation(Save.Data, Load("Data/reputation", new Core.Career.ReputationConfig()));
+            Street.SpawnRateScale = Today.ClientsFactor;
+            ApplyTrafficScale();
             var trafficView = gameObject.AddComponent<TrafficView>();
             trafficView.baseMaterial = personMaterial;
             trafficView.City = City;
@@ -151,11 +173,18 @@ namespace TaxiKmer.Driving
             trafficView.Decorate(taxi.transform, TaxiFactory.Length, TaxiFactory.Width, true, 0);
 
             foreach (var stop in stops.stops) _stopMarkers[stop.id] = MakeStopMarker(stop);
+            if (_fuel.stations != null) foreach (var station in _fuel.stations) MakeStation(station);
             _sounds = taxi.GetComponent<TaxiSounds>();
             if (_sounds == null) _sounds = taxi.gameObject.AddComponent<TaxiSounds>(); // pas de « ?? » avec un objet Unity
             _tutorial = new Tutorial(PlayerPrefs.GetInt(TutorialDoneKey, 0) == 0, shift.Ledger.Versement);
             BuildHud();
             _gauges = new ShiftGaugesView(controls.Overlay, controls.Font);
+            _pushButton = UiKit.NewButton(controls.Overlay, controls.Font, FuelGauge.PushLabel, new Color(0.3f, 0.3f, 0.35f, 0.95f), out _pushText);
+            _technicianButton = UiKit.NewButton(controls.Overlay, controls.Font, "", new Color(0.12f, 0.55f, 0.25f, 0.95f), out _technicianText);
+            _pushButton.gameObject.SetActive(false);
+            _technicianButton.gameObject.SetActive(false);
+            var radio = Load("Data/radio", new Core.Radio.RadioConfig());
+            if (radio.enabled) _radio = new RadioView(controls.Overlay, controls.Font, taxi.gameObject, radio);
             _menu = new GameMenu(!TitleDone);
             _menuView = new GameMenuView(transform, controls.Font);
             _settings.Volume = PlayerPrefs.GetFloat(VolumeKey, GameSettings.DefaultVolume);
@@ -198,7 +227,7 @@ namespace TaxiKmer.Driving
 
         private void ApplyTrafficScale()
         {
-            var scale = _quality != null ? _quality.Current.trafficScale : 1f;
+            var scale = (_quality != null ? _quality.Current.trafficScale : 1f) * (_calendar != null ? Today.TrafficFactor : 1f);
             City.Traffic.DensityScale = scale;
             City.Pedestrians.DensityScale = scale;
         }
@@ -236,8 +265,9 @@ namespace TaxiKmer.Driving
             if (!Street.DayFinished && !_menu.Frozen)
             {
                 shift.Clock.Advance(dt);
-                shift.Ledger.AddDistance(Mathf.Abs(taxi.SpeedKmh) / 3.6f * dt);
+                shift.Drive(Mathf.Abs(taxi.SpeedKmh) / 3.6f * dt);
             }
+            UpdateFuel(shift.Tank);
 
             var state = TaxiState();
             Street.Update(dt, state);
@@ -249,13 +279,15 @@ namespace TaxiKmer.Driving
                 if (Save.TryResume())
                 {
                     state = TaxiState();
-                    Toast($"Jour {Save.Career.DayNumber} repris à {Street.Shift.Clock.Display}", 4f);
+                    Toast($"Jour {Save.Career.DayNumber} ({Today.Name}) repris à {Street.Shift.Clock.Display}", 4f);
                 }
                 else
                 {
                     var start = Load("Data/day", new DayConfig());
                     var career = Save.StartedNewCareer ? "Nouvelle carrière. " : "";
-                    Toast($"{career}Jour {Save.Career.DayNumber} : le patron te veut sur la route de {start.startHour} h à {start.endHour} h", 6f);
+                    Toast($"{career}Jour {Save.Career.DayNumber}, {Today.Name} : le patron te veut sur la route de {start.startHour} h à {start.endHour} h", 6f);
+                    var news = _calendar.Announcement(Today);
+                    if (news.Length > 0) Toast(news, 6f);
                 }
                 City.Populate(Hour, PlayerState());
             }
@@ -267,15 +299,20 @@ namespace TaxiKmer.Driving
                 Haptics.Play(HapticEvent.Honk);
                 OnHonk(state);
             }
+            UpdateDryTank(state);
+            // La radio se tait en pause et au bilan ; pas encore de bulles de dialogue dans Unity (jalon 5 coupé).
+            _radio?.Update(dt, !Street.DayFinished && !_menu.Frozen && _summaryView == null, false);
             var action = Street.AvailableAction(state);
             if (controls.ActionTriggered && action.Kind != StreetActionKind.None) OnAction(state);
             action = Street.AvailableAction(state);
             controls.ActionVisible = action.Kind != StreetActionKind.None;
+            _actionKind = action.Kind;
             controls.ActionLabel = action.Kind switch
             {
                 StreetActionKind.Drop => action.Count > 1 ? $"Faire descendre ({action.Count})" : "Faire descendre",
                 StreetActionKind.Board => action.MoveFirst != null ? "Changer de place et monter" : "Faire monter",
                 StreetActionKind.EndDay => "Terminer la journée",
+                StreetActionKind.Refuel => FuelGauge.ActionLabel(action.FuelLitres, action.FuelCost),
                 _ => "",
             };
 
@@ -367,7 +404,8 @@ namespace TaxiKmer.Driving
                     HasAcceptedClient = accepted,
                     Passengers = Street.Shift.Cabin.PassengerCount,
                     RidesPaid = Street.Shift.Ledger.RideCount,
-                    ActionVisible = controls.ActionVisible,
+                    // Le tutoriel parle de monter et descendre : le bouton de la station n'en fait pas partie.
+                    ActionVisible = _actionKind == StreetActionKind.Board || _actionKind == StreetActionKind.Drop,
                 });
                 if (!_tutorial.Active)
                 {
@@ -457,6 +495,14 @@ namespace TaxiKmer.Driving
                     }
                     foreach (var c in outcome.Dropped) SpawnLeavingPerson(c);
                     break;
+                case StreetActionKind.Refuel:
+                    if (outcome.FuelLitres > 0f)
+                    {
+                        _sounds.PlayCoins();
+                        Haptics.Play(HapticEvent.Payment);
+                        Toast(FuelGauge.Bought(outcome.FuelLitres, outcome.FuelCost, Street.Shift.Tank));
+                    }
+                    break;
                 case StreetActionKind.Board:
                     if (outcome.Board == BoardResult.Boarded)
                     {
@@ -476,6 +522,83 @@ namespace TaxiKmer.Driving
             }
         }
 
+        /// <summary>Réservoir : vitesse limitée quand il est vide, messages de réserve et de panne sèche (une fois chacun).</summary>
+        private void UpdateFuel(FuelTank tank)
+        {
+            if (tank == null) return;
+            taxi.SpeedCapKmh = tank.SpeedCapKmh;
+            if (Street.DayFinished) return;
+            if (!tank.IsLow) _lowFuelShown = _emptyFuelShown = false;
+            if (tank.IsLow && !_lowFuelShown) { _lowFuelShown = true; Toast(FuelGauge.LowMessage, 5f); }
+            if (tank.IsEmpty && !_emptyFuelShown)
+            {
+                _emptyFuelShown = true;
+                Toast(FuelGauge.EmptyMessage, 7f);
+                Haptics.Play(HapticEvent.Refused);
+            }
+        }
+
+        /// <summary>
+        /// Panne sèche hors de la station : deux boutons au milieu de l'écran (le taxi est arrêté), « Pousser le taxi »
+        /// (au pas) ou « Appeler un technicien (prix, délai) » ; touches P et T au clavier. Toute la règle est dans Core.
+        /// </summary>
+        private void UpdateDryTank(TaxiOnRoute state)
+        {
+            if (_pushButton == null || _technicianButton == null) return;
+            var show = !_menu.Frozen && _summaryView == null && Street.DryTankChoice(state);
+            _pushButton.gameObject.SetActive(show);
+            _technicianButton.gameObject.SetActive(show);
+            if (!show) return;
+
+            var h = Screen.height;
+            var bw = h * 0.6f;
+            var bh = h * 0.11f;
+            var y = h * 0.55f;
+            UiKit.PlaceTopCenter(_pushButton.rectTransform, y, bw, bh);
+            _pushButton.rectTransform.anchoredPosition = new Vector2(-bw * 0.55f, -y);
+            UiKit.PlaceTopCenter(_technicianButton.rectTransform, y, bw, bh);
+            _technicianButton.rectTransform.anchoredPosition = new Vector2(bw * 0.55f, -y);
+            _pushText.fontSize = _technicianText.fontSize = Mathf.RoundToInt(h * 0.032f);
+            _technicianText.text = FuelGauge.TechnicianLabel(Street.TechnicianQuote());
+
+            if (UiKit.Tapped(_pushButton.rectTransform) || UnityEngine.Input.GetKeyDown(KeyCode.P))
+            {
+                if (Street.PushTaxi()) Toast(FuelGauge.PushingMessage, 5f);
+            }
+            else if (UiKit.Tapped(_technicianButton.rectTransform) || UnityEngine.Input.GetKeyDown(KeyCode.T))
+            {
+                if (Street.CallTechnician(out var call))
+                {
+                    _sounds.PlayCoins();
+                    Haptics.Play(HapticEvent.Payment);
+                    Toast(FuelGauge.TechnicianCame(call), 6f);
+                }
+            }
+            var stillShown = Street.DryTankChoice(state);
+            _pushButton.gameObject.SetActive(stillShown);
+            _technicianButton.gameObject.SetActive(stillShown);
+        }
+
+        /// <summary>Station-service provisoire (auvent et pompe en primitives) à droite de la route dans le sens vers Étoudi.</summary>
+        private void MakeStation(StationData station)
+        {
+            WorldGeometry.SampleAlong(_xz, _cum, station.distanceAlongRouteMeters, out var x, out var z, out var dx, out var dz);
+            var right = new Vector3(dz, 0f, -dx);
+            var root = new GameObject("Station " + station.name);
+            root.transform.SetParent(transform, false);
+            root.transform.SetPositionAndRotation(new Vector3(x, 0f, z) + right * (sideOffset + 6f),
+                Quaternion.LookRotation(new Vector3(dx, 0f, dz), Vector3.up));
+            var white = new Color(0.92f, 0.92f, 0.9f);
+            var red = new Color(0.8f, 0.12f, 0.1f);
+            Part(root.transform, PrimitiveType.Cube, new Vector3(0f, 4.2f, 0f), new Vector3(9f, 0.4f, 6f), white);
+            Part(root.transform, PrimitiveType.Cube, new Vector3(0f, 4.55f, 0f), new Vector3(9.1f, 0.3f, 6.1f), red);
+            foreach (var px in new[] { -3.5f, 3.5f })
+                Part(root.transform, PrimitiveType.Cube, new Vector3(px, 2f, 0f), new Vector3(0.3f, 4f, 0.3f), white);
+            Part(root.transform, PrimitiveType.Cube, new Vector3(0f, 0.8f, 0f), new Vector3(0.8f, 1.6f, 0.5f), red);
+            Part(root.transform, PrimitiveType.Cube, new Vector3(-5.5f, 3f, -2.5f), new Vector3(0.25f, 6f, 0.25f), white);
+            Part(root.transform, PrimitiveType.Cube, new Vector3(-5.5f, 6.2f, -2.5f), new Vector3(1.6f, 1.2f, 0.2f), red);
+        }
+
         private void ShowSummary()
         {
             if (_summaryView != null) return;
@@ -487,7 +610,9 @@ namespace TaxiKmer.Driving
             _pops.Clear();
             var closure = Save.CloseDay();
             _summaryView = gameObject.AddComponent<DaySummaryView>();
-            _summaryView.Show(Street.Summary, closure, Street.Shift.Clock.Display, controls.Font);
+            var reputation = Street.Reputation != null && Street.Reputation.Visible
+                ? Core.Career.DriverReputation.SummaryLine(Street.Reputation.Config, Street.Summary.Reputation, Street.Summary.ReputationChange) : "";
+            _summaryView.Show(Street.Summary, closure, Street.Shift.Clock.Display, controls.Font, Today.Name, reputation);
             _summaryView.NewCareerRequested += Save.StartNewCareer;
         }
 
@@ -781,7 +906,8 @@ namespace TaxiKmer.Driving
             var h = Screen.height;
             var shift = Street.Shift;
             UpdatePaymentPops();
-            _gauges.Update(shift, Save.Career.DayNumber, _revenue.Shown, !Street.DayFinished);
+            _gauges.Update(shift, Calendar.HudLabel(Today), _revenue.Shown, !Street.DayFinished,
+                Street.Reputation != null && Street.Reputation.Visible ? Street.Reputation.HudLabel : "");
 
             var reminder = Street.DayFinished ? "" : HudGauges.EndOfDayReminder(shift.Clock, shift.Cabin.PassengerCount);
             _endReminder.enabled = reminder.Length > 0;

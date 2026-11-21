@@ -1,0 +1,6 @@
+{
+    "_note": "Dépôt et appli (jalon 8, docs/tech/jalon-08.md). enabled = false : seule la course partagée existe dans le jeu tant que Kevin n'a pas choisi le nom de l'appli, sa commission et les prix des dépôts (questions du jalon 8). depot : le client propose offerPerSeatFactor × prix partagé de la distance × seatsPaid places ; demander plus fait baisser la chance qu'il accepte de acceptDropPer10Percent par tranche de 10 % ; depotClientChance = 0 (aucun client ne demande de dépôt). app : appName provisoire, commission 0, fareFactor × prix partagé, ordersPerHour = 0 (aucune commande), offerSeconds = durée d'une proposition, note 5 étoiles si attente ≤ fiveStarsWithinMinutes minutes de jeu, une de moins par minutesPerStarLost.",
+    "enabled": false,
+    "depot": { "offerPerSeatFactor": 1, "seatsPaid": 5, "acceptDropPer10Percent": 0.25, "depotClientChance": 0, "roundTo": 100 },
+    "app": { "appName": "l'appli", "commission": 0, "fareFactor": 1.5, "ordersPerHour": 0, "offerSeconds": 15, "fiveStarsWithinMinutes": 10, "minutesPerStarLost": 10 }
+}
