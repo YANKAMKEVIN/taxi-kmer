@@ -23,12 +23,35 @@ namespace TaxiKmer.Core.Talk
         public static readonly string[] All = { Boarding, Chat, SeatMove, Detour, Paid, Haggle, RefusesToPay };
     }
 
+    /// <summary>
+    /// Langues et registres des répliques (décision de Kevin, 2026-11-21 : français, camfranglais et pidgin).
+    /// </summary>
+    public static class TalkRegisters
+    {
+        public const string French = "fr";
+        public const string Camfranglais = "camfranglais";
+        public const string Pidgin = "pidgin";
+
+        public static readonly string[] All = { French, Camfranglais, Pidgin };
+    }
+
+    /// <summary>Un registre de langue et sa part parmi les passagers (poids relatif ; 0 : aucun passager ne le parle).</summary>
+    [Serializable]
+    public class RegisterData
+    {
+        public string id = "";
+        public string name = "";
+        public float weight = 1f;
+    }
+
     /// <summary>Un personnage type (« la commerçante du marché », « l'étudiant »…) : contenu de Kevin.</summary>
     [Serializable]
     public class CharacterData
     {
         public string id = "";
         public string name = "";
+        /// <summary>Registre que parle toujours ce personnage (<see cref="TalkRegisters"/>) ; vide : tiré comme pour les autres passagers.</summary>
+        public string register = "";
     }
 
     /// <summary>Une réponse rapide du chauffeur (un bouton qui ne bloque pas la conduite).</summary>
@@ -50,6 +73,8 @@ namespace TaxiKmer.Core.Talk
         public string trigger = "";
         /// <summary>Personnage type qui la dit (vide : n'importe quel passager).</summary>
         public string character = "";
+        /// <summary>Langue ou registre de la réplique (<see cref="TalkRegisters"/>) ; vide : convient à tous les passagers.</summary>
+        public string register = "";
         public string text = "";
         public ReplyData[] replies = Array.Empty<ReplyData>();
     }
@@ -83,6 +108,23 @@ namespace TaxiKmer.Core.Talk
         public float haggleChance;
         /// <summary>Chance qu'un client refuse de payer à l'arrivée (0 : jamais ; conséquences à décider par Kevin).</summary>
         public float refusesToPayChance;
+
+        /// <summary>
+        /// Registres parlés par les passagers et leur part (décision de Kevin : français, camfranglais, pidgin). Chaque
+        /// passager reçoit un registre (<see cref="DialogueDirector.RegisterFor"/>) et ne dit que des répliques de ce
+        /// registre ou sans registre. Parts par défaut (Yaoundé, ville francophone) : choix de Claude, à régler par Kevin.
+        /// </summary>
+        public RegisterData[] registers =
+        {
+            new RegisterData { id = TalkRegisters.French, name = "français", weight = 0.5f },
+            new RegisterData { id = TalkRegisters.Camfranglais, name = "camfranglais", weight = 0.35f },
+            new RegisterData { id = TalkRegisters.Pidgin, name = "pidgin", weight = 0.15f },
+        };
+        /// <summary>
+        /// Registre de secours : si aucune réplique n'existe dans le registre du passager pour cette situation, il dit une
+        /// réplique de ce registre (vide : il se tait).
+        /// </summary>
+        public string fallbackRegister = TalkRegisters.French;
 
         public CharacterData[] characters = Array.Empty<CharacterData>();
         public LineData[] lines = Array.Empty<LineData>();

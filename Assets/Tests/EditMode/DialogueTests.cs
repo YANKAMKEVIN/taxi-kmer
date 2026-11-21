@@ -149,5 +149,109 @@ namespace TaxiKmer.Core.Tests
             w.Forget("p");
             Assert.IsFalse(w.Update("p", 3000f, 1000f));
         }
+
+        private static LineData L(string id, string trigger, string register) =>
+            new LineData { id = id, trigger = trigger, register = register, text = $"Réplique {id} (exemple)" };
+
+        [Test]
+        public void Registers_FrenchCamfranglaisPidgin_ByDefault()
+        {
+            var c = new DialogueConfig();
+            CollectionAssert.AreEqual(TalkRegisters.All, Array.ConvertAll(c.registers, r => r.id), "Décision de Kevin : français, camfranglais, pidgin.");
+            Assert.AreEqual(TalkRegisters.French, c.fallbackRegister);
+        }
+
+        [Test]
+        public void Register_PerPassenger_Stable_AndSharedByWeights()
+        {
+            var c = new DialogueConfig();
+            Assert.AreEqual(DialogueDirector.RegisterFor(c, "client-42"), DialogueDirector.RegisterFor(c, "client-42"), "Toujours le même pour un passager.");
+            var counts = new Dictionary<string, int>();
+            const int n = 6000;
+            for (var i = 0; i < n; i++)
+            {
+                var r = DialogueDirector.RegisterFor(c, "c" + i);
+                counts[r] = counts.TryGetValue(r, out var k) ? k + 1 : 1;
+            }
+            Assert.AreEqual(0.5, counts[TalkRegisters.French] / (double)n, 0.04);
+            Assert.AreEqual(0.35, counts[TalkRegisters.Camfranglais] / (double)n, 0.04);
+            Assert.AreEqual(0.15, counts[TalkRegisters.Pidgin] / (double)n, 0.04);
+
+            c.registers[2].weight = 0f;
+            for (var i = 0; i < 500; i++) Assert.AreNotEqual(TalkRegisters.Pidgin, DialogueDirector.RegisterFor(c, "c" + i), "Poids 0 : personne.");
+            Assert.AreEqual("", DialogueDirector.RegisterFor(new DialogueConfig { registers = Array.Empty<RegisterData>() }, "c1"));
+        }
+
+        [Test]
+        public void Lines_FollowTheSpeakersRegister_NeutralLinesForEveryone()
+        {
+            var config = new DialogueConfig
+            {
+                enabled = true,
+                minGapSeconds = 0f,
+                noRepeatWithin = 0,
+                lines = new[]
+                {
+                    L("fr", TalkTriggers.Boarding, TalkRegisters.French),
+                    L("cf", TalkTriggers.Boarding, TalkRegisters.Camfranglais),
+                    L("pg", TalkTriggers.Boarding, TalkRegisters.Pidgin),
+                    L("neutre", TalkTriggers.Paid, ""),
+                },
+            };
+            var d = new DialogueDirector(config, new Random(1));
+            d.AssignRegister("p", TalkRegisters.Pidgin);
+            for (var i = 0; i < 20; i++)
+            {
+                Assert.IsTrue(d.Trigger(TalkTriggers.Boarding, "p"));
+                Assert.AreEqual("pg", d.Current.Line.id, "Un passager pidgin ne dit que ses répliques pidgin.");
+                Assert.AreEqual(TalkRegisters.Pidgin, d.Current.Register);
+                Wait(d, 10f);
+            }
+            Assert.IsTrue(d.Trigger(TalkTriggers.Paid, "p"));
+            Assert.AreEqual("neutre", d.Current.Line.id, "Une réplique sans registre convient à tous.");
+            Wait(d, 10f);
+            Assert.AreEqual(TalkRegisters.Pidgin, d.RegisterOf("p"));
+            d.AssignRegister("p", "");
+            Assert.AreEqual(DialogueDirector.RegisterFor(config, "p"), d.RegisterOf("p"), "Sans registre imposé : celui tiré pour lui.");
+        }
+
+        [Test]
+        public void Register_FallsBackToFrench_OrStaysSilent()
+        {
+            var config = new DialogueConfig
+            {
+                enabled = true,
+                minGapSeconds = 0f,
+                noRepeatWithin = 0,
+                lines = new[] { L("fr", TalkTriggers.Detour, TalkRegisters.French) },
+            };
+            var d = new DialogueDirector(config, new Random(1));
+            d.AssignRegister("p", TalkRegisters.Camfranglais);
+            Assert.IsTrue(d.Trigger(TalkTriggers.Detour, "p"), "Pas de réplique camfranglais : il parle français (registre de secours).");
+            Assert.AreEqual("fr", d.Current.Line.id);
+            Wait(d, 10f);
+            config.fallbackRegister = "";
+            Assert.IsFalse(d.Trigger(TalkTriggers.Detour, "p"), "Sans registre de secours : il se tait.");
+        }
+
+        [Test]
+        public void Register_ImposedByCharacter_AndAnyRegisterInGroupChat()
+        {
+            var config = new DialogueConfig
+            {
+                enabled = true,
+                minGapSeconds = 0f,
+                noRepeatWithin = 0,
+                characters = new[] { new CharacterData { id = "anglo", name = "exemple", register = TalkRegisters.Pidgin } },
+                lines = new[] { L("pg", TalkTriggers.Chat, TalkRegisters.Pidgin), L("fr", TalkTriggers.Boarding, TalkRegisters.French), L("pg2", TalkTriggers.Boarding, TalkRegisters.Pidgin) },
+            };
+            var d = new DialogueDirector(config, new Random(1));
+            Assert.AreEqual(TalkRegisters.Pidgin, d.RegisterOf("x", "anglo"));
+            Assert.IsTrue(d.Trigger(TalkTriggers.Boarding, "x", "anglo"));
+            Assert.AreEqual("pg2", d.Current.Line.id);
+            Wait(d, 10f);
+            Assert.IsTrue(d.Trigger(TalkTriggers.Chat, ""), "Discussion sans passager désigné : tous les registres.");
+            Assert.AreEqual("", d.Current.Register);
+        }
     }
 }

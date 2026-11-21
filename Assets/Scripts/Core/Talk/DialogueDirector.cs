@@ -7,6 +7,8 @@ namespace TaxiKmer.Core.Talk
     public sealed class Bubble
     {
         public LineData Line { get; internal set; }
+        /// <summary>Registre du passager qui parle (vide : discussion sans passager désigné).</summary>
+        public string Register { get; internal set; } = "";
         /// <summary>Passager qui parle (id du client), vide si personne en particulier.</summary>
         public string SpeakerId { get; internal set; } = "";
         public float ShowSeconds { get; internal set; }
@@ -37,6 +39,7 @@ namespace TaxiKmer.Core.Talk
         /// <summary>Réplique dite alors qu'elle l'avait déjà été dans la journée.</summary>
         public int Repeats { get; private set; }
         private readonly HashSet<string> _saidToday = new HashSet<string>();
+        private readonly Dictionary<string, string> _assigned = new Dictionary<string, string>();
 
         public DialogueDirector(DialogueConfig config, Random random)
         {
@@ -87,9 +90,12 @@ namespace TaxiKmer.Core.Talk
         public bool Trigger(string trigger, string speakerId, string character = "")
         {
             if (!_config.enabled || Current != null || _silence < _config.minGapSeconds) return false;
-            var line = Pick(trigger, character);
+            var register = string.IsNullOrEmpty(speakerId) ? "" : RegisterOf(speakerId, character);
+            var line = Pick(trigger, character, register);
+            if (line == null && !string.IsNullOrEmpty(register) && !string.IsNullOrEmpty(_config.fallbackRegister) && register != _config.fallbackRegister)
+                line = Pick(trigger, character, _config.fallbackRegister);
             if (line == null) return false;
-            Current = new Bubble { Line = line, SpeakerId = speakerId ?? "", ShowSeconds = ShowSecondsFor(_config, line.text) };
+            Current = new Bubble { Line = line, Register = register, SpeakerId = speakerId ?? "", ShowSeconds = ShowSecondsFor(_config, line.text) };
             Said++;
             if (!_saidToday.Add(line.id)) Repeats++;
             _recent.Add(line.id);
@@ -118,12 +124,73 @@ namespace TaxiKmer.Core.Talk
             Repeats = 0;
         }
 
-        private LineData Pick(string trigger, string character)
+        /// <summary>
+        /// Registre d'un passager : celui qu'on lui a donné (<see cref="AssignRegister"/>), sinon celui de son personnage
+        /// type, sinon <see cref="RegisterFor"/>. Toujours le même pour un même passager.
+        /// </summary>
+        public string RegisterOf(string passengerId, string character = "")
+        {
+            if (string.IsNullOrEmpty(passengerId)) return "";
+            if (_assigned.TryGetValue(passengerId, out var r)) return r;
+            if (!string.IsNullOrEmpty(character) && _config.characters != null)
+                foreach (var c in _config.characters)
+                    if (c.id == character && !string.IsNullOrEmpty(c.register)) return c.register;
+            return RegisterFor(_config, passengerId);
+        }
+
+        /// <summary>Impose le registre d'un passager (par ex. choisi par la présentation ou repris d'une sauvegarde).</summary>
+        public void AssignRegister(string passengerId, string register)
+        {
+            if (string.IsNullOrEmpty(passengerId)) return;
+            if (string.IsNullOrEmpty(register)) _assigned.Remove(passengerId);
+            else _assigned[passengerId] = register;
+        }
+
+        /// <summary>
+        /// Registre tiré pour un passager selon les parts des données (<see cref="DialogueConfig.registers"/>), à partir
+        /// de son identifiant : le même passager parle toujours de la même façon, sans toucher au hasard du jeu.
+        /// </summary>
+        public static string RegisterFor(DialogueConfig config, string passengerId)
+        {
+            var registers = config?.registers;
+            if (registers == null || registers.Length == 0) return "";
+            var total = 0.0;
+            foreach (var r in registers) total += Math.Max(0f, r.weight);
+            if (total <= 0.0) return "";
+            var roll = Fraction(passengerId ?? "") * total;
+            foreach (var r in registers)
+            {
+                var w = Math.Max(0f, r.weight);
+                if (w <= 0f) continue;
+                if (roll < w) return r.id;
+                roll -= w;
+            }
+            for (var i = registers.Length - 1; i >= 0; i--) if (registers[i].weight > 0f) return registers[i].id;
+            return "";
+        }
+
+        /// <summary>Empreinte FNV-1a 32 bits de l'identifiant ramenée dans [0, 1).</summary>
+        private static double Fraction(string id)
+        {
+            var h = 2166136261u;
+            foreach (var ch in id)
+            {
+                h ^= ch;
+                h *= 16777619u;
+            }
+            h ^= h >> 15; // mélange les derniers caractères (« c1 », « c2 »…) dans les bits de poids fort
+            h *= 0x2c1b3c6du;
+            h ^= h >> 12;
+            return h / 4294967296.0;
+        }
+
+        private LineData Pick(string trigger, string character, string register)
         {
             var candidates = new List<LineData>();
             foreach (var l in _config.lines ?? Array.Empty<LineData>())
             {
                 if (l.trigger != trigger || string.IsNullOrEmpty(l.text) || _recent.Contains(l.id)) continue;
+                if (!string.IsNullOrEmpty(register) && !string.IsNullOrEmpty(l.register) && l.register != register) continue;
                 if (!string.IsNullOrEmpty(l.character) && !string.IsNullOrEmpty(character) && l.character != character) continue;
                 candidates.Add(l);
             }

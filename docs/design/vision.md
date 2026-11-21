@@ -104,7 +104,7 @@ Le tronçon **dispensaire de Messassi → Étoudi, devant le palais de la prési
 7. ~~Photos des lieux ?~~ → **Tranché** : Street View et internet servent seulement de **référence** pour modéliser ; les textures du jeu viennent de sources libres (Poly Haven, ambientCG, Mapillary, Wikimedia Commons) ; Kevin fournira les photos prises sur place quand il le faudra.
 8. Situation familiale : choisie au départ, ou qui évolue pendant la partie (mariage, enfants) ?
 9. Peut-on perdre (dettes, taxi saisi, permis retiré) ?
-10. Langue : français seulement, ou aussi pidgin et camfranglais à l'écran ?
+10. ~~Langue : français seulement, ou aussi pidgin et camfranglais à l'écran ?~~ → **Tranché** (2026-11-21) : français, camfranglais et pidgin.
 11. Modèle économique : payant, gratuit avec publicité, ou gratuit ?
 12. Calendrier : en parallèle de Pokemake ou après ?
 13. ~~Nom du dépôt ?~~ → **Tranché** : `taxi-kmer`.

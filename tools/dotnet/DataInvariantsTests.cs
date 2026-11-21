@@ -297,7 +297,16 @@ namespace TaxiKmer.Core.DotnetTests
                 Assert.LessOrEqual(l.text.Length, d.maxChars, $"{l.id} : trop long pour être lu en conduisant");
                 Assert.IsTrue(string.IsNullOrEmpty(l.character) || characters.Contains(l.character), $"{l.id} : personnage inconnu");
                 StringAssert.Contains("exemple", l.text, "Seules des lignes d'exemple tant que Kevin n'a pas écrit les siennes.");
+                Assert.IsTrue(string.IsNullOrEmpty(l.register) || TaxiKmer.Core.Talk.TalkRegisters.All.Contains(l.register), $"{l.id} : registre inconnu « {l.register} »");
             }
+            // Langues décidées par Kevin (2026-11-21) : français, camfranglais et pidgin.
+            CollectionAssert.AreEquivalent(TaxiKmer.Core.Talk.TalkRegisters.All, d.registers.Select(r => r.id).ToArray());
+            foreach (var r in d.registers) Assert.Greater(r.weight, 0f, $"{r.id} : chaque langue décidée est parlée par des passagers");
+            Assert.IsTrue(string.IsNullOrEmpty(d.fallbackRegister) || TaxiKmer.Core.Talk.TalkRegisters.All.Contains(d.fallbackRegister));
+            foreach (var reg in TaxiKmer.Core.Talk.TalkRegisters.All)
+                Assert.IsTrue(d.lines.Any(l => l.register == reg), $"Au moins un exemple en {reg} (format montré à Kevin)");
+            foreach (var c in d.characters)
+                Assert.IsTrue(string.IsNullOrEmpty(c.register) || TaxiKmer.Core.Talk.TalkRegisters.All.Contains(c.register), $"{c.id} : registre inconnu");
             Assert.Greater(d.minShowSeconds, 0f);
             Assert.Greater(d.charsPerSecond, 0f);
         }

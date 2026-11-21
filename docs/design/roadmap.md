@@ -103,7 +103,7 @@ Après le jalon 11 : l'entreprise de taxis, le reste de Yaoundé, puis Douala, l
 **Accepté si** : sur une journée, les dialogues ne se répètent pas trop et restent lisibles en conduisant.
 
 **Questions pour Kevin**
-1. Langues à l'écran : français, camfranglais, pidgin, langues locales (sous-titrées) ?
+1. ~~Langues à l'écran : français, camfranglais, pidgin, langues locales (sous-titrées) ?~~ → **Tranché** (2026-11-21) : **français, camfranglais et pidgin**.
 2. Voix enregistrées ou texte seul (au moins au début) ?
 3. Qui écrit les dialogues : Kevin, Claude à partir de situations données par Kevin, ou les deux ?
 
