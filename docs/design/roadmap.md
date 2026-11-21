@@ -97,7 +97,7 @@ Après le jalon 11 : l'entreprise de taxis, le reste de Yaoundé, puis Douala, l
 - Système de dialogues dans les données (personnages types, sujets, réactions).
 - Interactions entre passagers : discussions, disputes de place, plaintes sur le détour, négociation du prix, clients qui ne veulent pas payer.
 - Réponses du chauffeur (choix rapides qui ne bloquent pas la conduite).
-- Radio du taxi.
+- Radio du taxi. *(mécanisme fait le 2026-11-21, coupé ; questions : `docs/tech/radio.md`)*
 - Ambiance sonore : klaxons, appels des clients (« Emana, 300 ! »), marché.
 
 **Accepté si** : sur une journée, les dialogues ne se répètent pas trop et restent lisibles en conduisant.

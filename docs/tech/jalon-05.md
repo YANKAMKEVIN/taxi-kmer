@@ -16,7 +16,7 @@
 | 5.4 Plaintes sur le détour | **faite** (`DetourWatch`) : le passager se plaint quand le taxi s'est éloigné de 150 m de sa destination depuis le point le plus proche atteint, puis de nouveau tous les 150 m |
 | 5.5 Disputes de place, négociation, refus de payer | **déclencheurs prêts** (`TalkTriggers`) ; la négociation et le refus de payer n'ont **aucune conséquence** et une chance de 0 (`haggleChance`, `refusesToPayChance`) tant que Kevin n'a pas décidé |
 | 5.6 Affichage dans Unity | **à faire avec les vraies répliques** : bulle au-dessus du taxi (ou du plan des places), 2 ou 3 boutons de réponse près du klaxon ; branchement dans `StreetView` (montée, changement de place, détour, paiement) |
-| 5.7 Radio et ambiance sonore | **non fait** : demande des sons et des musiques (chantier audio, pas en session cloud) |
+| 5.7 Radio et ambiance sonore | **radio : mécanisme fait, coupé** (2026-11-21, priorité de Kevin ; `docs/tech/radio.md`) : stations dans `radio.json`, changement de station, silence hors du taxi et pendant les dialogues, bouton minimal ; aucun son fourni (pistes vides, à fournir par Kevin). **Ambiance sonore : non faite** (sons à produire) |
 
 Tests : `Assets/Tests/EditMode/DialogueTests.cs` (9 tests, dont une journée de la durée de `day.json` : moins d'une réplique sur quatre répétée avec 24 répliques par situation pour 35 min ; 8 suffisaient pour 10 min) ; `DataInvariantsTests.Dialogues_Readable_KnownTriggers_ExamplesMarked_Off` (situations connues, longueur lisible, personnages connus, lignes d'exemple marquées).
 
@@ -46,4 +46,4 @@ Question 1 tranchée (français, camfranglais, pidgin) ; **les autres restent ou
 5. **Négociation du prix** : **A.** le client propose moins, le joueur accepte ou refuse ; **B.** marchandage en 2 tours ; **C.** pas de négociation (le prix annoncé fait foi).
 6. **Client qui refuse de payer** : **A.** il part sans payer (perte sèche) ; **B.** le joueur peut insister (temps perdu, réputation) ; **C.** appeler la police (lien avec le jalon 4).
 7. **Effet des réponses** du chauffeur : sur la réputation, sur le pourboire, ou rien (ambiance seulement) ?
-8. **Radio** : stations fictives ? musique libre de droits ou commandée ?
+8. **Radio** : questions détaillées dans `docs/tech/radio.md` (noms des stations, musique sous licence ou libre, animateurs, publicités locales).

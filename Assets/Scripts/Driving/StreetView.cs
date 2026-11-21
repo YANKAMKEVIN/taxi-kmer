@@ -55,6 +55,8 @@ namespace TaxiKmer.Driving
         // Panne sèche : choix « pousser » ou « appeler un technicien du quartier » (décision de Kevin, 2026-11-21).
         private Image _pushButton, _technicianButton;
         private Text _pushText, _technicianText;
+        // Radio du taxi (radio.json ; créée seulement si enabled).
+        private RadioView _radio;
         private DaySummaryView _summaryView;
         private Tutorial _tutorial;
         private Image _tutorialPanel;
@@ -181,6 +183,8 @@ namespace TaxiKmer.Driving
             _technicianButton = UiKit.NewButton(controls.Overlay, controls.Font, "", new Color(0.12f, 0.55f, 0.25f, 0.95f), out _technicianText);
             _pushButton.gameObject.SetActive(false);
             _technicianButton.gameObject.SetActive(false);
+            var radio = Load("Data/radio", new Core.Radio.RadioConfig());
+            if (radio.enabled) _radio = new RadioView(controls.Overlay, controls.Font, taxi.gameObject, radio);
             _menu = new GameMenu(!TitleDone);
             _menuView = new GameMenuView(transform, controls.Font);
             _settings.Volume = PlayerPrefs.GetFloat(VolumeKey, GameSettings.DefaultVolume);
@@ -296,6 +300,8 @@ namespace TaxiKmer.Driving
                 OnHonk(state);
             }
             UpdateDryTank(state);
+            // La radio se tait en pause et au bilan ; pas encore de bulles de dialogue dans Unity (jalon 5 coupé).
+            _radio?.Update(dt, !Street.DayFinished && !_menu.Frozen && _summaryView == null, false);
             var action = Street.AvailableAction(state);
             if (controls.ActionTriggered && action.Kind != StreetActionKind.None) OnAction(state);
             action = Street.AvailableAction(state);

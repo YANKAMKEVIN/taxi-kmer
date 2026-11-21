@@ -62,6 +62,7 @@ namespace TaxiKmer.Core.DotnetTests
             ["home.json"] = typeof(TaxiKmer.Core.Home.HomeConfig),
             ["ride_types.json"] = typeof(RideTypesConfig),
             ["taxi_market.json"] = typeof(TaxiMarketConfig),
+            ["radio.json"] = typeof(TaxiKmer.Core.Radio.RadioConfig),
         };
 
         [Test]
@@ -309,6 +310,36 @@ namespace TaxiKmer.Core.DotnetTests
                 Assert.IsTrue(string.IsNullOrEmpty(c.register) || TaxiKmer.Core.Talk.TalkRegisters.All.Contains(c.register), $"{c.id} : registre inconnu");
             Assert.Greater(d.minShowSeconds, 0f);
             Assert.Greater(d.charsPerSecond, 0f);
+        }
+
+        [Test]
+        public void Radio_Off_EmptySlots_ToBeProvidedByKevin()
+        {
+            var r = Load<TaxiKmer.Core.Radio.RadioConfig>("radio.json");
+            Assert.IsFalse(r.enabled, "Coupée tant que Kevin n'a pas fourni stations et musiques (radio.md).");
+            Assert.IsNotEmpty(r.stations);
+            Assert.That(r.volume, Is.InRange(0f, 1f));
+            Assert.Greater(r.defaultProgramSeconds, 0f);
+            Assert.AreEqual(r.stations.Length, r.stations.Select(s => s.id).Distinct().Count());
+            foreach (var s in r.stations)
+            {
+                StringAssert.Contains("à fournir par Kevin", s.name, "Noms des stations : question pour Kevin.");
+                Assert.GreaterOrEqual(s.frequencyMHz, 0f);
+                Assert.IsNotEmpty(s.programmes, s.id);
+                Assert.AreEqual(s.programmes.Length, s.programmes.Select(p => p.id).Distinct().Count(), s.id);
+                foreach (var p in s.programmes)
+                {
+                    Assert.AreEqual("", p.clip, $"{s.id}/{p.id} : aucun son fourni par Claude (emplacement vide).");
+                    StringAssert.Contains("à fournir par Kevin", p.title);
+                    CollectionAssert.Contains(new[] { "musique", "emission", "publicite", "flash" }, p.kind, p.id);
+                    Assert.GreaterOrEqual(p.seconds, 0f);
+                }
+            }
+            // Aucun fichier son ni musique dans le dépôt.
+            var assets = Path.Combine(Path.GetDirectoryName(SourceDataDir), "..");
+            var audio = Directory.GetFiles(assets, "*.*", SearchOption.AllDirectories)
+                .Where(f => new[] { ".mp3", ".ogg", ".wav", ".aiff", ".flac", ".m4a" }.Contains(Path.GetExtension(f).ToLowerInvariant())).ToList();
+            CollectionAssert.IsEmpty(audio, "Les musiques sont à fournir par Kevin.");
         }
 
         [Test]
