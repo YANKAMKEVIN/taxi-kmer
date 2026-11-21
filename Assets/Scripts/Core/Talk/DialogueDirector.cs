@@ -9,6 +9,8 @@ namespace TaxiKmer.Core.Talk
         public LineData Line { get; internal set; }
         /// <summary>Registre du passager qui parle (vide : discussion sans passager désigné).</summary>
         public string Register { get; internal set; } = "";
+        /// <summary>Personnage type de celui qui parle (vide : passager quelconque).</summary>
+        public string Character { get; internal set; } = "";
         /// <summary>Passager qui parle (id du client), vide si personne en particulier.</summary>
         public string SpeakerId { get; internal set; } = "";
         public float ShowSeconds { get; internal set; }
@@ -16,6 +18,8 @@ namespace TaxiKmer.Core.Talk
         /// <summary>Réponse choisie par le chauffeur (null tant qu'il n'a pas répondu).</summary>
         public ReplyData Reply { get; internal set; }
         public bool HasReplies => Line.replies != null && Line.replies.Length > 0;
+        /// <summary>Petit son de voix à jouer avec la bulle (null : aucun) ; son clip peut être vide (à fournir).</summary>
+        public VoiceSoundData Voice { get; internal set; }
         /// <summary>Les boutons de réponse sont encore proposés.</summary>
         public bool RepliesOpen(float replySeconds) => HasReplies && Reply == null && Age < replySeconds;
     }
@@ -32,6 +36,7 @@ namespace TaxiKmer.Core.Talk
         private readonly List<string> _recent = new List<string>();
         private float _silence;
         private float _chatClock;
+        private float _quietClock;
 
         public Bubble Current { get; private set; }
         /// <summary>Répliques dites depuis le début (pour mesurer les répétitions).</summary>
@@ -40,6 +45,37 @@ namespace TaxiKmer.Core.Talk
         public int Repeats { get; private set; }
         private readonly HashSet<string> _saidToday = new HashSet<string>();
         private readonly Dictionary<string, string> _assigned = new Dictionary<string, string>();
+        private readonly Dictionary<string, string> _characters = new Dictionary<string, string>();
+        private readonly List<string> _passengers = new List<string>();
+
+        /// <summary>Passagers à bord (ids), pour choisir qui rompt un long silence. Mis à jour par la présentation.</summary>
+        public void SetPassengers(IEnumerable<string> ids)
+        {
+            _passengers.Clear();
+            if (ids != null) _passengers.AddRange(ids);
+        }
+
+        /// <summary>
+        /// Personnage type d'un passager : imposé (<see cref="AssignCharacter"/>) ou tiré à partir de son identifiant
+        /// (<see cref="DialogueConfig.characterShare"/>) ; vide : passager quelconque. Toujours le même pour un passager.
+        /// </summary>
+        public string CharacterOf(string passengerId)
+        {
+            if (string.IsNullOrEmpty(passengerId)) return "";
+            if (_characters.TryGetValue(passengerId, out var c)) return c;
+            var list = _config.characters;
+            if (list == null || list.Length == 0) return "";
+            var f = Fraction("perso:" + passengerId);
+            var share = Math.Max(0f, Math.Min(1f, _config.characterShare));
+            if (f >= share) return "";
+            return list[Math.Min(list.Length - 1, (int)(f / share * list.Length))].id;
+        }
+
+        public void AssignCharacter(string passengerId, string character)
+        {
+            if (string.IsNullOrEmpty(passengerId)) return;
+            _characters[passengerId] = character ?? "";
+        }
 
         public DialogueDirector(DialogueConfig config, Random random)
         {
@@ -80,6 +116,14 @@ namespace TaxiKmer.Core.Talk
                 _chatClock += dt;
                 if (Current == null && _chatClock >= _config.chatEverySeconds && Trigger(TalkTriggers.Chat, "")) _chatClock = 0f;
             }
+            // Long silence avec au moins un passager : quelqu'un le rompt (situation « silence »).
+            if (Current != null || passengers <= 0) _quietClock = 0f;
+            else if (_config.silenceAfterSeconds > 0f)
+            {
+                _quietClock += dt;
+                var speaker = _passengers.Count > 0 ? _passengers[_random.Next(_passengers.Count)] : "";
+                if (_quietClock >= _config.silenceAfterSeconds && Trigger(TalkTriggers.Silence, speaker)) _quietClock = 0f;
+            }
             return gone;
         }
 
@@ -90,12 +134,14 @@ namespace TaxiKmer.Core.Talk
         public bool Trigger(string trigger, string speakerId, string character = "")
         {
             if (!_config.enabled || Current != null || _silence < _config.minGapSeconds) return false;
+            var designated = !string.IsNullOrEmpty(speakerId);
+            if (designated && string.IsNullOrEmpty(character)) character = CharacterOf(speakerId);
             var register = string.IsNullOrEmpty(speakerId) ? "" : RegisterOf(speakerId, character);
-            var line = Pick(trigger, character, register);
+            var line = Pick(trigger, character, register, designated);
             if (line == null && !string.IsNullOrEmpty(register) && !string.IsNullOrEmpty(_config.fallbackRegister) && register != _config.fallbackRegister)
-                line = Pick(trigger, character, _config.fallbackRegister);
+                line = Pick(trigger, character, _config.fallbackRegister, designated);
             if (line == null) return false;
-            Current = new Bubble { Line = line, Register = register, SpeakerId = speakerId ?? "", ShowSeconds = ShowSecondsFor(_config, line.text) };
+            Current = new Bubble { Line = line, Register = register, SpeakerId = speakerId ?? "", Character = character ?? "", ShowSeconds = ShowSecondsFor(_config, line.text), Voice = _config.VoiceFor(line, character) };
             Said++;
             if (!_saidToday.Add(line.id)) Repeats++;
             _recent.Add(line.id);
@@ -184,7 +230,11 @@ namespace TaxiKmer.Core.Talk
             return h / 4294967296.0;
         }
 
-        private LineData Pick(string trigger, string character, string register)
+        /// <param name="designated">
+        /// Un passager précis parle : sans personnage type, il ne dit pas les répliques réservées à un personnage
+        /// (la maman ne parle pas de son bébé par la bouche d'un autre).
+        /// </param>
+        private LineData Pick(string trigger, string character, string register, bool designated = false)
         {
             var candidates = new List<LineData>();
             foreach (var l in _config.lines ?? Array.Empty<LineData>())
@@ -192,6 +242,7 @@ namespace TaxiKmer.Core.Talk
                 if (l.trigger != trigger || string.IsNullOrEmpty(l.text) || _recent.Contains(l.id)) continue;
                 if (!string.IsNullOrEmpty(register) && !string.IsNullOrEmpty(l.register) && l.register != register) continue;
                 if (!string.IsNullOrEmpty(l.character) && !string.IsNullOrEmpty(character) && l.character != character) continue;
+                if (!string.IsNullOrEmpty(l.character) && string.IsNullOrEmpty(character) && designated) continue;
                 candidates.Add(l);
             }
             if (candidates.Count == 0) return null;

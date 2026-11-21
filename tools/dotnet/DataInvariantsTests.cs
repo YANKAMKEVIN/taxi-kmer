@@ -292,31 +292,62 @@ namespace TaxiKmer.Core.DotnetTests
             Assert.Greater(p.callOutcomes.Sum(o => o.weight), 0f);
         }
 
+        /// <summary>
+        /// Jalon 5 activé le 21/11 : répliques proposées par Claude (statut « proposée »), personnages de Kevin, situations
+        /// des jalons 3 à 6, trois langues, petits sons « à fournir », négociation et refus de payer branchés.
+        /// </summary>
         [Test]
-        public void Dialogues_Readable_KnownTriggers_ExamplesMarked_Off()
+        public void Dialogues_Proposed_Readable_CoverKevinsCharactersAndSituations()
         {
             var d = Load<TaxiKmer.Core.Talk.DialogueConfig>("dialogues.json");
-            Assert.IsFalse(d.enabled, "Coupé tant que Kevin n'a pas écrit ou validé les répliques (jalon-05.md).");
-            Assert.AreEqual(0f, d.haggleChance, "Conséquences de la négociation : décision de Kevin.");
-            Assert.AreEqual(0f, d.refusesToPayChance, "Conséquences du refus de payer : décision de Kevin.");
+            Assert.IsTrue(d.enabled, "Jalon 5 activé (Kevin, 21/11).");
+            Assert.That(d.haggleChance, Is.InRange(0.01f, 1f), "Négociation, option A : branchée.");
+            Assert.That(d.refusesToPayChance, Is.InRange(0.001f, 1f), "Refus de payer, option C : branché.");
+            Assert.That(d.refusalPolicePayChance, Is.InRange(0f, 1f));
+            Assert.LessOrEqual(d.haggleDiscountMin, d.haggleDiscountMax);
             Assert.AreEqual(d.lines.Length, d.lines.Select(l => l.id).Distinct().Count());
+            Assert.That(d.lines.Length, Is.InRange(35, 60), "Une quarantaine de répliques de qualité.");
             var characters = new HashSet<string>(d.characters.Select(c => c.id));
+            CollectionAssert.IsSupersetOf(characters, new[] { "commercante", "ecolier", "etudiant", "fonctionnaire", "maman-bebe", "professeur" },
+                "Personnages de Kevin.");
+            var voices = new HashSet<string>(d.voiceSounds.Select(v => v.id));
+            foreach (var v in d.voiceSounds)
+            {
+                Assert.AreEqual("", v.clip, $"{v.id} : aucun son fourni (emplacement).");
+                Assert.AreEqual("à fournir", v.statut, v.id);
+            }
+            foreach (var c in d.characters)
+            {
+                Assert.IsTrue(string.IsNullOrEmpty(c.voice) || voices.Contains(c.voice), $"{c.id} : son inconnu");
+                Assert.IsTrue(string.IsNullOrEmpty(c.register) || TaxiKmer.Core.Talk.TalkRegisters.All.Contains(c.register), $"{c.id} : registre inconnu");
+            }
             foreach (var l in d.lines)
             {
                 CollectionAssert.Contains(TaxiKmer.Core.Talk.TalkTriggers.All, l.trigger, l.id);
                 Assert.LessOrEqual(l.text.Length, d.maxChars, $"{l.id} : trop long pour être lu en conduisant");
                 Assert.IsTrue(string.IsNullOrEmpty(l.character) || characters.Contains(l.character), $"{l.id} : personnage inconnu");
-                StringAssert.Contains("exemple", l.text, "Seules des lignes d'exemple tant que Kevin n'a pas écrit les siennes.");
-                Assert.IsTrue(string.IsNullOrEmpty(l.register) || TaxiKmer.Core.Talk.TalkRegisters.All.Contains(l.register), $"{l.id} : registre inconnu « {l.register} »");
+                Assert.IsTrue(l.statut == "proposée" || l.statut == "validée", $"{l.id} : statut « proposée » tant que Kevin n'a pas validé");
+                Assert.IsTrue(l.traduction == "" || l.traduction == "à traduire", l.id);
+                Assert.IsTrue(string.IsNullOrEmpty(l.voice) || voices.Contains(l.voice), $"{l.id} : son inconnu");
+                Assert.IsTrue(TaxiKmer.Core.Talk.TalkRegisters.All.Contains(l.register) || l.register == "", $"{l.id} : registre inconnu « {l.register} »");
+                StringAssert.DoesNotContain("exemple", l.text, $"{l.id} : plus d'exemple à remplacer");
+                foreach (var r in l.replies)
+                {
+                    Assert.That(r.reputation, Is.InRange(-3, 3), $"{l.id}/{r.id} : effet modéré");
+                    Assert.That(r.tip, Is.InRange(0, 500), $"{l.id}/{r.id}");
+                    Assert.LessOrEqual(r.text.Length, 40, $"{l.id}/{r.id} : bouton lisible");
+                }
             }
+            foreach (var t in new[] { "montee", "destination", "prix", "negociation", "refus-paiement", "panne", "controle", "pluie", "silence" })
+                Assert.IsTrue(d.lines.Any(l => l.trigger == t), $"Situation « {t} » couverte.");
+            foreach (var c in characters)
+                Assert.IsTrue(d.lines.Any(l => l.character == c), $"{c} : au moins une réplique");
             // Langues décidées par Kevin (2026-11-21) : français, camfranglais et pidgin.
             CollectionAssert.AreEquivalent(TaxiKmer.Core.Talk.TalkRegisters.All, d.registers.Select(r => r.id).ToArray());
             foreach (var r in d.registers) Assert.Greater(r.weight, 0f, $"{r.id} : chaque langue décidée est parlée par des passagers");
             Assert.IsTrue(string.IsNullOrEmpty(d.fallbackRegister) || TaxiKmer.Core.Talk.TalkRegisters.All.Contains(d.fallbackRegister));
             foreach (var reg in TaxiKmer.Core.Talk.TalkRegisters.All)
-                Assert.IsTrue(d.lines.Any(l => l.register == reg), $"Au moins un exemple en {reg} (format montré à Kevin)");
-            foreach (var c in d.characters)
-                Assert.IsTrue(string.IsNullOrEmpty(c.register) || TaxiKmer.Core.Talk.TalkRegisters.All.Contains(c.register), $"{c.id} : registre inconnu");
+                Assert.GreaterOrEqual(d.lines.Count(l => l.register == reg && l.traduction == ""), 3, $"Au moins 3 répliques sûres en {reg}");
             Assert.Greater(d.minShowSeconds, 0f);
             Assert.Greater(d.charsPerSecond, 0f);
         }

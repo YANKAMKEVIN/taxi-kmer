@@ -35,7 +35,7 @@ Toutes cochées : **police (jalon 4)**, **passagers qui parlent (jalon 5)**, **r
 | Priorité | Décidé et actif | Prêt mais coupé, en attendant |
 |---|---|---|
 | Police (jalon 4) | **Activé le 21/11** (2ᵉ série de décisions de Kevin) : ton réaliste, papiers option A, contester / fuir / appeler option B, renvoi à la 2ᵉ fourrière, réputation inchangée ; panneau `PoliceView` (non exécuté) | En valeurs par défaut : sommes, fréquence, positions des postes (`jalon-04.md`) ; contacts du jalon 7 (crochet coupé) |
-| Passagers qui parlent (jalon 5) | Langues : français, camfranglais, pidgin (champ `register`, choix par passager) | Dialogues (`dialogues.json`) : question 3 (qui écrit les répliques) et 4 (personnages types) ; 2, 5, 6, 7 ouvertes (`jalon-05.md`) |
+| Passagers qui parlent (jalon 5) | **Activé le 21/11** : langues, 43 répliques proposées par Claude (à valider par Kevin), 6 personnages, petits sons « à fournir », négociation (A), refus de payer (C), réponses → réputation et pourboire ; `TalkView` (non exécuté) | Validation des répliques par Kevin ; sons de voix à fournir ; destinations et heures des personnages (`jalon-05.md`) |
 | Radio camerounaise | Mécanisme (stations, changement de station, silence hors du taxi et pendant les dialogues) | Radio (`radio.json`) : noms des stations, musique sous licence ou libre, animateurs, publicités (`radio.md`) ; aucun son fourni |
 | Route dure (jalon 6) | Panne sèche : pousser ou appeler un technicien du quartier (actif, jalon 3) | Imprévus (`road.json`) : question 1 (fréquence ; ≈ 8 crevaisons par semaine avec la journée de 35 min) et 3 (qui paie) ; 2, 4, 5, 6 ouvertes (`jalon-06.md`) |
 

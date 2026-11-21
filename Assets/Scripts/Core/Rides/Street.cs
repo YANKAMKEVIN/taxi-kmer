@@ -150,6 +150,9 @@ namespace TaxiKmer.Core.Rides
         /// <summary>Refuel : litres achetés et prix payé.</summary>
         public float FuelLitres;
         public int FuelCost;
+        /// <summary>Drop : passager qui refuse de payer (null sinon) ; Paid compte les pourboires (Tips).</summary>
+        public PaymentRefusal Refusal;
+        public int Tips;
     }
 
     /// <summary>
@@ -190,6 +193,82 @@ namespace TaxiKmer.Core.Rides
         /// </summary>
         public float AcceptedPatienceSeconds =>
             _config.acceptedPatienceSeconds * (Reputation?.PatienceFactor ?? 1f) * Math.Max(0f, PatienceScale);
+
+        /// <summary>
+        /// Disputes d'argent (jalon 5, décisions de Kevin du 21/11) : négociation et refus de payer. Null : aucune (les
+        /// clients paient le prix annoncé).
+        /// </summary>
+        public FareDisputeRules FareDisputes { get; set; }
+        /// <summary>Hasard des disputes d'argent (séparé de celui des clients, pour ne pas changer leurs tirages).</summary>
+        public Random DisputeRandom { get; set; } = new Random(97);
+
+        /// <summary>Un client accepté propose moins : le joueur répond avec <see cref="AnswerHaggle"/> (null sinon).</summary>
+        public HaggleOffer PendingHaggle { get; private set; }
+        /// <summary>Un passager arrivé refuse de payer : le joueur répond avec <see cref="ResolveRefusal"/> (null sinon).</summary>
+        public PaymentRefusal PendingRefusal { get; private set; }
+
+        private readonly Dictionary<string, int> _tips = new Dictionary<string, int>();
+
+        /// <summary>
+        /// Réponse du chauffeur à un passager (jalon 5, décision de Kevin du 21/11 : effet sur la réputation et le
+        /// pourboire) : la réputation bouge tout de suite, le pourboire est payé avec la course (perdu s'il ne paie pas).
+        /// </summary>
+        public void ApplyReply(string passengerId, int reputation, int tip)
+        {
+            if (reputation != 0) Reputation?.Add(reputation);
+            if (tip <= 0 || string.IsNullOrEmpty(passengerId) || !_shift.Cabin.Contains(passengerId)) return;
+            _tips[passengerId] = (_tips.TryGetValue(passengerId, out var t) ? t : 0) + tip;
+        }
+
+        /// <summary>Pourboire promis par un passager à bord (0 sinon).</summary>
+        public int PendingTip(string passengerId) => passengerId != null && _tips.TryGetValue(passengerId, out var t) ? t : 0;
+
+        /// <summary>
+        /// Négociation, option A (tranché par Kevin le 21/11) : le joueur accepte la contre-offre (le client paiera ce
+        /// prix et peut monter) ou la refuse (le client reste au bord de la route). False s'il n'y a rien à répondre.
+        /// </summary>
+        public bool AnswerHaggle(bool accept)
+        {
+            var h = PendingHaggle;
+            if (h == null) return false;
+            PendingHaggle = null;
+            if (accept) h.Client.Client.AgreeFare(h.Offer);
+            else { h.Client.State = RoadsideState.Waiting; h.Client.Calling = false; }
+            return true;
+        }
+
+        /// <summary>
+        /// Refus de payer, option C (tranché par Kevin le 21/11) : le joueur laisse partir le passager (course perdue)
+        /// ou appelle la police (temps perdu ; le policier le fait payer selon une chance).
+        /// </summary>
+        public RefusalOutcome ResolveRefusal(bool callPolice)
+        {
+            var r = PendingRefusal;
+            var outcome = new RefusalOutcome();
+            if (r == null) return outcome;
+            PendingRefusal = null;
+            var rules = FareDisputes ?? new FareDisputeRules();
+            if (callPolice)
+            {
+                outcome.PoliceCalled = true;
+                outcome.LostMinutes = Math.Max(0, rules.PoliceMinutes);
+                _shift.Clock.AdvanceGameMinutes(outcome.LostMinutes);
+                outcome.Paid = DisputeRandom.NextDouble() < rules.PolicePayChance;
+            }
+            if (outcome.Paid)
+            {
+                outcome.Amount = r.Fare;
+                _shift.Ledger.AddFare(r.Fare);
+                Reputation?.RidesPaid(1);
+            }
+            else
+            {
+                _leftUnpaid++;
+                _leftUnpaidFares += r.Fare;
+            }
+            if (!DayFinished && _shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
+            return outcome;
+        }
 
         /// <summary>Autre facteur de patience (pluie du jalon 6) ; 1 par défaut.</summary>
         public float PatienceScale { get; set; } = 1f;
@@ -262,6 +341,7 @@ namespace TaxiKmer.Core.Rides
                         Reputation?.AcceptedClientGaveUp();
                     }
                 }
+                if (PendingHaggle != null && PendingHaggle.Client == c && c.State != RoadsideState.Accepted) PendingHaggle = null;
                 c.Calling = c.State == RoadsideState.Waiting && onRoute && !_shift.Clock.IsOver
                     && taxi.Direction == c.Direction
                     && ahead > -_config.boardDistanceMeters && ahead < _config.announceDistanceMeters;
@@ -286,10 +366,15 @@ namespace TaxiKmer.Core.Rides
             return HonkResult.NoRoom;
         }
 
-        private static void Accept(RoadsideClient c)
+        private void Accept(RoadsideClient c)
         {
+            var wasAccepted = c.State == RoadsideState.Accepted;
             c.State = RoadsideState.Accepted;
             c.AcceptedSeconds = 0f;
+            if (wasAccepted || PendingHaggle != null || FareDisputes == null) return;
+            // Négociation, option A (Kevin, 21/11) : le client propose moins ; chance × effet de la réputation (jalon 3).
+            var offer = Rides.FareDisputes.MaybeHaggle(FareDisputes, c.Client.ProposedFare, Reputation?.HaggleFactor ?? 1f, DisputeRandom);
+            if (offer > 0) PendingHaggle = new HaggleOffer { Client = c, Asked = c.Client.ProposedFare, Offer = offer };
         }
 
         /// <summary>
@@ -333,6 +418,7 @@ namespace TaxiKmer.Core.Rides
                 foreach (var c in _waiting)
                 {
                     if (c.State != RoadsideState.Accepted || !OnClientSide(c, taxi)) continue;
+                    if (PendingHaggle != null && PendingHaggle.Client == c) continue; // il attend la réponse à sa contre-offre
                     var d = Math.Abs(c.Along - taxi.Along);
                     if (d <= _config.boardDistanceMeters && d < best) { best = d; nearest = c; }
                 }
@@ -371,8 +457,26 @@ namespace TaxiKmer.Core.Rides
             {
                 case StreetActionKind.Drop:
                     outcome.Dropped = _shift.Cabin.PassengersFor(action.Stop.id);
-                    outcome.Paid = _shift.DropAllAt(action.Stop.id);
-                    if (outcome.Paid > 0) Reputation?.RidesPaid(outcome.Dropped.Count);
+                    // Refus de payer, option C (Kevin, 21/11) : un passager à la fois peut refuser ; il descend sans payer.
+                    if (FareDisputes != null && PendingRefusal == null && FareDisputes.RefusesToPayChance > 0f)
+                        foreach (var p in outcome.Dropped)
+                            if (DisputeRandom.NextDouble() < FareDisputes.RefusesToPayChance)
+                            {
+                                _shift.Cabin.Remove(p);
+                                _tips.Remove(p.Id);
+                                PendingRefusal = new PaymentRefusal { Client = p, Fare = p.ProposedFare };
+                                outcome.Refusal = PendingRefusal;
+                                break;
+                            }
+                    var payers = 0;
+                    foreach (var p in outcome.Dropped)
+                    {
+                        if (outcome.Refusal != null && outcome.Refusal.Client == p) continue;
+                        payers++;
+                        if (_tips.TryGetValue(p.Id, out var tip)) { _shift.Ledger.AddTip(tip); outcome.Tips += tip; _tips.Remove(p.Id); }
+                    }
+                    outcome.Paid = _shift.DropAllAt(action.Stop.id) + outcome.Tips;
+                    if (payers > 0) Reputation?.RidesPaid(payers);
                     break;
                 case StreetActionKind.Board:
                     var c = action.Client;
@@ -392,7 +496,7 @@ namespace TaxiKmer.Core.Rides
                     outcome.FuelLitres = _shift.BuyFuel(_shift.Tank.Config.refuelStepFcfa, out outcome.FuelCost);
                     break;
             }
-            if (!DayFinished && _shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
+            if (!DayFinished && PendingRefusal == null && _shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
             return outcome;
         }
 

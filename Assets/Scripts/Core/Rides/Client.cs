@@ -8,7 +8,8 @@ namespace TaxiKmer.Core.Rides
         public string Id { get; }
         public string DestinationStopId { get; }
         public int DistanceMeters { get; }
-        public int ProposedFare { get; }
+        /// <summary>Prix de la course ; il baisse si le chauffeur accepte la contre-offre du client (négociation, jalon 5).</summary>
+        public int ProposedFare { get; private set; }
         public Corpulence Corpulence { get; }
 
         public Client(string id, string destinationStopId, int distanceMeters, int proposedFare, Corpulence corpulence)
@@ -22,6 +23,13 @@ namespace TaxiKmer.Core.Rides
             DistanceMeters = distanceMeters;
             ProposedFare = proposedFare;
             Corpulence = corpulence;
+        }
+
+        /// <summary>Négociation acceptée (option A, tranché par Kevin le 21/11) : le client paiera ce prix.</summary>
+        public void AgreeFare(int fare)
+        {
+            if (fare < 0) throw new ArgumentOutOfRangeException(nameof(fare));
+            ProposedFare = fare;
         }
     }
 }
