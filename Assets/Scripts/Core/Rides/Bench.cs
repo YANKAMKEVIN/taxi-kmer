@@ -46,5 +46,11 @@ namespace TaxiKmer.Core.Rides
         internal void Seat(Client client) => _passengers.Add(client);
 
         internal bool Remove(Client client) => _passengers.Remove(client);
+
+        internal int IndexOf(Client client) => _passengers.IndexOf(client);
+
+        /// <summary>Remet un passager à cette place de la banquette (après un essai de changement de place).</summary>
+        internal void SeatAt(int index, Client client) =>
+            _passengers.Insert(System.Math.Max(0, System.Math.Min(index, _passengers.Count)), client);
     }
 }

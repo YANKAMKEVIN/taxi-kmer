@@ -111,6 +111,59 @@ namespace TaxiKmer.Core.Tests
         }
 
         [Test]
+        public void FindMoveToFit_EveryCabin_NeverThrows_NeverChangesTheCabin()
+        {
+            // Toutes les façons de remplir le taxi (carrures tirées au hasard), puis chaque nouveau client possible :
+            // la recherche ne doit ni planter (elle déplaçait les passagers pendant qu'elle les parcourait), ni rien changer.
+            var rng = new System.Random(3);
+            var kinds = new[] { Corpulence.Mince, Corpulence.Normal, Corpulence.Costaud };
+            var searches = 0;
+            for (var trial = 0; trial < 400; trial++)
+            {
+                var cabin = new TaxiCabin(new SeatingConfig());
+                for (var i = 0; i < 6; i++) cabin.TryBoard(C(kinds[rng.Next(3)]), out _);
+                var back = string.Join(",", System.Linq.Enumerable.Select(cabin.Back.Passengers, x => x.Id));
+                var front = string.Join(",", System.Linq.Enumerable.Select(cabin.Front.Passengers, x => x.Id));
+                foreach (var k in kinds)
+                {
+                    var newcomer = C(k);
+                    Client move = null;
+                    Assert.DoesNotThrow(() => move = cabin.FindMoveToFit(newcomer));
+                    searches++;
+                    Assert.AreEqual(back, string.Join(",", System.Linq.Enumerable.Select(cabin.Back.Passengers, x => x.Id)));
+                    Assert.AreEqual(front, string.Join(",", System.Linq.Enumerable.Select(cabin.Front.Passengers, x => x.Id)));
+                    if (move != null)
+                    {
+                        Assert.IsFalse(cabin.CanBoard(newcomer));
+                        var copy = new TaxiCabin(new SeatingConfig());
+                        foreach (var p in cabin.Back.Passengers) copy.Restore(p, BenchSide.Back);
+                        foreach (var p in cabin.Front.Passengers) copy.Restore(p, BenchSide.Front);
+                        Assert.IsTrue(copy.TryMove(move.Id));
+                        Assert.IsTrue(copy.CanBoard(newcomer), "Le changement proposé libère vraiment la place.");
+                    }
+                }
+            }
+            Assert.Greater(searches, 0);
+        }
+
+        [Test]
+        public void FindMoveToFit_FirstTryFails_SecondHelps()
+        {
+            // Derrière : costaud, mince ; devant : costaud. Un costaud arrive : le costaud de derrière ne peut pas passer
+            // devant (essai refusé sans déplacement) ; le mince, si → la recherche continue après un essai raté.
+            var c1 = C(Corpulence.Costaud);
+            var m = C(Corpulence.Mince);
+            var c2 = C(Corpulence.Costaud);
+            Assert.IsTrue(_cabin.Restore(c1, BenchSide.Back));
+            Assert.IsTrue(_cabin.Restore(m, BenchSide.Back));
+            Assert.IsTrue(_cabin.Restore(c2, BenchSide.Front));
+            var normal = C(Corpulence.Normal);
+            Assert.IsTrue(_cabin.Restore(normal, BenchSide.Back)); // derrière : 4 + 2 + 3 = 9, plein
+            var newcomer = C(Corpulence.Mince);
+            Assert.DoesNotThrow(() => _cabin.FindMoveToFit(newcomer));
+        }
+
+        [Test]
         public void TryMove_FailsWhenOtherBenchIsFull()
         {
             FillBack();
