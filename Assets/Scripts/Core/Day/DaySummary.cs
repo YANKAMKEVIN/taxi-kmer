@@ -34,10 +34,15 @@ namespace TaxiKmer.Core.Day
         public int Reputation { get; private set; } = -1;
         public int ReputationChange { get; private set; }
 
-        /// <summary>Le versement est couvert par les recettes.</summary>
-        public bool VersementReached => Revenue >= Versement;
-        /// <summary>Ce qui manque aux recettes pour couvrir le versement (0 s'il est couvert).</summary>
-        public int VersementShortfall => Math.Max(0, Versement - Revenue);
+        /// <summary>
+        /// Recette qui reste pour le versement une fois payés le carburant et les frais imprévus de la journée (ils se
+        /// paient d'abord, comme dans <see cref="Career.DriverCareer.CloseDay"/>) ; peut être négative.
+        /// </summary>
+        public int TowardVersement => Revenue - FuelCost - ExpensesTotal;
+        /// <summary>Le versement est couvert par la journée seule (recettes moins carburant et frais), sans l'épargne.</summary>
+        public bool VersementReached => TowardVersement >= Versement;
+        /// <summary>Ce qui manque à la journée seule pour couvrir le versement (0 s'il est couvert), avant l'épargne.</summary>
+        public int VersementShortfall => Versement - Math.Max(0, Math.Min(Versement, TowardVersement));
 
         public static DaySummary From(DayLedger ledger, int unpaidPassengers = 0, int unpaidFares = 0,
             bool arrested = false, bool vehicleSeized = false, float tankLitres = -1f,

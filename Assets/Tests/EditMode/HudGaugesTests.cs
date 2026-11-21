@@ -31,6 +31,29 @@ namespace TaxiKmer.Core.Tests
         }
     
         [Test]
+        public void VersementGauge_DeductsFuelAndExpenses_LikeTheSummary()
+        {
+            // 11 000 de recette, 4 000 de carburant acheté et 0 de frais : 7 000 comptent pour le versement.
+            var toward = HudGauges.TowardVersement(11000, 4000, 0);
+            Assert.AreEqual(7000, toward);
+            Assert.IsFalse(HudGauges.VersementCovered(toward, 10000));
+            Assert.AreEqual(0.7f, HudGauges.VersementFill(toward, 10000), 1e-6f);
+            Assert.AreEqual("Versement 10 000 · -4 000 dépensés", HudGauges.VersementCaption(toward, 10000, 4000));
+            Assert.AreEqual("Versement couvert · +500 au-delà", HudGauges.VersementCaption(HudGauges.TowardVersement(14500, 4000, 0), 10000, 4000));
+            Assert.AreEqual(0f, HudGauges.VersementFill(HudGauges.TowardVersement(1000, 2000, 15000), 10000), "Jamais négative.");
+
+            // Même verdict que le bilan de fin de journée.
+            var ledger = new DayLedger(new DayConfig()) { UsesFuelPurchases = true };
+            ledger.AddFare(11000);
+            ledger.BuyFuel(4.76f, 4000);
+            var s = DaySummary.From(ledger);
+            Assert.AreEqual(toward, s.TowardVersement);
+            Assert.IsFalse(s.VersementReached);
+            Assert.AreEqual(3000, s.VersementShortfall);
+            Assert.AreEqual("IL MANQUE 3 000 FCFA", SummaryReveal.StampText(s));
+        }
+
+        [Test]
         public void LastHour_StartsAt19h_AndStopsAtTheEnd()
         {
             var clock = new DayClock(new DayConfig()); // 6 h → 20 h en 600 s : 1 h de jeu = 600 / 14 s

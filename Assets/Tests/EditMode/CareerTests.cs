@@ -31,6 +31,21 @@ namespace TaxiKmer.Core.Tests
             Assert.AreEqual(14000 - 1680 - 10000 + 2000, c.Savings, "L'argent passe d'un jour à l'autre.");
         }
 
+        [TestCase(14000, 25000f, 0)]
+        [TestCase(10500, 25000f, 0)]
+        [TestCase(10000, 0f, 0)]
+        [TestCase(9000, 0f, 0)]
+        [TestCase(12000, 10000f, 15000)]
+        [TestCase(0, 5000f, 0)]
+        public void WithoutSavings_SummaryVerdict_MatchesTheOwner(int revenue, float meters, int expenses)
+        {
+            // Le bilan (tampon, jauge du HUD) et le propriétaire comptent de la même façon : carburant et frais d'abord.
+            var s = Day(revenue, meters, expenses);
+            var close = new DriverCareer(new OwnerConfig()).CloseDay(s);
+            Assert.AreEqual(close.VersementMissing, s.VersementShortfall);
+            Assert.AreEqual(close.VersementMissing == 0, s.VersementReached);
+        }
+
         [Test]
         public void ShortDay_CompletedFromSavings_NoThreat()
         {

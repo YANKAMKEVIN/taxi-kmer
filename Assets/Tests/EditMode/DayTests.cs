@@ -56,7 +56,8 @@ namespace TaxiKmer.Core.Tests
             Assert.AreEqual(1200 - 10000 - 2513, s.Remaining);
             Assert.AreEqual(s.Revenue - s.Versement - s.FuelCost, s.Remaining, "Le bilan s'additionne.");
             Assert.IsFalse(s.VersementReached);
-            Assert.AreEqual(8800, s.VersementShortfall);
+            Assert.AreEqual(1200 - 2513, s.TowardVersement, "Le carburant passe avant le versement.");
+            Assert.AreEqual(10000, s.VersementShortfall, "Rien ne reste pour le versement.");
             Assert.AreEqual(2, s.UnpaidPassengers);
             Assert.AreEqual(900, s.UnpaidFares);
         }

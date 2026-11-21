@@ -95,14 +95,17 @@ namespace TaxiKmer.Driving
             UiKit.PlaceTopLeft(_day.rectTransform, x + w * 0.64f, h * 0.162f, w * 0.36f, h * 0.038f);
 
             var versement = shift.Ledger.Versement;
-            var revenue = shownRevenue; // le compteur défile : la jauge et la légende suivent ce qu'il affiche
-            var covered = HudGauges.VersementCovered(revenue, versement);
-            _caption.text = HudGauges.VersementCaption(revenue, versement);
+            // Le compteur défile : la jauge et la légende suivent ce qu'il affiche, moins le carburant et les frais
+            // déjà payés dans la journée (ils passent avant le versement, comme au bilan).
+            var spent = shift.Ledger.FuelCost + shift.Ledger.ExpensesTotal;
+            var toward = HudGauges.TowardVersement(shownRevenue, shift.Ledger.FuelCost, shift.Ledger.ExpensesTotal);
+            var covered = HudGauges.VersementCovered(toward, versement);
+            _caption.text = HudGauges.VersementCaption(toward, versement, spent);
             _caption.fontSize = Mathf.RoundToInt(h * 0.028f);
             _caption.color = covered ? Covered : Color.white;
             UiKit.PlaceTopLeft(_caption.rectTransform, x, h * 0.19f, w, h * 0.034f);
             UiKit.PlaceTopLeft(_gaugeTrack.rectTransform, x, h * 0.225f, w, h * 0.045f);
-            Fill(_gaugeFill.rectTransform, HudGauges.VersementFill(shownRevenue, versement));
+            Fill(_gaugeFill.rectTransform, HudGauges.VersementFill(toward, versement));
             _gaugeFill.color = covered ? Covered : Filling;
             _revenue.text = DaySummary.Money(shownRevenue);
             _revenue.fontSize = Mathf.RoundToInt(h * 0.03f);

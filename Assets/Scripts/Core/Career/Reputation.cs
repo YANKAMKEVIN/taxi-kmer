@@ -73,6 +73,7 @@ namespace TaxiKmer.Core.Career
         {
             DayStart = Clamp(dayStart);
             Score = Clamp(score);
+            _roughSeconds = 0f;
         }
 
         public void Add(int delta) => Score = Clamp(Score + delta);
