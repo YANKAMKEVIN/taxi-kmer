@@ -28,6 +28,17 @@
 
 Après le jalon 11 : l'entreprise de taxis, le reste de Yaoundé, puis Douala, la démo web.
 
+## Priorités suivantes (cochées par Kevin le 2026-11-21)
+
+Toutes cochées : **police (jalon 4)**, **passagers qui parlent (jalon 5)**, **radio camerounaise**, **route dure (jalon 6)**. Ce qui est entièrement décidé est actif ; le reste est prêt mais coupé (`enabled: false`) :
+
+| Priorité | Décidé et actif | Prêt mais coupé, en attendant |
+|---|---|---|
+| Police (jalon 4) | Ton réaliste : textes du contrôle (`PoliceTexts`), sans affichage tant que le contrôle est coupé | Contrôles (`police.json`) : questions 2 (papiers et coûts), 3 (contester), 5 (appeler), 6 (sommes et fréquence), 7 (fourrière), 9 (postes) ; 4 (fuir) et 8 (réputation) restent ouvertes (`jalon-04.md`) |
+| Passagers qui parlent (jalon 5) | Langues : français, camfranglais, pidgin (champ `register`, choix par passager) | Dialogues (`dialogues.json`) : question 3 (qui écrit les répliques) et 4 (personnages types) ; 2, 5, 6, 7 ouvertes (`jalon-05.md`) |
+| Radio camerounaise | Mécanisme (stations, changement de station, silence hors du taxi et pendant les dialogues) | Radio (`radio.json`) : noms des stations, musique sous licence ou libre, animateurs, publicités (`radio.md`) ; aucun son fourni |
+| Route dure (jalon 6) | Panne sèche : pousser ou appeler un technicien du quartier (actif, jalon 3) | Imprévus (`road.json`) : question 1 (fréquence ; ≈ 8 crevaisons par semaine avec la journée de 35 min) et 3 (qui paie) ; 2, 4, 5, 6 ouvertes (`jalon-06.md`) |
+
 ---
 
 ## Jalon 2 — La ville vit

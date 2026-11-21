@@ -1,6 +1,8 @@
 # Jalon 6 — La route est dure (plan technique)
 
 > Ouvert le 2026-11-21 en session cloud, **logique pure seulement**. Contenu et critères : `docs/design/roadmap.md` ; vision §4.5. Rien n'est actif : `enabled: false` dans `road.json` tant que Kevin n'a pas fixé la fréquence des incidents et qui paie.
+>
+> **Priorité cochée par Kevin le 2026-11-21.** Rien de ce jalon n'est encore entièrement décidé : il reste coupé (questions 1 et 3 bloquantes ; 2, 4, 5, 6 ouvertes). Décidé le même jour et actif : la **panne sèche** (pousser ou appeler un technicien du quartier, `jalon-03.md`). Avec la **journée de 35 min**, les incidents comptés au kilomètre sont 3,5 fois plus nombreux par journée : ≈ 8 crevaisons et 8 pannes par semaine aux valeurs par défaut (contre 2,5 avec 10 min), à prendre en compte pour la question 1. Le « mécanicien de quartier qui vient sur place » (question 5) pourrait reprendre le technicien de la panne sèche.
 
 **But** : les imprévus du quotidien.
 
