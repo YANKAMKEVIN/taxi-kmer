@@ -24,4 +24,4 @@ Tests : `Assets/Tests/EditMode/RideTypesTests.cs` (5 tests) ; `DataInvariantsTes
 3. **Prix types d'un dépôt** (question 2) : **A.** le prix de toutes les places (5 × le prix partagé, par défaut) ; **B.** un forfait par zone (par ex. 1 500 FCFA jusqu'à Emana, 2 500 jusqu'à Étoudi) ; **C.** 3 × le prix partagé, négociable. Et le marchandage : le chauffeur demande plus, ou le client propose moins ?
 4. **Fréquence** : combien de commandes de l'appli par heure, et combien de clients veulent un dépôt (`app.ordersPerHour`, `depot.depotClientChance`, à 0) ?
 5. **Note du client** : effet sur les commandes suivantes (moins de commandes sous 4 étoiles ?) ou seulement affichée ?
-6. Avec l'équilibrage du jalon 3 (une journée de 10 min rapporte 1 500 à 2 600 FCFA), quelle place pour ces courses plus chères ?
+6. Avec l'équilibrage du jalon 3 (une journée de 35 min rapporte 6 600 à 10 500 FCFA, mais le carburant en coûte ≈ 11 400), quelle place pour ces courses plus chères ?

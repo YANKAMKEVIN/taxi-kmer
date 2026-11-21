@@ -120,11 +120,14 @@ namespace TaxiKmer.Core.Tests
         [Test]
         public void Day_WithEnoughLines_FewRepeats()
         {
-            // Critère du jalon 5 : sur une journée (600 s), les dialogues ne se répètent pas trop.
-            var config = Config(8, TalkTriggers.All);
+            // Critère du jalon 5 : sur une journée (durée de day.json), les dialogues ne se répètent pas trop.
+            // Journée de 35 min : environ 160 bulles à ce rythme ; il faut alors deux douzaines de répliques par situation
+            // (8 suffisaient pour 10 min) : chiffre donné à Kevin dans jalon-05.md.
+            var config = Config(24, TalkTriggers.All);
             var d = new DialogueDirector(config, new Random(4));
             var rng = new Random(5);
-            for (var t = 0f; t < 600f; t += 0.1f)
+            var dayLength = new TaxiKmer.Core.Day.DayConfig().dayLengthRealSeconds;
+            for (var t = 0f; t < dayLength; t += 0.1f)
             {
                 d.Update(0.1f, 3);
                 if (rng.NextDouble() < 0.02) d.Trigger(TalkTriggers.All[rng.Next(TalkTriggers.All.Length)], "c");

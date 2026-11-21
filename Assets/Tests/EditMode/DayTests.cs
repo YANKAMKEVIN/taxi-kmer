@@ -6,14 +6,18 @@ namespace TaxiKmer.Core.Tests
     public class DayTests
     {
         [Test]
-        public void Clock_RunsFrom6To20InTenMinutes()
+        public void Clock_RunsFrom6To20In35Minutes()
         {
-            var clock = new DayClock(new DayConfig());
+            var day = new DayConfig();
+            Assert.AreEqual(2100f, day.dayLengthRealSeconds, "Journée de 35 min réelles (décision de Kevin, 2026-11-21 : piste B).");
+            var clock = new DayClock(day);
             Assert.AreEqual("06:00", clock.Display);
-            clock.Advance(300f);
+            clock.Advance(1050f);
             Assert.AreEqual("13:00", clock.Display);
             Assert.IsFalse(clock.IsOver);
-            clock.Advance(300f);
+            clock.Advance(150f);
+            Assert.AreEqual("14:00", clock.Display, "Une heure de jeu = 150 s réelles.");
+            clock.Advance(900f);
             Assert.AreEqual("20:00", clock.Display);
             Assert.IsTrue(clock.IsOver);
             clock.Advance(100f);

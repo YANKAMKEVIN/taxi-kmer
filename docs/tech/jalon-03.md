@@ -1,6 +1,6 @@
 # Jalon 3 — Les jours s'enchaînent (plan technique)
 
-> Ouvert le 2026-11-15, **partie technique seulement** (la sauvegarde), à la demande de Kevin, pendant que le jalon 1 attend sa validation et que le jalon 2 attend l'essai sur téléphone. Contenu et critères : `docs/design/roadmap.md`. Le propriétaire a suivi le 2026-11-15 (décisions de Kevin) ; calendrier, carburant et réputation le 2026-11-21 avec des valeurs par défaut (questions ouvertes réglables dans les données).
+> Journée de **35 min** réelles depuis le 2026-11-21 (décision de Kevin, piste B). Ouvert le 2026-11-15, **partie technique seulement** (la sauvegarde), à la demande de Kevin, pendant que le jalon 1 attend sa validation et que le jalon 2 attend l'essai sur téléphone. Contenu et critères : `docs/design/roadmap.md`. Le propriétaire a suivi le 2026-11-15 (décisions de Kevin) ; calendrier, carburant et réputation le 2026-11-21 avec des valeurs par défaut (questions ouvertes réglables dans les données).
 
 **Accepté si** (feuille de route) : on joue 3 jours de suite, on quitte l'appli à n'importe quel moment et on reprend sans perte ; tests de la sauvegarde, y compris fichier corrompu ou version ancienne.
 
@@ -58,7 +58,54 @@ Sauvegarde automatique toutes les 30 s réelles ; aussi à la mise en arrière-p
 - Score de 0 à 100, 50 au départ ; paliers : très mauvaise, mauvaise (20), correcte (40), bonne (60), excellente (80).
 - +1 par client payé ; -2 par client accepté qui abandonne ; -2 par passager descendu sans arriver ; -10 piéton blessé léger, -25 blessé grave ; avec des passagers, au-delà de 60 km/h, -1 toutes les 10 s.
 
-## Équilibrage : simulation de journées types (2026-11-21, session cloud)
+## Équilibrage, piste B : journée de 35 minutes (décision de Kevin, 2026-11-21)
+
+**Décision de Kevin** : piste B, journée allongée à 30-40 min réelles ; **carburant : garder le réalisme actuel** (consommation inchangée : 8 L/100 km ×8), on équilibre ailleurs. Appliqué : `day.json` → `dayLengthRealSeconds: 2100` (**35 min**, valeur par défaut choisie dans la fourchette ; 1 800 à 2 400 se règlent dans les données). Aucune autre valeur changée (ni versement, ni prix, ni carburant).
+
+Simulation refaite (`BalanceSimulationTests.DayLength_VersementReachable_Report`, même chauffeur automatique que ci-dessous, 40 km/h, réservoir plein, carburant de `fuel.json`, **30 journées par durée**) :
+
+| Durée | Courses | Recette moy. (min - max) | km | Carburant brûlé | Reste après carburant | Versement atteint après carburant | Recette seule ≥ 10 000 |
+|---|---|---|---|---|---|---|---|
+| 10 min (avant) | 6,2 | 2 243 (1 400 - 3 100) | 6,1 | 3 291 | -1 048 | **0 / 30** | 0 / 30 |
+| 30 min | 20,8 | 7 566 (6 400 - 8 900) | 18,1 | 9 748 | -2 181 | **0 / 30** | 0 / 30 |
+| **35 min (day.json)** | 23,1 | 8 636 (6 600 - 10 500) | 21,2 | 11 400 | **-2 763** | **0 / 30** | 3 / 30 |
+| 40 min | 28,1 | 10 533 (8 400 - 12 300) | 24,1 | 12 969 | -2 435 | **0 / 30** | 21 / 30 |
+
+Selon la vitesse (35 min, 10 journées chacune) :
+
+| Vitesse | Courses | Recette | km | Carburant ×1 | ×4 | ×8 (actuel) | Reste ×8 | Journées où le versement est atteint (×8) |
+|---|---|---|---|---|---|---|---|---|
+| 30 km/h | 20,3 | 7 430 | 16,1 | 1 093 | 4 347 | 8 691 | -1 261 | 0 / 10 |
+| 40 km/h | 22,1 | 8 260 | 21,3 | 1 423 | 5 718 | 11 437 | -3 177 | 0 / 10 |
+| 50 km/h | 31,2 | 11 620 | 25,5 | 1 719 | 6 854 | 13 725 | -2 105 | 0 / 10 |
+
+Semaine avec le propriétaire (35 min, 40 km/h, départ à 12 L, station sous 25 %) :
+
+| Jour | Courses | Recette | Carburant acheté | Versement remis | Manque | Épargne | Propriétaire |
+|---|---|---|---|---|---|---|---|
+| 1 lun. | 25 | 9 200 | 14 000 | 0 | 10 000 | -4 800 | menace |
+| 2 mar. | 23 | 8 200 | 10 000 | 0 | 10 000 | -6 600 | menace |
+| 3 mer. | 25 | 9 000 | 12 000 | 0 | 10 000 | -9 600 | renvoyé |
+
+**Pour Kevin : le versement de 10 000 FCFA reste inatteignable, dans 0 % des journées** (0 sur 30 à 35 min, 0 sur 120 toutes durées confondues). Aucune autre valeur n'a été changée, comme demandé. Pourquoi, précisément :
+- La recette est multipliée par 3,8 (2 243 → 8 636), mais le carburant aussi (3 291 → 11 400) : les deux sont proportionnels aux kilomètres. Allonger la journée ne change donc pas leur rapport.
+- **Au kilomètre, le carburant coûte plus que ce que rapportent les courses** : 8 L/100 km ×8 × 840 FCFA = **≈ 540 FCFA par km**, contre **≈ 400 FCFA de recette par km** (3 passagers à bord en moyenne, 300 à 800 FCFA la course sur une portion de 6 km). Chaque kilomètre fait perdre ≈ 140 FCFA, quelle que soit la durée.
+- La recette seule (sans compter le carburant) dépasse 10 000 FCFA dans 10 % des journées de 35 min (3 sur 30) et 70 % des journées de 40 min (21 sur 30) : la durée suffirait si le carburant était compté à ×1 (1 400 FCFA par jour à 40 km/h ; à 50 km/h, 5 journées sur 10 couvrent alors le versement).
+- Le ×8 avait été choisi pour qu'une journée de **10 min** consomme comme une vraie journée (≈ 5 L). Avec 35 min, la même échelle fait brûler ≈ 13,6 L pour 21 km de jeu, soit ce que consomme un vrai taxi sur ≈ 170 km : c'est « réaliste » pour une journée entière, mais la recette, elle, reste celle de 21 km.
+- Conséquence avec les valeurs par défaut du propriétaire (3 manques sur 7 jours) : **renvoyé le 3ᵉ jour**, comme avant.
+
+Ce qui permettrait d'atteindre le versement (à trancher par Kevin, **rien n'est appliqué**) : baisser `consumptionScale` (×1 à ×2 ; contraire au « réalisme actuel »), ou baisser le versement (`day.json`), ou augmenter les prix (`fares.json`), ou allonger la portion (plus de clients par km ; jalons suivants).
+
+Ce qui dépend de la durée de la journée (vérifié le 2026-11-21) :
+- **Horloge affichée** : 6 h → 20 h en 35 min, soit **1 h de jeu = 150 s réelles** (avant : 43 s) ; `DayClock` lit `dayLengthRealSeconds`, rien d'autre à changer. Tests mis à jour (`DayTests`, `HudGaugesTests`, `ShiftTests` lisent la durée des données au lieu de 600 s).
+- **Rappels de fin de journée** : en minutes de jeu (dernière heure à 19 h, rappel après 20 h) : inchangés, la dernière heure dure maintenant 150 s réelles.
+- **Apparition des clients** : `street.json` compte en secondes réelles (un client toutes les 20 s par lieu, patience de 30 s) : environ **3,5 fois plus de clients par journée**, à la même cadence qu'avant ; inchangé.
+- **Temps perdus** (hôpital, police, garage, technicien) : en minutes de jeu, donc la même part de la journée ; en temps réel, 3,5 fois plus longs.
+- **Imprévus de la route** (jalon 6, coupé) : comptés au kilomètre, donc 3,5 fois plus par journée ; `RoadTests` simule désormais des journées de la durée des données : **≈ 8 crevaisons et 8 pannes par semaine** (avant : 2,5), à revoir avec la question 1 du jalon 6.
+- **Dialogues** (jalon 5, coupé) : ≈ 160 bulles par journée au rythme du test ; il faut ≈ 24 répliques par situation au lieu de 8 pour moins d'une répétition sur quatre (`jalon-05.md`).
+- **Sauvegarde** : toutes les 30 s réelles, inchangée ; une journée en cours sauvegardée avec l'ancienne durée reprendrait plus tôt dans la journée (reprise coupée par `resumeOnStart: false`, sans effet aujourd'hui).
+
+## Équilibrage : simulation de journées types (2026-11-21, session cloud, journée de 10 min, avant la décision)
 
 `tools/dotnet/BalanceSimulationTests.cs` : un chauffeur automatique joue des journées sur les vraies données (arrêts, prix, places, clients, carburant, propriétaire, calendrier) : aller-retour dispensaire ↔ Étoudi à vitesse constante, il accepte tout client qui annonce sa destination, s'arrête 4 s pour faire monter ou descendre, 8 s pour faire demi-tour, passe à la station sous 25 % du réservoir. Ni trafic, ni feux, ni accident : une journée « propre », plutôt optimiste. Moyenne sur 10 journées ; rapports dans `tools/dotnet/bin/Debug/net8.0/equilibrage/` (`tools/test_core.sh Balance`). **Aucune valeur n'a été changée.**
 
@@ -91,5 +138,5 @@ Pistes à trancher par Kevin (une seule suffit, toutes se règlent dans les donn
 3. **Panne sèche** : que se passe-t-il vraiment (pousser, bidon au bord de la route, passagers qui descendent, remorquage payant) ?
 4. **Station-service** : laquelle, et où, sur la portion Messassi → Étoudi ?
 5. **Jours de marché** de Messassi et **jour de repos** éventuel (dimanche ?).
-6. **Équilibre recettes / carburant / versement** : voir « Équilibrage » ci-dessus ; avec les valeurs actuelles le versement est hors d'atteinte et le chauffeur est renvoyé le 3ᵉ jour. Choisir la piste A, B ou C.
+6. ~~Équilibre recettes / carburant / versement : piste A, B ou C~~ → **piste B, journée de 35 min, carburant inchangé** (Kevin, 2026-11-21). **Reste ouvert** : même ainsi, le versement de 10 000 FCFA n'est atteint dans aucune journée simulée (le carburant coûte ≈ 540 FCFA par km pour ≈ 400 FCFA de recette) : que faut-il changer (consommation, versement, prix) ? Voir « Équilibrage, piste B ».
 7. Niveau de concurrence des taxis (question 4 du jalon 2) : réglable dans `traffic.json`.

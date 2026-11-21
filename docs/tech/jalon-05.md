@@ -18,11 +18,11 @@
 | 5.6 Affichage dans Unity | **à faire avec les vraies répliques** : bulle au-dessus du taxi (ou du plan des places), 2 ou 3 boutons de réponse près du klaxon ; branchement dans `StreetView` (montée, changement de place, détour, paiement) |
 | 5.7 Radio et ambiance sonore | **non fait** : demande des sons et des musiques (chantier audio, pas en session cloud) |
 
-Tests : `Assets/Tests/EditMode/DialogueTests.cs` (9 tests, dont une journée de 600 s : moins d'une réplique sur quatre répétée avec 8 répliques par situation) ; `DataInvariantsTests.Dialogues_Readable_KnownTriggers_ExamplesMarked_Off` (situations connues, longueur lisible, personnages connus, lignes d'exemple marquées).
+Tests : `Assets/Tests/EditMode/DialogueTests.cs` (9 tests, dont une journée de la durée de `day.json` : moins d'une réplique sur quatre répétée avec 24 répliques par situation pour 35 min ; 8 suffisaient pour 10 min) ; `DataInvariantsTests.Dialogues_Readable_KnownTriggers_ExamplesMarked_Off` (situations connues, longueur lisible, personnages connus, lignes d'exemple marquées).
 
 ## Combien de répliques écrire
 
-Pour qu'une journée de 10 minutes ne se répète presque pas avec les réglages par défaut (une bulle toutes les 15 à 30 s), il faut environ **8 répliques par situation** (≈ 60 au total) ; avec 3, le passager se tait souvent plutôt que de se répéter.
+Pour qu'une journée de 10 minutes ne se répète presque pas avec les réglages par défaut (une bulle toutes les 15 à 30 s), il fallait environ **8 répliques par situation** (≈ 60 au total). **Avec la journée de 35 min** (2026-11-21), il en faut environ **24 par situation** (≈ 170 au total) ; avec moins, le passager se tait plus souvent plutôt que de se répéter.
 
 ## Questions pour Kevin (jalon 5)
 

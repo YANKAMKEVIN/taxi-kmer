@@ -49,10 +49,13 @@ namespace TaxiKmer.Core.DotnetTests
         public float RefuelUpTo = 0.5f;
         public float ConsumptionScale = -1f; // < 0 : valeur de fuel.json
         public float ClientsFactor = 1f;
+        /// <summary>Durée de la journée (s réelles) ; &lt; 0 : valeur de day.json.</summary>
+        public float DayLengthSeconds = -1f;
 
         public SimDay Play(int seed, float startLitres)
         {
             var day = Load<DayConfig>("day.json");
+            if (DayLengthSeconds > 0f) day.dayLengthRealSeconds = DayLengthSeconds;
             var fuel = Load<FuelConfig>("fuel.json");
             if (ConsumptionScale >= 0f) fuel.consumptionScale = ConsumptionScale;
             var stops = Load<StopsConfig>("stops_messassi_etoudi.json");
@@ -71,7 +74,7 @@ namespace TaxiKmer.Core.DotnetTests
             var guard = 0;
             var seatSeconds = 0f;
             var seconds = 0f;
-            while (!street.DayFinished && guard++ < 200000)
+            while (!street.DayFinished && guard++ < 1000000)
             {
                 var moving = wait <= 0f;
                 var speed = moving ? Math.Min(CruiseKmh, shift.Tank.SpeedCapKmh) : 0f;
@@ -139,27 +142,65 @@ namespace TaxiKmer.Core.DotnetTests
             var fuel = BalanceBot.Load<FuelConfig>("fuel.json");
             var report = new StringBuilder();
             report.AppendLine($"Journée de {day.dayLengthRealSeconds:F0} s réelles, versement {F(day.versement)}, {day.fuelPricePerLitre} FCFA/L, {day.fuelLitresPer100Km} L/100 km.");
-            report.AppendLine("vitesse | conso ×   | courses | à bord (moy.) | recette | km   | carburant brûlé (FCFA) | reste après carburant | versement atteint ?");
+            report.AppendLine("vitesse | conso ×   | courses | à bord (moy.) | recette | km   | carburant brûlé (FCFA) | reste après carburant | versement atteint ? | journées où il l'est");
 
             foreach (var kmh in new[] { 30f, 40f, 50f })
             foreach (var scale in new[] { 1f, 4f, fuel.consumptionScale })
             {
                 double rev = 0, rides = 0, km = 0, litres = 0, occ = 0;
                 const int seeds = 10;
+                var reached = 0;
                 for (var seed = 1; seed <= seeds; seed++)
                 {
                     var bot = new BalanceBot { CruiseKmh = kmh, ConsumptionScale = scale };
                     var d = bot.Play(seed, fuel.tankLitres); // réservoir plein : on mesure ce qui est brûlé
                     rev += d.Revenue; rides += d.Rides; km += d.Km; litres += d.LitresBurned; occ += d.Occupancy;
+                    if (d.Revenue - (int)Math.Round(d.LitresBurned * day.fuelPricePerLitre) >= day.versement) reached++;
                 }
                 rev /= seeds; rides /= seeds; km /= seeds; litres /= seeds; occ /= seeds;
                 var fuelCost = (int)Math.Round(litres * day.fuelPricePerLitre);
                 var net = (int)Math.Round(rev) - fuelCost;
-                report.AppendLine($"{kmh,4:F0} km/h | ×{scale,-7:0.#} | {rides,7:F1} | {occ,13:F1} | {F((int)rev),7} | {km,4:F1} | {F(fuelCost),22} | {F(net),21} | {(net >= day.versement ? "oui" : $"non, il manque {F(day.versement - net)}")}");
+                report.AppendLine($"{kmh,4:F0} km/h | ×{scale,-7:0.#} | {rides,7:F1} | {occ,13:F1} | {F((int)rev),7} | {km,4:F1} | {F(fuelCost),22} | {F(net),21} | {(net >= day.versement ? "oui" : $"non, il manque {F(day.versement - net)}")} | {reached}/{seeds}");
                 Assert.Greater(rides, 0, "Le chauffeur automatique fait des courses.");
             }
             TestContext.WriteLine(report.ToString());
             WriteReport("equilibrage-journees.txt", report.ToString());
+        }
+
+        /// <summary>
+        /// Piste B (décision de Kevin, 2026-11-21) : journée de 30 à 40 min réelles, carburant réaliste inchangé.
+        /// Pour chaque durée, 30 journées à 40 km/h avec la consommation de fuel.json : part des journées où la recette
+        /// moins le carburant brûlé couvre le versement (et, pour comparaison, où la recette seule le couvre).
+        /// </summary>
+        [Test]
+        public void DayLength_VersementReachable_Report()
+        {
+            var day = BalanceBot.Load<DayConfig>("day.json");
+            var fuel = BalanceBot.Load<FuelConfig>("fuel.json");
+            var report = new StringBuilder();
+            report.AppendLine($"40 km/h, consommation ×{fuel.consumptionScale:0.#} ({day.fuelLitresPer100Km} L/100 km, {day.fuelPricePerLitre} FCFA/L), versement {F(day.versement)}, 30 journées par durée.");
+            report.AppendLine("durée | courses | recette moy. (min-max) | km | carburant brûlé | reste après carburant | versement atteint après carburant | recette seule ≥ versement");
+            const int seeds = 30;
+            foreach (var minutes in new[] { 10, 30, 35, 40 })
+            {
+                double rev = 0, rides = 0, km = 0, fuelCost = 0;
+                int min = int.MaxValue, max = 0, reached = 0, reachedNoFuel = 0;
+                for (var seed = 1; seed <= seeds; seed++)
+                {
+                    var d = new BalanceBot { DayLengthSeconds = minutes * 60f }.Play(seed, fuel.tankLitres);
+                    var cost = (int)Math.Round(d.LitresBurned * day.fuelPricePerLitre);
+                    rev += d.Revenue; rides += d.Rides; km += d.Km; fuelCost += cost;
+                    min = Math.Min(min, d.Revenue); max = Math.Max(max, d.Revenue);
+                    if (d.Revenue - cost >= day.versement) reached++;
+                    if (d.Revenue >= day.versement) reachedNoFuel++;
+                }
+                rev /= seeds; rides /= seeds; km /= seeds; fuelCost /= seeds;
+                var mark = Math.Abs(minutes * 60f - day.dayLengthRealSeconds) < 1f ? " (day.json)" : "";
+                report.AppendLine($"{minutes} min{mark} | {rides:F1} | {F((int)rev)} ({F(min)}-{F(max)}) | {km:F1} | {F((int)fuelCost)} | {F((int)(rev - fuelCost))} | {reached}/{seeds} | {reachedNoFuel}/{seeds}");
+                Assert.Greater(rides, 0);
+            }
+            TestContext.WriteLine(report.ToString());
+            WriteReport("equilibrage-duree.txt", report.ToString());
         }
 
         [Test]
@@ -168,7 +209,8 @@ namespace TaxiKmer.Core.DotnetTests
             var fuel = BalanceBot.Load<FuelConfig>("fuel.json");
             var calendar = new Calendar(BalanceBot.Load<CalendarConfig>("calendar.json"));
             var report = new StringBuilder();
-            report.AppendLine("Une semaine (40 km/h, valeurs par défaut des données, passage à la station sous 25 %) :");
+            var dayCfg = BalanceBot.Load<DayConfig>("day.json");
+            report.AppendLine($"Une semaine (journée de {dayCfg.dayLengthRealSeconds / 60f:0.#} min, 40 km/h, valeurs par défaut des données, passage à la station sous 25 %) :");
             report.AppendLine("jour | courses | recette | carburant acheté | versement remis | manque | épargne | propriétaire");
             var career = new DriverCareer(BalanceBot.Load<OwnerConfig>("owner.json"));
             var tank = fuel.startLitres;

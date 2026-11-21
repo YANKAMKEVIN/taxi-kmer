@@ -127,6 +127,7 @@ namespace TaxiKmer.Core.Tests
             var car = new VehicleCondition(config);
             int punctures = 0, breakdowns = 0, rainyDays = 0, collisions = 0, hitAndRuns = 0;
             const int weeks = 20;
+            var dayLength = new DayConfig().dayLengthRealSeconds; // la vraie durée d'une journée (day.json)
             for (var day = 0; day < 7 * weeks; day++)
             {
                 var shift = new Shift(new DayConfig(), new SeatingConfig());
@@ -134,7 +135,7 @@ namespace TaxiKmer.Core.Tests
                 if (weather.Rains) rainyDays++;
                 var along = 0f;
                 var dir = 1;
-                for (var t = 0f; t < 600f; t += 1f)
+                for (var t = 0f; t < dayLength; t += 1f)
                 {
                     var speed = Math.Min(40f, car.SpeedCapKmh);
                     var next = Math.Max(0f, Math.Min(6132f, along + dir * speed / 3.6f));
