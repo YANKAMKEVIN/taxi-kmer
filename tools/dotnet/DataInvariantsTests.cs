@@ -59,6 +59,7 @@ namespace TaxiKmer.Core.DotnetTests
             ["police.json"] = typeof(TaxiKmer.Core.Police.PoliceConfig),
             ["dialogues.json"] = typeof(TaxiKmer.Core.Talk.DialogueConfig),
             ["road.json"] = typeof(TaxiKmer.Core.Road.RoadConfig),
+            ["home.json"] = typeof(TaxiKmer.Core.Home.HomeConfig),
         };
 
         [Test]
@@ -277,6 +278,23 @@ namespace TaxiKmer.Core.DotnetTests
             Assert.That(r.damagedThreshold, Is.InRange(0f, 100f));
             Assert.AreEqual(r.otherDriverAtFault.Length, r.otherDriverAtFault.Select(o => o.id).Distinct().Count());
             Assert.IsTrue(r.otherDriverAtFault.Any(o => o.id == "fuit"), "Délit de fuite : feuille de route.");
+        }
+
+        [Test]
+        public void Home_MatchesDefaults_Off_NoAmountInvented()
+        {
+            var h = Load<TaxiKmer.Core.Home.HomeConfig>("home.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Home.HomeConfig(), Opts), JsonSerializer.Serialize(h, Opts));
+            Assert.IsFalse(h.enabled);
+            Assert.IsFalse(h.tontine.join);
+            Assert.IsTrue(h.situations.Any(s => s.id == h.startSituation));
+            foreach (var s in h.situations)
+                foreach (var c in s.charges)
+                {
+                    Assert.AreEqual(0, c.amount, $"{s.id}/{c.id} : montant à fixer par Kevin (question 3 du jalon 7)");
+                    Assert.GreaterOrEqual(c.everyDays, 1);
+                }
+            foreach (var e in h.lifeEvents) Assert.AreEqual(0f, e.chancePerDay, e.id);
         }
 
         [Test]
