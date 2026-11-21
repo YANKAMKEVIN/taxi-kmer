@@ -660,6 +660,18 @@ namespace TaxiKmer.Core.Rides
             if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
         }
 
+        /// <summary>
+        /// Accrochage (jalon 6) où l'autre est fautif et ne fuit pas (il paie ou négocie), ou fuit et le joueur le laisse
+        /// partir : ce qu'il paie entre dans la recette (dédommagement, sans course) et le temps passe.
+        /// </summary>
+        public void ApplyOtherAtFaultCollision(Road.CollisionOutcome collision)
+        {
+            if (DayFinished || collision.PlayerAtFault) return;
+            if (collision.Received > 0) _shift.Ledger.AddCompensation(collision.Received);
+            _shift.Clock.AdvanceGameMinutes(Math.Max(0, collision.LostMinutes));
+            if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
+        }
+
         /// <summary>Délit de fuite subi : résultat de la poursuite (temps perdu ; rattrapé, il paie les réparations).</summary>
         public void ApplyChase(Road.ChaseOutcome chase)
         {

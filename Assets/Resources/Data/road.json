@@ -1,5 +1,5 @@
 {
-    "_note": "Imprévus de la route (jalon 6, docs/tech/jalon-06.md). ACTIVÉ le 21/11 (tranché par Kevin le 21/11) : incidents rares et marquants, ≈ 1 panne par mois de jeu et 1 crevaison par semaine, recalculés avec la journée de 35 min (≈ 23 km et ≈ 35 nids-de-poule pris par jour à 40 km/h) : breakdownPerKm 0,0013 (+ 0,00001 par point de dégâts), potholePunctureChance 0,0044, potholeDamagePerKmh 0,005 ; le chauffeur paie les réparations (driverShareOfRepairs = 1) ; pluie selon les saisons de Yaoundé (rainChanceByMonth, janvier à décembre ; rainChancePerDay si le mois est inconnu) ; fuite du joueur fautif option B (playerFlee… : réputation perdue, retrouvé par la police selon une chance) ; délit de fuite subi : poursuite (chaseMinutes, chaseCatchChance). Mécanicien de quartier sur place : mechanicCallFee + réparation. Dégâts de 0 (neuf) à 100 ; vitesses en km/h ; chances entre 0 et 1 ; sommes en FCFA ; durées en minutes de jeu. otherDriverAtFault : ce que fait l'autre conducteur fautif (paie, negocie, fuit = délit de fuite), tiré selon weight. Valeurs par défaut de Claude, à régler avec Kevin.",
+    "_note": "Imprévus de la route (jalon 6, docs/tech/jalon-06.md). ACTIVÉ le 21/11 (tranché par Kevin le 21/11) : incidents rares et marquants, ≈ 1 panne par mois de jeu et 1 crevaison par semaine, recalculés avec la journée de 35 min (≈ 23 km et ≈ 35 nids-de-poule pris par jour à 40 km/h) : breakdownPerKm 0,0013 (+ 0,00001 par point de dégâts), potholePunctureChance 0,0044, potholeDamagePerKmh 0,005 ; le chauffeur paie les réparations (driverShareOfRepairs = 1) ; pluie selon les saisons de Yaoundé (rainChanceByMonth, janvier à décembre ; rainChancePerDay si le mois est inconnu) ; fuite du joueur fautif option B (playerFlee… : réputation perdue, retrouvé par la police selon une chance) ; délit de fuite subi : poursuite (chaseMinutes, chaseCatchChance). Accrochages avec le trafic dans le jeu : collisionMinKmh (en dessous, simple frôlement), collisionCooldownSeconds (secondes réelles entre deux accrochages), collisionChoiceSeconds (secondes réelles pour choisir s'arrêter / partir ou poursuivre / laisser), collisionDriveAwayKmh (sans réponse, le joueur fautif qui roule encore à cette vitesse est parti) ; fautif = celui qui fonce sur l'autre. Mécanicien de quartier sur place : mechanicCallFee + réparation. Dégâts de 0 (neuf) à 100 ; vitesses en km/h ; chances entre 0 et 1 ; sommes en FCFA ; durées en minutes de jeu. otherDriverAtFault : ce que fait l'autre conducteur fautif (paie, negocie, fuit = délit de fuite), tiré selon weight. Valeurs par défaut de Claude, à régler avec Kevin.",
     "enabled": true,
     "damagePerImpactKmh": 0.8,
     "damagedThreshold": 60,
@@ -36,6 +36,10 @@
     "playerFleeFoundMinutes": 90,
     "chaseMinutes": 20,
     "chaseCatchChance": 0.4,
+    "collisionMinKmh": 5,
+    "collisionCooldownSeconds": 5,
+    "collisionChoiceSeconds": 10,
+    "collisionDriveAwayKmh": 15,
     "repairCostPerDamage": 500,
     "repairMinutesPerDamage": 2,
     "punctureRepairCost": 1500,

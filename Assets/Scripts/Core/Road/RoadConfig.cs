@@ -109,6 +109,16 @@ namespace TaxiKmer.Core.Road
         public int chaseMinutes = 20;
         public float chaseCatchChance = 0.4f;
 
+        /// <summary>
+        /// Détection des accrochages avec le trafic dans le jeu (valeurs par défaut de Claude, à régler) : sous … km/h de
+        /// rapprochement, simple frôlement ; après un accrochage, … secondes réelles sans en compter un autre ; le joueur a
+        /// … secondes réelles pour choisir ; sans réponse, il est « parti » s'il roule encore à … km/h ou plus.
+        /// </summary>
+        public float collisionMinKmh = 5f;
+        public float collisionCooldownSeconds = 5f;
+        public float collisionChoiceSeconds = 10f;
+        public float collisionDriveAwayKmh = 15f;
+
         // Garage / mécanicien de quartier
         /// <summary>Réparation : … FCFA par point de dégâts.</summary>
         public int repairCostPerDamage = 500;
