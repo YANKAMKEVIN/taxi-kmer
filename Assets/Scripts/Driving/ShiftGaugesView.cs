@@ -24,6 +24,7 @@ namespace TaxiKmer.Driving
         private readonly Text _revenue;
         private readonly Image _fuelTrack, _fuelFill;
         private readonly Text _fuel;
+        private readonly Text _reputation;
         private static readonly Color FuelColor = new Color(1f, 1f, 1f, 0.85f);
         private static readonly Color FuelLow = new Color(1f, 0.3f, 0.25f, 1f);
 
@@ -56,6 +57,7 @@ namespace TaxiKmer.Driving
             _fuelTrack = UiKit.NewImage(_root, "Carburant", Track, UiKit.Rounded);
             _fuelFill = UiKit.NewImage(_fuelTrack.transform, "Réservoir", FuelColor, UiKit.Rounded);
             _fuel = Label(font, TextAnchor.MiddleLeft, Color.white);
+            _reputation = Label(font, TextAnchor.MiddleLeft, Color.white);
         }
 
         private Text Label(Font font, TextAnchor anchor, Color color)
@@ -69,7 +71,7 @@ namespace TaxiKmer.Driving
         /// <summary>Texte de l'heure (la fin de journée le colore et le fait battre).</summary>
         public Text Clock => _clock;
 
-        public void Update(Shift shift, string dayLabel, int shownRevenue, bool visible)
+        public void Update(Shift shift, string dayLabel, int shownRevenue, bool visible, string reputationLabel = "")
         {
             _root.gameObject.SetActive(visible);
             if (!visible) return;
@@ -104,6 +106,12 @@ namespace TaxiKmer.Driving
             _gaugeFill.color = covered ? Covered : Filling;
             _revenue.text = DaySummary.Money(shownRevenue);
             _revenue.fontSize = Mathf.RoundToInt(h * 0.03f);
+
+            // Réputation (jalon 3) à droite de la jauge de versement, si elle est visible (reputation.json).
+            _reputation.enabled = !string.IsNullOrEmpty(reputationLabel);
+            _reputation.text = reputationLabel;
+            _reputation.fontSize = Mathf.RoundToInt(h * 0.026f);
+            UiKit.PlaceTopLeft(_reputation.rectTransform, x + w + h * 0.015f, h * 0.225f, w * 0.6f, h * 0.045f);
 
             // Jauge de carburant (jalon 3) à droite de l'heure : se vide en roulant, rouge sur la réserve.
             var tank = shift.Tank;

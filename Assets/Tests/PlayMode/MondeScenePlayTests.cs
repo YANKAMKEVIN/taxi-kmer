@@ -109,6 +109,7 @@ namespace TaxiKmer.PlayModeTests
             tank.Set(0f);
             yield return new WaitForSeconds(0.2f);
             Assert.AreEqual(tank.Config.emptyCrawlKmh, taxi.SpeedCapKmh, "Réservoir vide : vitesse limitée");
+            Assert.IsNotNull(view.Street.Reputation, "Réputation suivie (reputation.json)");
         }
 
         [UnityTest]

@@ -41,7 +41,7 @@ namespace TaxiKmer.Driving
         private static readonly Color Negative = new Color(1f, 0.45f, 0.4f);
         private static readonly Color ButtonColor = new Color(0.1f, 0.45f, 0.2f, 0.95f);
 
-        public void Show(DaySummary s, DayClosure c, string clock, Font font, string weekday = "")
+        public void Show(DaySummary s, DayClosure c, string clock, Font font, string weekday = "", string reputationLine = "")
         {
             if (Visible) return;
             Visible = true;
@@ -110,6 +110,7 @@ namespace TaxiKmer.Driving
                 var who = s.UnpaidPassengers == 1 ? "1 passager descendu sans payer" : $"{s.UnpaidPassengers} passagers descendus sans payer";
                 note += $"\n{who} ({DaySummary.Money(s.UnpaidFares)}).";
             }
+            if (!string.IsNullOrEmpty(reputationLine)) note += "\n" + reputationLine;
             _note.text = note;
             Layout();
         }

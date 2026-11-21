@@ -157,6 +157,8 @@ namespace TaxiKmer.Driving
             Today = _calendar.For(Save.Career.DayNumber);
             // Carburant : le réservoir laissé la veille (ou celui du départ d'une carrière).
             shift.Tank.Set(Core.Save.SaveSnapshot.TankAtDayStart(Save.Data, _fuel));
+            // Réputation : celle de la veille (visible ou cachée selon reputation.json, question ouverte de Kevin).
+            Street.Reputation = Core.Save.SaveSnapshot.LoadReputation(Save.Data, Load("Data/reputation", new Core.Career.ReputationConfig()));
             Street.SpawnRateScale = Today.ClientsFactor;
             ApplyTrafficScale();
             var trafficView = gameObject.AddComponent<TrafficView>();
@@ -553,7 +555,9 @@ namespace TaxiKmer.Driving
             _pops.Clear();
             var closure = Save.CloseDay();
             _summaryView = gameObject.AddComponent<DaySummaryView>();
-            _summaryView.Show(Street.Summary, closure, Street.Shift.Clock.Display, controls.Font, Today.Name);
+            var reputation = Street.Reputation != null && Street.Reputation.Visible
+                ? Core.Career.DriverReputation.SummaryLine(Street.Reputation.Config, Street.Summary.Reputation, Street.Summary.ReputationChange) : "";
+            _summaryView.Show(Street.Summary, closure, Street.Shift.Clock.Display, controls.Font, Today.Name, reputation);
             _summaryView.NewCareerRequested += Save.StartNewCareer;
         }
 
@@ -847,7 +851,8 @@ namespace TaxiKmer.Driving
             var h = Screen.height;
             var shift = Street.Shift;
             UpdatePaymentPops();
-            _gauges.Update(shift, Calendar.HudLabel(Today), _revenue.Shown, !Street.DayFinished);
+            _gauges.Update(shift, Calendar.HudLabel(Today), _revenue.Shown, !Street.DayFinished,
+                Street.Reputation != null && Street.Reputation.Visible ? Street.Reputation.HudLabel : "");
 
             var reminder = Street.DayFinished ? "" : HudGauges.EndOfDayReminder(shift.Clock, shift.Cabin.PassengerCount);
             _endReminder.enabled = reminder.Length > 0;

@@ -13,7 +13,7 @@
 | 3.3 Journée suivante, épargne et propriétaire | **faite, à essayer dans Unity** (2026-11-15, décisions de Kevin) : l'argent qui reste passe d'un jour à l'autre (épargne) ; horaires du patron (6 h - 20 h, `day.json`), annoncés au début de chaque jour ; versement manqué → le propriétaire menace ; 3 manques sur 7 jours → renvoyé, la carrière s'arrête et le bouton du bilan propose « Nouvelle carrière » ; sinon « Jour suivant » (jour + 1, épargne gardée). `Core/Career/DriverCareer` (8 tests), `owner.json` ; sauvegarde passée en version 2 (épargne, manques, renvoi) avec sa migration testée |
 | 3.4 Calendrier | **fait, à essayer dans Unity** (2026-11-21, session cloud) : `Core/Day/Calendar` (5 tests), `calendar.json` ; le jour 1 est un lundi ; chaque jour de la semaine multiplie la cadence d'arrivée des clients (`Street.SpawnRateScale`) et la densité du trafic et des piétons ; dimanche plus calme (×0,6), jours de marché mercredi et samedi (clients ×1,25, trafic ×1,15), annoncés au début de la journée ; « Jour 3 · mer. » dans le HUD, jour de la semaine dans le titre du bilan. Valeurs par défaut, à régler avec Kevin |
 | 3.5 Carburant et station-service | **fait, à essayer dans Unity** (2026-11-21, session cloud) : `Core/Fuel` (réservoir, station, textes ; 11 tests), `fuel.json` ; le réservoir se vide en roulant et passe d'un jour à l'autre ; à l'arrêt à la station-service, le bouton contextuel achète pour 2 000 FCFA de carburant à chaque appui (sans dépasser le plein) ; le bilan compte le carburant **acheté** dans la journée (et non plus brûlé) ; réservoir vide : le taxi ne dépasse plus 8 km/h ; jauge à droite de l'heure (rouge sous 15 %) ; station provisoire (auvent rouge et blanc) ; sauvegarde version 3 (réservoir, carburant acheté) avec sa migration testée ; test PlayMode de la station |
-| 3.6 Réputation | à faire (question ouverte : visible ou cachée) |
+| 3.6 Réputation | **faite, à essayer dans Unity** (2026-11-21, session cloud) : `Core/Career/Reputation` (7 tests), `reputation.json` ; score de 0 à 100 (50 au départ) qui passe d'un jour à l'autre ; monte à chaque course payée, baisse quand un client accepté abandonne, quand des passagers descendent sans arriver (accident, journée terminée avec eux), quand on renverse un piéton, et en roulant trop vite avec des passagers ; **visible ou cachée réglable** (`visible`, visible par défaut) : « Réputation 52 » à droite de la jauge de versement et une ligne dans le bilan ; sauvegarde version 4 avec sa migration testée. **Aucun effet sur le jeu** tant que Kevin ne l'a pas décidé |
 
 ## Choix techniques
 
@@ -51,3 +51,19 @@ Sauvegarde automatique toutes les 30 s réelles ; aussi à la mise en arrière-p
 - Un appui à la station achète pour **2 000 FCFA** (on « met 2 000 »), payé sur la recette du jour.
 - **Une station**, « Station-service d'Emana », à 1 850 m du dispensaire (entre le pont d'Emana et Emana) : **position provisoire**, à remplacer par une vraie station repérée par Kevin.
 - **Panne sèche** : le taxi se traîne à 8 km/h jusqu'à la station. La vraie conséquence (pousser, bidon acheté au bord de la route, clients qui descendent…) est une **question pour Kevin**.
+
+## Valeurs par défaut de la réputation (`reputation.json`, à régler avec Kevin)
+
+- **Visible** par défaut (`visible: true`), pour que Kevin la voie bouger pendant l'essai ; `false` la cache (elle compte toujours). **Décision de Kevin** (question 3 du jalon 3).
+- Score de 0 à 100, 50 au départ ; paliers : très mauvaise, mauvaise (20), correcte (40), bonne (60), excellente (80).
+- +1 par client payé ; -2 par client accepté qui abandonne ; -2 par passager descendu sans arriver ; -10 piéton blessé léger, -25 blessé grave ; avec des passagers, au-delà de 60 km/h, -1 toutes les 10 s.
+
+## Questions pour Kevin (jalon 3)
+
+1. Réputation **visible ou cachée** ? (réglée visible en attendant)
+2. **Effets de la réputation** : rien n'est branché. Pistes : clients plus ou moins patients, prix acceptés, attitude du propriétaire, contrôles de police (jalon 4).
+3. **Panne sèche** : que se passe-t-il vraiment (pousser, bidon au bord de la route, passagers qui descendent, remorquage payant) ?
+4. **Station-service** : laquelle, et où, sur la portion Messassi → Étoudi ?
+5. **Jours de marché** de Messassi et **jour de repos** éventuel (dimanche ?).
+6. **Équilibre du carburant** : environ 4 300 FCFA par journée de jeu par défaut, contre 500 avant ; à régler avec le versement.
+7. Niveau de concurrence des taxis (question 4 du jalon 2) : réglable dans `traffic.json`.

@@ -135,6 +135,15 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void Reputation_MatchesDefaults()
+        {
+            var r = Load<TaxiKmer.Core.Career.ReputationConfig>("reputation.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Career.ReputationConfig(), Opts), JsonSerializer.Serialize(r, Opts));
+            Assert.That(r.start, Is.InRange(r.min, r.max));
+            Assert.AreEqual(r.min, r.levels[0].min, "Chaque score a un nom.");
+        }
+
+        [Test]
         public void World_MessassiEtoudi_IsUsable()
         {
             var w = Load<TaxiKmer.Core.World.WorldData>("world_messassi_etoudi.json");

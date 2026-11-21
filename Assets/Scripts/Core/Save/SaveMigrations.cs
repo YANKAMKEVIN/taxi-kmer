@@ -10,7 +10,7 @@ namespace TaxiKmer.Core.Save
     public static class SaveMigrations
     {
         /// <summary>Version écrite par ce jeu. À augmenter à chaque changement du contenu, avec son étape ci-dessous.</summary>
-        public const int CurrentVersion = 3;
+        public const int CurrentVersion = 4;
 
         public static void Upgrade(SaveData data, int fromVersion)
         {
@@ -41,6 +41,15 @@ namespace TaxiKmer.Core.Save
                     // journée en cours se comptait à la distance : rien d'acheté.
                     if (data.career != null) data.career.fuelLitres = -1f;
                     if (data.day != null) { data.day.tankLitres = -1f; data.day.fuelBoughtLitres = 0f; data.day.fuelBoughtCost = 0; }
+                    break;
+                case 3:
+                    // Version 4 : réputation. Inconnue → réputation de départ (reputation.json).
+                    if (data.career != null)
+                    {
+                        data.career.reputation = -1;
+                        if (data.career.history != null) foreach (var r in data.career.history) { r.reputation = -1; r.reputationChange = 0; }
+                    }
+                    if (data.day != null) { data.day.reputationDayStart = -1; data.day.reputation = -1; }
                     break;
             }
         }

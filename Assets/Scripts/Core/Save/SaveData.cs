@@ -38,6 +38,8 @@ namespace TaxiKmer.Core.Save
         public bool fired;
         /// <summary>Carburant dans le réservoir à la fin de la dernière journée (L, version 3) ; -1 = inconnu (réservoir de départ).</summary>
         public float fuelLitres = -1f;
+        /// <summary>Réputation à la fin de la dernière journée (version 4) ; -1 = inconnue (réputation de départ).</summary>
+        public int reputation = -1;
         public DayRecordData[] history = Array.Empty<DayRecordData>();
     }
 
@@ -63,6 +65,9 @@ namespace TaxiKmer.Core.Save
         public int versementMissing;
         public int savingsAfter;
         public int ownerMood;
+        /// <summary>Version 4 : réputation à la fin de la journée (-1 si pas suivie) et sa variation.</summary>
+        public int reputation = -1;
+        public int reputationChange;
     }
 
     /// <summary>État d'une journée en cours, pour la reprendre là où on l'a laissée.</summary>
@@ -88,6 +93,9 @@ namespace TaxiKmer.Core.Save
         public float tankLitres = -1f;
         public float fuelBoughtLitres;
         public int fuelBoughtCost;
+        /// <summary>Version 4 : réputation au début de la journée et maintenant (-1 = inconnue).</summary>
+        public int reputationDayStart = -1;
+        public int reputation = -1;
     }
 
     [Serializable]

@@ -45,6 +45,8 @@ namespace TaxiKmer.Core.Save
                 tankLitres = shift.Tank != null ? shift.Tank.Litres : -1f,
                 fuelBoughtLitres = shift.Ledger.FuelBoughtLitres,
                 fuelBoughtCost = shift.Ledger.FuelBoughtCost,
+                reputationDayStart = street.Reputation?.DayStart ?? -1,
+                reputation = street.Reputation?.Score ?? -1,
             };
         }
 
@@ -65,6 +67,8 @@ namespace TaxiKmer.Core.Save
             shift.Ledger.Restore(day.revenue, day.rideCount, day.metersDriven, expenses);
             shift.Ledger.RestoreFuel(day.fuelBoughtLitres, day.fuelBoughtCost);
             if (shift.Tank != null && day.tankLitres >= 0f) shift.Tank.Set(day.tankLitres);
+            if (street.Reputation != null && day.reputation >= 0)
+                street.Reputation.Restore(day.reputationDayStart >= 0 ? day.reputationDayStart : day.reputation, day.reputation);
             street.RestoreLeftUnpaid(day.leftUnpaid, day.leftUnpaidFares);
 
             var lost = 0;
@@ -90,6 +94,14 @@ namespace TaxiKmer.Core.Save
             if (fuel == null) throw new ArgumentNullException(nameof(fuel));
             var saved = data?.career?.fuelLitres ?? -1f;
             return saved >= 0f ? saved : fuel.startLitres;
+        }
+
+        /// <summary>Réputation au début de la journée : celle de la veille, ou celle du départ d'une carrière.</summary>
+        public static DriverReputation LoadReputation(SaveData data, ReputationConfig config)
+        {
+            if (config == null) throw new ArgumentNullException(nameof(config));
+            var saved = data?.career?.reputation ?? -1;
+            return new DriverReputation(config, saved >= 0 ? saved : (int?)null);
         }
 
         /// <summary>La carrière sauvegardée (jour, épargne, manques, renvoi).</summary>
@@ -124,6 +136,8 @@ namespace TaxiKmer.Core.Save
                 unpaidFares = summary.UnpaidFares,
                 arrested = summary.Arrested,
                 vehicleSeized = summary.VehicleSeized,
+                reputation = summary.Reputation,
+                reputationChange = summary.ReputationChange,
             };
             var history = new List<DayRecordData>(data.career.history ?? Array.Empty<DayRecordData>()) { record };
             data.career.history = history.ToArray();
@@ -132,6 +146,7 @@ namespace TaxiKmer.Core.Save
             data.career.missedVersementDays = new List<int>(career.MissedDays).ToArray();
             data.career.fired = career.Fired;
             if (summary.TankLitres >= 0f) data.career.fuelLitres = summary.TankLitres;
+            if (summary.Reputation >= 0) data.career.reputation = summary.Reputation;
             data.hasDayInProgress = false;
             data.day = new DayProgressData();
         }

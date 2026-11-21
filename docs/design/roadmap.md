@@ -65,7 +65,7 @@ Après le jalon 11 : l'entreprise de taxis, le reste de Yaoundé, puis Douala, l
 **Questions pour Kevin**
 1. ~~Que se passe-t-il si le versement n'est pas atteint ?~~ → **Tranché** (2026-11-15) : le propriétaire menace, puis renvoie le chauffeur s'il n'y arrive pas au bout d'un certain temps.
 2. ~~Le joueur choisit-il ses heures ?~~ → **Tranché** : au début non, il suit les horaires de son patron (il cherche l'argent).
-3. Réputation : visible pour le joueur, ou cachée ?
+3. Réputation : visible pour le joueur, ou cachée ? *(réglable : `visible` dans `reputation.json`, visible par défaut en attendant la réponse ; ses effets sur le jeu restent à décider)*
 4. *(tranché aussi)* L'argent qui reste passe d'un jour à l'autre.
 
 ## Jalon 4 — Le contrôle

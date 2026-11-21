@@ -181,6 +181,9 @@ namespace TaxiKmer.Core.Rides
         /// </summary>
         public float SpawnRateScale { get; set; } = 1f;
 
+        /// <summary>Réputation du chauffeur (jalon 3) : les courses, les clients laissés en plan et la conduite la font bouger. Null : pas suivie.</summary>
+        public Career.DriverReputation Reputation { get; set; }
+
         /// <summary>
         /// La journée est terminée et le bilan est arrêté : à l'heure de fin dès que le taxi est vide,
         /// ou quand le joueur choisit de terminer avec des passagers à bord (<see cref="StreetActionKind.EndDay"/>).
@@ -222,6 +225,7 @@ namespace TaxiKmer.Core.Rides
                 }
             }
 
+            Reputation?.Drive(dt, taxi.SpeedKmh, _shift.Cabin.PassengerCount);
             var onRoute = Math.Abs(taxi.Lateral) <= _config.maxLateralMeters;
             foreach (var c in _waiting)
             {
@@ -235,6 +239,7 @@ namespace TaxiKmer.Core.Rides
                     {
                         c.State = RoadsideState.Waiting;
                         _lost.Add(new ClientLost { Client = c, Reason = ClientLostReason.GaveUp, WasAccepted = true });
+                        Reputation?.AcceptedClientGaveUp();
                     }
                 }
                 c.Calling = c.State == RoadsideState.Waiting && onRoute && !_shift.Clock.IsOver
@@ -347,6 +352,7 @@ namespace TaxiKmer.Core.Rides
                 case StreetActionKind.Drop:
                     outcome.Dropped = _shift.Cabin.PassengersFor(action.Stop.id);
                     outcome.Paid = _shift.DropAllAt(action.Stop.id);
+                    if (outcome.Paid > 0) Reputation?.RidesPaid(outcome.Dropped.Count);
                     break;
                 case StreetActionKind.Board:
                     var c = action.Client;
@@ -393,8 +399,10 @@ namespace TaxiKmer.Core.Rides
         {
             var unpaid = _leftUnpaidFares;
             foreach (var p in _shift.Cabin.Passengers) unpaid += p.ProposedFare;
+            Reputation?.PassengersNotDelivered(_shift.Cabin.PassengerCount);
             Summary = DaySummary.From(_shift.Ledger, _shift.Cabin.PassengerCount + _leftUnpaid, unpaid, arrested, seized,
-                _shift.Tank != null ? _shift.Tank.Litres : -1f);
+                _shift.Tank != null ? _shift.Tank.Litres : -1f,
+                Reputation?.Score ?? -1, Reputation?.ChangeToday ?? 0);
             foreach (var c in _waiting) c.Calling = false;
         }
 
@@ -409,9 +417,11 @@ namespace TaxiKmer.Core.Rides
             var outcome = PedestrianAccident.Resolve(config, impactKmh, random);
             if (outcome.Severity == InjurySeverity.None) return outcome;
 
+            Reputation?.PedestrianHit(outcome.Severity == InjurySeverity.Serious);
             if (outcome.PassengersLeave)
             {
                 var passengers = new List<Client>(_shift.Cabin.Passengers);
+                Reputation?.PassengersNotDelivered(passengers.Count);
                 foreach (var p in passengers)
                 {
                     _leftUnpaid++;
