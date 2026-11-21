@@ -1,0 +1,13 @@
+{
+    "_note": "Carburant (jalon 3, valeurs par défaut à régler avec Kevin). Le prix au litre (fuelPricePerLitre) et la consommation réelle (fuelLitresPer100Km) restent dans day.json. consumptionScale multiplie la consommation réelle pour qu'une journée de jeu (quelques km) consomme comme une vraie journée de taxi. refuelStepFcfa : un appui à la station achète pour ce montant. emptyCrawlKmh : vitesse maximale réservoir vide. Stations : position le long de l'itinéraire, provisoire (à corriger par Kevin).",
+    "tankLitres": 40,
+    "startLitres": 12,
+    "consumptionScale": 8,
+    "refuelStepFcfa": 2000,
+    "stationRadiusMeters": 30,
+    "emptyCrawlKmh": 8,
+    "lowFraction": 0.15,
+    "stations": [
+        { "id": "station-emana", "name": "Station-service d'Emana", "distanceAlongRouteMeters": 1850 }
+    ]
+}

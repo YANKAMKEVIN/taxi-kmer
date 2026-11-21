@@ -98,6 +98,8 @@ namespace TaxiKmer.Core.Rides
         Drop,
         /// <summary>Après l'heure de fin, avec des passagers encore à bord : terminer quand même (ils ne paient pas).</summary>
         EndDay,
+        /// <summary>Arrêté à la station-service, réservoir pas plein : acheter du carburant (jalon 3).</summary>
+        Refuel,
     }
 
     /// <summary>Action proposée par le bouton contextuel.</summary>
@@ -112,6 +114,10 @@ namespace TaxiKmer.Core.Rides
         public Stop Stop;
         /// <summary>Drop : nombre de passagers qui descendent ici.</summary>
         public int Count;
+        /// <summary>Refuel : la station, et ce qu'un appui achèterait (litres, prix).</summary>
+        public Fuel.StationData Station;
+        public float FuelLitres;
+        public int FuelCost;
     }
 
     /// <summary>Pourquoi un client n'attend plus le joueur (pour le message à l'écran).</summary>
@@ -141,6 +147,9 @@ namespace TaxiKmer.Core.Rides
         public Client Moved;
         public int Paid;
         public List<Client> Dropped;
+        /// <summary>Refuel : litres achetés et prix payé.</summary>
+        public float FuelLitres;
+        public int FuelCost;
     }
 
     /// <summary>
@@ -292,22 +301,40 @@ namespace TaxiKmer.Core.Rides
                 if (count > 0) return new StreetAction { Kind = StreetActionKind.Drop, Stop = stop, Count = count };
             }
 
-            if (_shift.Clock.IsOver)
-                return _shift.Cabin.PassengerCount > 0
-                    ? new StreetAction { Kind = StreetActionKind.EndDay, Count = _shift.Cabin.PassengerCount }
-                    : none;
-
-            RoadsideClient nearest = null;
-            var best = float.MaxValue;
-            foreach (var c in _waiting)
+            if (!_shift.Clock.IsOver)
             {
-                if (c.State != RoadsideState.Accepted || !OnClientSide(c, taxi)) continue;
-                var d = Math.Abs(c.Along - taxi.Along);
-                if (d <= _config.boardDistanceMeters && d < best) { best = d; nearest = c; }
+                RoadsideClient nearest = null;
+                var best = float.MaxValue;
+                foreach (var c in _waiting)
+                {
+                    if (c.State != RoadsideState.Accepted || !OnClientSide(c, taxi)) continue;
+                    var d = Math.Abs(c.Along - taxi.Along);
+                    if (d <= _config.boardDistanceMeters && d < best) { best = d; nearest = c; }
+                }
+                if (nearest != null)
+                {
+                    var move = _shift.Cabin.CanBoard(nearest.Client) ? null : _shift.Cabin.FindMoveToFit(nearest.Client);
+                    return new StreetAction { Kind = StreetActionKind.Board, Client = nearest, MoveFirst = move };
+                }
             }
-            if (nearest == null) return none;
-            var move = _shift.Cabin.CanBoard(nearest.Client) ? null : _shift.Cabin.FindMoveToFit(nearest.Client);
-            return new StreetAction { Kind = StreetActionKind.Board, Client = nearest, MoveFirst = move };
+
+            var tank = _shift.Tank;
+            var station = tank?.StationAt(taxi.Along);
+            if (station != null && !tank.IsFull)
+            {
+                var litres = tank.LitresFor(tank.Config.refuelStepFcfa, _shift.Ledger.FuelPricePerLitre);
+                return new StreetAction
+                {
+                    Kind = StreetActionKind.Refuel,
+                    Station = station,
+                    FuelLitres = litres,
+                    FuelCost = Fuel.FuelTank.Cost(litres, _shift.Ledger.FuelPricePerLitre),
+                };
+            }
+
+            return _shift.Clock.IsOver && _shift.Cabin.PassengerCount > 0
+                ? new StreetAction { Kind = StreetActionKind.EndDay, Count = _shift.Cabin.PassengerCount }
+                : none;
         }
 
         /// <summary>Le joueur appuie sur le bouton contextuel.</summary>
@@ -334,6 +361,9 @@ namespace TaxiKmer.Core.Rides
                     break;
                 case StreetActionKind.EndDay:
                     Finish();
+                    break;
+                case StreetActionKind.Refuel:
+                    outcome.FuelLitres = _shift.BuyFuel(_shift.Tank.Config.refuelStepFcfa, out outcome.FuelCost);
                     break;
             }
             if (!DayFinished && _shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
@@ -363,7 +393,8 @@ namespace TaxiKmer.Core.Rides
         {
             var unpaid = _leftUnpaidFares;
             foreach (var p in _shift.Cabin.Passengers) unpaid += p.ProposedFare;
-            Summary = DaySummary.From(_shift.Ledger, _shift.Cabin.PassengerCount + _leftUnpaid, unpaid, arrested, seized);
+            Summary = DaySummary.From(_shift.Ledger, _shift.Cabin.PassengerCount + _leftUnpaid, unpaid, arrested, seized,
+                _shift.Tank != null ? _shift.Tank.Litres : -1f);
             foreach (var c in _waiting) c.Calling = false;
         }
 

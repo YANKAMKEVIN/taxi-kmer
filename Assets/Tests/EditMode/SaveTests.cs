@@ -175,7 +175,7 @@ namespace TaxiKmer.Core.Tests
         }
 
         [Test]
-        public void Version1File_UpgradesToVersion2()
+        public void Version1File_UpgradesToCurrentVersion()
         {
             // Sauvegarde écrite par la version 1 : un bilan, pas encore d'épargne ni de versements manqués.
             var payload = "{\"version\":1,\"career\":{\"dayNumber\":2,\"history\":[{\"dayNumber\":1,\"revenue\":12000,\"versement\":10000,\"remaining\":1500}]}}";
@@ -183,11 +183,27 @@ namespace TaxiKmer.Core.Tests
             storage.Files[SaveStore.MainFile] = Serializer.ToJson(new SaveEnvelope { version = 1, checksum = SaveStore.Checksum(payload), payload = payload });
             var r = new SaveStore(storage, Serializer).Load();
             Assert.AreEqual(LoadStatus.Loaded, r.Status);
-            Assert.AreEqual(2, r.Data.version);
+            Assert.AreEqual(SaveMigrations.CurrentVersion, r.Data.version);
             Assert.AreEqual(2, r.Data.career.dayNumber);
             Assert.AreEqual(0, r.Data.career.savings, "L'argent ne passait pas d'un jour à l'autre en version 1.");
             Assert.AreEqual(10000, r.Data.career.history.Single().versementPaid, "Ancien bilan : versement compté comme payé.");
             Assert.IsEmpty(r.Data.career.missedVersementDays);
+        }
+
+        [Test]
+        public void Version2File_TankUnknown_StartsWithTheStartingTank()
+        {
+            // Version 2 : pas de réservoir ; le champ absent ne doit pas devenir « réservoir vide ».
+            var payload = "{\"version\":2,\"career\":{\"dayNumber\":3,\"savings\":5000,\"fuelLitres\":0},\"hasDayInProgress\":true,\"day\":{\"revenue\":900,\"tankLitres\":0}}";
+            var storage = new MemoryStorage();
+            storage.Files[SaveStore.MainFile] = Serializer.ToJson(new SaveEnvelope { version = 2, checksum = SaveStore.Checksum(payload), payload = payload });
+            var r = new SaveStore(storage, Serializer).Load();
+            Assert.AreEqual(LoadStatus.Loaded, r.Status);
+            Assert.AreEqual(-1f, r.Data.career.fuelLitres);
+            Assert.AreEqual(-1f, r.Data.day.tankLitres);
+            var fuel = new TaxiKmer.Core.Fuel.FuelConfig();
+            Assert.AreEqual(fuel.startLitres, SaveSnapshot.TankAtDayStart(r.Data, fuel));
+            Assert.AreEqual(fuel.startLitres, SaveSnapshot.TankAtDayStart(new SaveData(), fuel), "Nouvelle carrière : réservoir de départ.");
         }
 
         [Test]

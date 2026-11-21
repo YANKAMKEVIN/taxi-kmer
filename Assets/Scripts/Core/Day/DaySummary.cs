@@ -28,6 +28,8 @@ namespace TaxiKmer.Core.Day
         public bool Arrested { get; private set; }
         /// <summary>Le taxi a été saisi par la gendarmerie.</summary>
         public bool VehicleSeized { get; private set; }
+        /// <summary>Carburant dans le réservoir à la fin de la journée (L) ; -1 sans réservoir.</summary>
+        public float TankLitres { get; private set; } = -1f;
 
         /// <summary>Le versement est couvert par les recettes.</summary>
         public bool VersementReached => Revenue >= Versement;
@@ -35,7 +37,7 @@ namespace TaxiKmer.Core.Day
         public int VersementShortfall => Math.Max(0, Versement - Revenue);
 
         public static DaySummary From(DayLedger ledger, int unpaidPassengers = 0, int unpaidFares = 0,
-            bool arrested = false, bool vehicleSeized = false)
+            bool arrested = false, bool vehicleSeized = false, float tankLitres = -1f)
         {
             if (ledger == null) throw new ArgumentNullException(nameof(ledger));
             return new DaySummary
@@ -43,6 +45,7 @@ namespace TaxiKmer.Core.Day
                 Expenses = new List<Expense>(ledger.Expenses),
                 ExpensesTotal = ledger.ExpensesTotal,
                 Arrested = arrested,
+                TankLitres = tankLitres,
                 VehicleSeized = vehicleSeized,
                 Revenue = ledger.Revenue,
                 RideCount = ledger.RideCount,

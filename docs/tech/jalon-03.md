@@ -12,7 +12,7 @@
 | 3.2 Sauvegarde dans le jeu | **écrite, à essayer dans Unity** : `SaveService` (créé par `StreetView`) ; sauvegarde la journée en cours toutes les 30 s et quand l'appli passe en arrière-plan ou se ferme ; enregistre le bilan en fin de journée ; reprise au lancement **coupée** (`resumeOnStart: false` dans `save.json`) jusqu'à la validation du jalon ; test PlayMode de bout en bout (sauvegarder, relancer, reprendre) dans un dossier temporaire |
 | 3.3 Journée suivante, épargne et propriétaire | **faite, à essayer dans Unity** (2026-11-15, décisions de Kevin) : l'argent qui reste passe d'un jour à l'autre (épargne) ; horaires du patron (6 h - 20 h, `day.json`), annoncés au début de chaque jour ; versement manqué → le propriétaire menace ; 3 manques sur 7 jours → renvoyé, la carrière s'arrête et le bouton du bilan propose « Nouvelle carrière » ; sinon « Jour suivant » (jour + 1, épargne gardée). `Core/Career/DriverCareer` (8 tests), `owner.json` ; sauvegarde passée en version 2 (épargne, manques, renvoi) avec sa migration testée |
 | 3.4 Calendrier | **fait, à essayer dans Unity** (2026-11-21, session cloud) : `Core/Day/Calendar` (5 tests), `calendar.json` ; le jour 1 est un lundi ; chaque jour de la semaine multiplie la cadence d'arrivée des clients (`Street.SpawnRateScale`) et la densité du trafic et des piétons ; dimanche plus calme (×0,6), jours de marché mercredi et samedi (clients ×1,25, trafic ×1,15), annoncés au début de la journée ; « Jour 3 · mer. » dans le HUD, jour de la semaine dans le titre du bilan. Valeurs par défaut, à régler avec Kevin |
-| 3.5 Carburant et station-service | à faire |
+| 3.5 Carburant et station-service | **fait, à essayer dans Unity** (2026-11-21, session cloud) : `Core/Fuel` (réservoir, station, textes ; 11 tests), `fuel.json` ; le réservoir se vide en roulant et passe d'un jour à l'autre ; à l'arrêt à la station-service, le bouton contextuel achète pour 2 000 FCFA de carburant à chaque appui (sans dépasser le plein) ; le bilan compte le carburant **acheté** dans la journée (et non plus brûlé) ; réservoir vide : le taxi ne dépasse plus 8 km/h ; jauge à droite de l'heure (rouge sous 15 %) ; station provisoire (auvent rouge et blanc) ; sauvegarde version 3 (réservoir, carburant acheté) avec sa migration testée ; test PlayMode de la station |
 | 3.6 Réputation | à faire (question ouverte : visible ou cachée) |
 
 ## Choix techniques
@@ -43,3 +43,11 @@ Sauvegarde automatique toutes les 30 s réelles ; aussi à la mise en arrière-p
 - **Dimanche plus calme** : clients et trafic ×0,6.
 - **Jours de marché : mercredi et samedi** (« marché de Messassi ») : clients ×1,25, trafic ×1,15. Les vrais jours de marché de Messassi sont à confirmer par Kevin.
 - Le patron fait travailler tous les jours, dimanche compris (horaires inchangés) : un jour de repos serait une décision de Kevin.
+
+## Valeurs par défaut du carburant (`fuel.json`, à régler avec Kevin)
+
+- Réservoir de **40 L** ; une carrière commence avec **12 L** ; ensuite le niveau passe d'un jour à l'autre.
+- Consommation : 8 L/100 km (day.json) **×8** (`consumptionScale`), car une journée de jeu ne fait que quelques kilomètres : environ 5 L par journée, soit à peu près 4 300 FCFA à 840 FCFA/L. C'est plus que l'ancien calcul à la distance (≈ 500 FCFA par jour) : l'équilibre recettes / versement / carburant est à revoir avec Kevin.
+- Un appui à la station achète pour **2 000 FCFA** (on « met 2 000 »), payé sur la recette du jour.
+- **Une station**, « Station-service d'Emana », à 1 850 m du dispensaire (entre le pont d'Emana et Emana) : **position provisoire**, à remplacer par une vraie station repérée par Kevin.
+- **Panne sèche** : le taxi se traîne à 8 km/h jusqu'à la station. La vraie conséquence (pousser, bidon acheté au bord de la route, clients qui descendent…) est une **question pour Kevin**.

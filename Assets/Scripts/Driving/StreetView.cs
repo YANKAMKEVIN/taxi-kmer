@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using TaxiKmer.Core.Day;
+using TaxiKmer.Core.Fuel;
 using TaxiKmer.Core.Incidents;
 using TaxiKmer.Core.Rides;
 using TaxiKmer.Core.Traffic;
@@ -80,6 +81,9 @@ namespace TaxiKmer.Driving
         private bool _cityPopulated;
         private AccidentConfig _accidents;
         private Calendar _calendar;
+        private FuelConfig _fuel;
+        private bool _lowFuelShown, _emptyFuelShown;
+        private StreetActionKind _actionKind;
         /// <summary>Jour de la semaine de la journée en cours (calendrier, jalon 3).</summary>
         public CalendarDay Today { get; private set; }
         private System.Random _random;
@@ -129,7 +133,8 @@ namespace TaxiKmer.Driving
 
             var stops = Load("Data/stops_messassi_etoudi", new StopsConfig());
             var fares = Load("Data/fares", FareConfig.Default());
-            var shift = new Shift(Load("Data/day", new DayConfig()), Load("Data/seating", new SeatingConfig()));
+            _fuel = Load("Data/fuel", new FuelConfig());
+            var shift = new Shift(Load("Data/day", new DayConfig()), Load("Data/seating", new SeatingConfig()), _fuel);
             var actualSeed = seed != 0 ? seed : System.Environment.TickCount;
             var factory = new ClientFactory(stops, fares, actualSeed);
             Street = new Street(Load("Data/street", new StreetConfig()), stops, factory, shift, _cum[_cum.Length - 1]);
@@ -150,6 +155,8 @@ namespace TaxiKmer.Driving
             // Calendrier : le jour de la semaine règle les clients et le trafic (dimanche plus calme, jours de marché).
             _calendar = new Calendar(Load("Data/calendar", new CalendarConfig()));
             Today = _calendar.For(Save.Career.DayNumber);
+            // Carburant : le réservoir laissé la veille (ou celui du départ d'une carrière).
+            shift.Tank.Set(Core.Save.SaveSnapshot.TankAtDayStart(Save.Data, _fuel));
             Street.SpawnRateScale = Today.ClientsFactor;
             ApplyTrafficScale();
             var trafficView = gameObject.AddComponent<TrafficView>();
@@ -159,6 +166,7 @@ namespace TaxiKmer.Driving
             trafficView.Decorate(taxi.transform, TaxiFactory.Length, TaxiFactory.Width, true, 0);
 
             foreach (var stop in stops.stops) _stopMarkers[stop.id] = MakeStopMarker(stop);
+            if (_fuel.stations != null) foreach (var station in _fuel.stations) MakeStation(station);
             _sounds = taxi.GetComponent<TaxiSounds>();
             if (_sounds == null) _sounds = taxi.gameObject.AddComponent<TaxiSounds>(); // pas de « ?? » avec un objet Unity
             _tutorial = new Tutorial(PlayerPrefs.GetInt(TutorialDoneKey, 0) == 0, shift.Ledger.Versement);
@@ -244,8 +252,9 @@ namespace TaxiKmer.Driving
             if (!Street.DayFinished && !_menu.Frozen)
             {
                 shift.Clock.Advance(dt);
-                shift.Ledger.AddDistance(Mathf.Abs(taxi.SpeedKmh) / 3.6f * dt);
+                shift.Drive(Mathf.Abs(taxi.SpeedKmh) / 3.6f * dt);
             }
+            UpdateFuel(shift.Tank);
 
             var state = TaxiState();
             Street.Update(dt, state);
@@ -281,11 +290,13 @@ namespace TaxiKmer.Driving
             if (controls.ActionTriggered && action.Kind != StreetActionKind.None) OnAction(state);
             action = Street.AvailableAction(state);
             controls.ActionVisible = action.Kind != StreetActionKind.None;
+            _actionKind = action.Kind;
             controls.ActionLabel = action.Kind switch
             {
                 StreetActionKind.Drop => action.Count > 1 ? $"Faire descendre ({action.Count})" : "Faire descendre",
                 StreetActionKind.Board => action.MoveFirst != null ? "Changer de place et monter" : "Faire monter",
                 StreetActionKind.EndDay => "Terminer la journée",
+                StreetActionKind.Refuel => FuelGauge.ActionLabel(action.FuelLitres, action.FuelCost),
                 _ => "",
             };
 
@@ -377,7 +388,8 @@ namespace TaxiKmer.Driving
                     HasAcceptedClient = accepted,
                     Passengers = Street.Shift.Cabin.PassengerCount,
                     RidesPaid = Street.Shift.Ledger.RideCount,
-                    ActionVisible = controls.ActionVisible,
+                    // Le tutoriel parle de monter et descendre : le bouton de la station n'en fait pas partie.
+                    ActionVisible = _actionKind == StreetActionKind.Board || _actionKind == StreetActionKind.Drop,
                 });
                 if (!_tutorial.Active)
                 {
@@ -467,6 +479,14 @@ namespace TaxiKmer.Driving
                     }
                     foreach (var c in outcome.Dropped) SpawnLeavingPerson(c);
                     break;
+                case StreetActionKind.Refuel:
+                    if (outcome.FuelLitres > 0f)
+                    {
+                        _sounds.PlayCoins();
+                        Haptics.Play(HapticEvent.Payment);
+                        Toast(FuelGauge.Bought(outcome.FuelLitres, outcome.FuelCost, Street.Shift.Tank));
+                    }
+                    break;
                 case StreetActionKind.Board:
                     if (outcome.Board == BoardResult.Boarded)
                     {
@@ -484,6 +504,42 @@ namespace TaxiKmer.Driving
                     }
                     break;
             }
+        }
+
+        /// <summary>Réservoir : vitesse limitée quand il est vide, messages de réserve et de panne sèche (une fois chacun).</summary>
+        private void UpdateFuel(FuelTank tank)
+        {
+            if (tank == null) return;
+            taxi.SpeedCapKmh = tank.SpeedCapKmh;
+            if (Street.DayFinished) return;
+            if (!tank.IsLow) _lowFuelShown = _emptyFuelShown = false;
+            if (tank.IsLow && !_lowFuelShown) { _lowFuelShown = true; Toast(FuelGauge.LowMessage, 5f); }
+            if (tank.IsEmpty && !_emptyFuelShown)
+            {
+                _emptyFuelShown = true;
+                Toast(FuelGauge.EmptyMessage, 7f);
+                Haptics.Play(HapticEvent.Refused);
+            }
+        }
+
+        /// <summary>Station-service provisoire (auvent et pompe en primitives) à droite de la route dans le sens vers Étoudi.</summary>
+        private void MakeStation(StationData station)
+        {
+            WorldGeometry.SampleAlong(_xz, _cum, station.distanceAlongRouteMeters, out var x, out var z, out var dx, out var dz);
+            var right = new Vector3(dz, 0f, -dx);
+            var root = new GameObject("Station " + station.name);
+            root.transform.SetParent(transform, false);
+            root.transform.SetPositionAndRotation(new Vector3(x, 0f, z) + right * (sideOffset + 6f),
+                Quaternion.LookRotation(new Vector3(dx, 0f, dz), Vector3.up));
+            var white = new Color(0.92f, 0.92f, 0.9f);
+            var red = new Color(0.8f, 0.12f, 0.1f);
+            Part(root.transform, PrimitiveType.Cube, new Vector3(0f, 4.2f, 0f), new Vector3(9f, 0.4f, 6f), white);
+            Part(root.transform, PrimitiveType.Cube, new Vector3(0f, 4.55f, 0f), new Vector3(9.1f, 0.3f, 6.1f), red);
+            foreach (var px in new[] { -3.5f, 3.5f })
+                Part(root.transform, PrimitiveType.Cube, new Vector3(px, 2f, 0f), new Vector3(0.3f, 4f, 0.3f), white);
+            Part(root.transform, PrimitiveType.Cube, new Vector3(0f, 0.8f, 0f), new Vector3(0.8f, 1.6f, 0.5f), red);
+            Part(root.transform, PrimitiveType.Cube, new Vector3(-5.5f, 3f, -2.5f), new Vector3(0.25f, 6f, 0.25f), white);
+            Part(root.transform, PrimitiveType.Cube, new Vector3(-5.5f, 6.2f, -2.5f), new Vector3(1.6f, 1.2f, 0.2f), red);
         }
 
         private void ShowSummary()

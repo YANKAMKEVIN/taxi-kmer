@@ -24,9 +24,36 @@ namespace TaxiKmer.Core.Day
 
         public int Versement => _config.versement;
 
-        public float FuelLitres => MetersDriven / 100000f * _config.fuelLitresPer100Km;
+        /// <summary>
+        /// Carburant acheté à la station (jalon 3, réservoir réel) : le bilan compte ce qui a été payé dans la journée,
+        /// pas ce qui a été brûlé. Sans réservoir (tests anciens, jalon 1), le carburant se compte à la distance.
+        /// </summary>
+        public bool UsesFuelPurchases { get; set; }
+        public float FuelBoughtLitres { get; private set; }
+        public int FuelBoughtCost { get; private set; }
 
-        public int FuelCost => (int)Math.Round(FuelLitres * _config.fuelPricePerLitre, MidpointRounding.AwayFromZero);
+        public float FuelLitres => UsesFuelPurchases ? FuelBoughtLitres : MetersDriven / 100000f * _config.fuelLitresPer100Km;
+
+        public int FuelCost => UsesFuelPurchases ? FuelBoughtCost
+            : (int)Math.Round(FuelLitres * _config.fuelPricePerLitre, MidpointRounding.AwayFromZero);
+
+        public int FuelPricePerLitre => _config.fuelPricePerLitre;
+
+        /// <summary>Plein (ou partie) payé à la station.</summary>
+        public void BuyFuel(float litres, int cost)
+        {
+            if (litres < 0f) throw new ArgumentOutOfRangeException(nameof(litres));
+            if (cost < 0) throw new ArgumentOutOfRangeException(nameof(cost));
+            FuelBoughtLitres += litres;
+            FuelBoughtCost += cost;
+        }
+
+        /// <summary>Reprend le carburant acheté d'une journée sauvegardée.</summary>
+        internal void RestoreFuel(float litres, int cost)
+        {
+            FuelBoughtLitres = Math.Max(0f, litres);
+            FuelBoughtCost = Math.Max(0, cost);
+        }
 
         public IReadOnlyList<Expense> Expenses => _expenses;
 

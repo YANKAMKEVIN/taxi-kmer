@@ -36,6 +36,8 @@ namespace TaxiKmer.Core.Save
         public int[] missedVersementDays = Array.Empty<int>();
         /// <summary>Renvoyé par le propriétaire : la carrière est finie (version 2).</summary>
         public bool fired;
+        /// <summary>Carburant dans le réservoir à la fin de la dernière journée (L, version 3) ; -1 = inconnu (réservoir de départ).</summary>
+        public float fuelLitres = -1f;
         public DayRecordData[] history = Array.Empty<DayRecordData>();
     }
 
@@ -82,6 +84,10 @@ namespace TaxiKmer.Core.Save
         public int taxiDirection = 1;
         /// <summary>Graine des clients de la journée.</summary>
         public int seed;
+        /// <summary>Version 3 : réservoir (L, -1 = inconnu), carburant acheté dans la journée (L et FCFA).</summary>
+        public float tankLitres = -1f;
+        public float fuelBoughtLitres;
+        public int fuelBoughtCost;
     }
 
     [Serializable]

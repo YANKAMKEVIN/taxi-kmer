@@ -83,6 +83,35 @@ namespace TaxiKmer.PlayModeTests
         }
 
         [UnityTest]
+        public IEnumerator Monde_Station_SellsFuel()
+        {
+            SceneManager.LoadScene("Monde");
+            yield return null;
+            yield return new WaitForSeconds(1f);
+
+            var view = Object.FindFirstObjectByType<StreetView>();
+            var taxi = Object.FindFirstObjectByType<TaxiCar>();
+            var tank = view.Street.Shift.Tank;
+            Assert.IsNotNull(tank, "Réservoir réel (fuel.json)");
+            var station = tank.Config.stations[0];
+            Assert.IsNotNull(GameObject.Find("Station " + station.name), "Station-service construite");
+            tank.Set(5f);
+            taxi.PlaceOnRoute(station.distanceAlongRouteMeters);
+            yield return new WaitForSeconds(1.5f);
+            var controls = Object.FindFirstObjectByType<DriverControls>();
+            Assert.IsTrue(controls.ActionVisible, "Bouton de la station affiché");
+            StringAssert.StartsWith("Carburant", controls.ActionLabel);
+            var outcome = view.Street.Perform(new TaxiOnRoute { Along = station.distanceAlongRouteMeters, Direction = 1, Lateral = 2f });
+            Assert.AreEqual(StreetActionKind.Refuel, outcome.Kind);
+            Assert.Greater(tank.Litres, 5f);
+            Assert.AreEqual(outcome.FuelCost, view.Street.Shift.Ledger.FuelCost);
+
+            tank.Set(0f);
+            yield return new WaitForSeconds(0.2f);
+            Assert.AreEqual(tank.Config.emptyCrawlKmh, taxi.SpeedCapKmh, "Réservoir vide : vitesse limitée");
+        }
+
+        [UnityTest]
         public IEnumerator Monde_EndOfDay_ShowsSummary_ThenNewDay()
         {
             SceneManager.LoadScene("Monde");

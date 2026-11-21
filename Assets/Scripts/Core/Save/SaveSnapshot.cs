@@ -42,6 +42,9 @@ namespace TaxiKmer.Core.Save
                 taxiAlong = taxiAlong,
                 taxiDirection = taxiDirection >= 0 ? 1 : -1,
                 seed = seed,
+                tankLitres = shift.Tank != null ? shift.Tank.Litres : -1f,
+                fuelBoughtLitres = shift.Ledger.FuelBoughtLitres,
+                fuelBoughtCost = shift.Ledger.FuelBoughtCost,
             };
         }
 
@@ -60,6 +63,8 @@ namespace TaxiKmer.Core.Save
             foreach (var e in day.expenses ?? Array.Empty<ExpenseData>())
                 expenses.Add(new Expense { Label = e.label, Amount = e.amount });
             shift.Ledger.Restore(day.revenue, day.rideCount, day.metersDriven, expenses);
+            shift.Ledger.RestoreFuel(day.fuelBoughtLitres, day.fuelBoughtCost);
+            if (shift.Tank != null && day.tankLitres >= 0f) shift.Tank.Set(day.tankLitres);
             street.RestoreLeftUnpaid(day.leftUnpaid, day.leftUnpaidFares);
 
             var lost = 0;
@@ -77,6 +82,14 @@ namespace TaxiKmer.Core.Save
                 if (!shift.Cabin.Restore(client, side)) lost++;
             }
             return lost;
+        }
+
+        /// <summary>Carburant au début de la journée : celui laissé la veille, ou le réservoir de départ d'une carrière.</summary>
+        public static float TankAtDayStart(SaveData data, Fuel.FuelConfig fuel)
+        {
+            if (fuel == null) throw new ArgumentNullException(nameof(fuel));
+            var saved = data?.career?.fuelLitres ?? -1f;
+            return saved >= 0f ? saved : fuel.startLitres;
         }
 
         /// <summary>La carrière sauvegardée (jour, épargne, manques, renvoi).</summary>
@@ -118,6 +131,7 @@ namespace TaxiKmer.Core.Save
             data.career.savings = career.Savings;
             data.career.missedVersementDays = new List<int>(career.MissedDays).ToArray();
             data.career.fired = career.Fired;
+            if (summary.TankLitres >= 0f) data.career.fuelLitres = summary.TankLitres;
             data.hasDayInProgress = false;
             data.day = new DayProgressData();
         }

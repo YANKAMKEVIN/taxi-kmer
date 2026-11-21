@@ -57,7 +57,9 @@ namespace TaxiKmer.Driving
             {
                 $"Recettes ({courses})",
                 versementLabel,
-                $"Carburant ({DaySummary.OneDecimal(s.FuelLitres)} L, {DaySummary.OneDecimal(s.Kilometres)} km)",
+                s.TankLitres >= 0f
+                    ? $"Carburant acheté ({DaySummary.OneDecimal(s.FuelLitres)} L ; {DaySummary.OneDecimal(s.Kilometres)} km parcourus)"
+                    : $"Carburant ({DaySummary.OneDecimal(s.FuelLitres)} L, {DaySummary.OneDecimal(s.Kilometres)} km)",
             };
             var values = new System.Collections.Generic.List<int> { s.Revenue, c.VersementPaid, s.FuelCost };
             var signs = new System.Collections.Generic.List<string> { "+ ", "- ", "- " };

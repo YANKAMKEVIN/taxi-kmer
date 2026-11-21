@@ -77,6 +77,9 @@ namespace TaxiKmer.Core.Driving
 
         public Gear Gear { get; private set; } = Gear.Forward;
 
+        /// <summary>Vitesse maximale imposée en marche avant (km/h), en plus du limiteur : réservoir vide (jalon 3).</summary>
+        public float SpeedCapKmh { get; set; } = float.PositiveInfinity;
+
         public DriveLogic(DriveConfig config)
         {
             if (config == null) throw new ArgumentNullException(nameof(config));
@@ -112,7 +115,7 @@ namespace TaxiKmer.Core.Driving
                 _holdTimer = 0f;
                 Gear = Gear.Forward;
                 if (speedKmh < -_pedals.stoppedKmh) cmd.Brake = 1f; // on recule encore : on freine d'abord
-                else cmd.Throttle = Limiter(speedKmh, _pedals.maxForwardKmh);
+                else cmd.Throttle = Limiter(speedKmh, Math.Min(_pedals.maxForwardKmh, SpeedCapKmh));
             }
             else if (input.Brake)
             {
@@ -149,6 +152,7 @@ namespace TaxiKmer.Core.Driving
         /// <summary>Gaz plein jusqu'à la bande du limiteur, puis décroissance linéaire jusqu'à 0 à la vitesse maximale.</summary>
         private float Limiter(float speedKmh, float maxKmh)
         {
+            if (maxKmh <= 0f) return 0f;
             var band = Math.Max(0.5f, maxKmh * _pedals.limiterBand);
             return Clamp01((maxKmh - speedKmh) / band);
         }

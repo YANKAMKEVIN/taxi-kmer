@@ -116,6 +116,25 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void Fuel_MatchesDefaults_StationsOnTheRoute_AwayFromStops()
+        {
+            var f = Load<TaxiKmer.Core.Fuel.FuelConfig>("fuel.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Fuel.FuelConfig(), Opts), JsonSerializer.Serialize(f, Opts));
+            Assert.LessOrEqual(f.startLitres, f.tankLitres);
+            var stops = Load<StopsConfig>("stops_messassi_etoudi.json");
+            var street = Load<StreetConfig>("street.json");
+            var end = stops.stops[stops.stops.Length - 1].distanceAlongRouteMeters;
+            Assert.IsNotEmpty(f.stations);
+            foreach (var s in f.stations)
+            {
+                Assert.That(s.distanceAlongRouteMeters, Is.InRange(0f, end), s.id);
+                foreach (var stop in stops.stops)
+                    Assert.Greater(System.Math.Abs(stop.distanceAlongRouteMeters - s.distanceAlongRouteMeters),
+                        street.stopRadiusMeters + f.stationRadiusMeters, $"{s.id} empiète sur {stop.id}");
+            }
+        }
+
+        [Test]
         public void World_MessassiEtoudi_IsUsable()
         {
             var w = Load<TaxiKmer.Core.World.WorldData>("world_messassi_etoudi.json");

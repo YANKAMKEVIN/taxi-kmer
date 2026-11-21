@@ -1,4 +1,5 @@
 using TaxiKmer.Core.Day;
+using TaxiKmer.Core.Fuel;
 using TaxiKmer.Core.Rides;
 using TaxiKmer.Core.Ux;
 using UnityEngine;
@@ -21,6 +22,10 @@ namespace TaxiKmer.Driving
         private readonly Text _caption;
         private readonly Image _gaugeTrack, _gaugeFill;
         private readonly Text _revenue;
+        private readonly Image _fuelTrack, _fuelFill;
+        private readonly Text _fuel;
+        private static readonly Color FuelColor = new Color(1f, 1f, 1f, 0.85f);
+        private static readonly Color FuelLow = new Color(1f, 0.3f, 0.25f, 1f);
 
         private static readonly Color Track = new Color(0f, 0f, 0f, 0.45f);
         private static readonly Color DayColor = new Color(1f, 1f, 1f, 0.85f);
@@ -48,6 +53,9 @@ namespace TaxiKmer.Driving
             _revenue.horizontalOverflow = HorizontalWrapMode.Overflow;
             _revenue.gameObject.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.8f);
             UiKit.Fill(_revenue.rectTransform);
+            _fuelTrack = UiKit.NewImage(_root, "Carburant", Track, UiKit.Rounded);
+            _fuelFill = UiKit.NewImage(_fuelTrack.transform, "Réservoir", FuelColor, UiKit.Rounded);
+            _fuel = Label(font, TextAnchor.MiddleLeft, Color.white);
         }
 
         private Text Label(Font font, TextAnchor anchor, Color color)
@@ -96,6 +104,20 @@ namespace TaxiKmer.Driving
             _gaugeFill.color = covered ? Covered : Filling;
             _revenue.text = DaySummary.Money(shownRevenue);
             _revenue.fontSize = Mathf.RoundToInt(h * 0.03f);
+
+            // Jauge de carburant (jalon 3) à droite de l'heure : se vide en roulant, rouge sur la réserve.
+            var tank = shift.Tank;
+            _fuelTrack.gameObject.SetActive(tank != null);
+            _fuel.enabled = tank != null;
+            if (tank == null) return;
+            var low = tank.IsLow;
+            UiKit.PlaceTopLeft(_fuelTrack.rectTransform, x + w * 0.45f, h * 0.135f, w * 0.32f, h * 0.022f);
+            Fill(_fuelFill.rectTransform, tank.Fraction);
+            _fuelFill.color = low ? FuelLow : FuelColor;
+            _fuel.text = FuelGauge.Label(tank);
+            _fuel.color = low ? FuelLow : Color.white;
+            _fuel.fontSize = Mathf.RoundToInt(h * 0.026f);
+            UiKit.PlaceTopLeft(_fuel.rectTransform, x + w * 0.8f, h * 0.125f, w * 0.4f, h * 0.04f);
         }
 
         /// <summary>Centre du compteur de recette, en pixels d'écran (le montant payé y file).</summary>
