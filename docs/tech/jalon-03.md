@@ -58,6 +58,32 @@ Sauvegarde automatique toutes les 30 s réelles ; aussi à la mise en arrière-p
 - Score de 0 à 100, 50 au départ ; paliers : très mauvaise, mauvaise (20), correcte (40), bonne (60), excellente (80).
 - +1 par client payé ; -2 par client accepté qui abandonne ; -2 par passager descendu sans arriver ; -10 piéton blessé léger, -25 blessé grave ; avec des passagers, au-delà de 60 km/h, -1 toutes les 10 s.
 
+## Équilibrage : simulation de journées types (2026-11-21, session cloud)
+
+`tools/dotnet/BalanceSimulationTests.cs` : un chauffeur automatique joue des journées sur les vraies données (arrêts, prix, places, clients, carburant, propriétaire, calendrier) : aller-retour dispensaire ↔ Étoudi à vitesse constante, il accepte tout client qui annonce sa destination, s'arrête 4 s pour faire monter ou descendre, 8 s pour faire demi-tour, passe à la station sous 25 % du réservoir. Ni trafic, ni feux, ni accident : une journée « propre », plutôt optimiste. Moyenne sur 10 journées ; rapports dans `tools/dotnet/bin/Debug/net8.0/equilibrage/` (`tools/test_core.sh Balance`). **Aucune valeur n'a été changée.**
+
+| Vitesse | Courses | À bord (moy. sur 5) | Recette | km | Carburant ×1 | ×4 | ×8 (actuel) | Reste ×8 |
+|---|---|---|---|---|---|---|---|---|
+| 30 km/h | 4,6 | 3,2 | 1 500 | 4,6 | 313 | 1 245 | 2 491 | -991 |
+| 40 km/h | 5,7 | 3,0 | 2 020 | 6,1 | 410 | 1 648 | 3 295 | -1 275 |
+| 50 km/h | 7,0 | 2,9 | 2 630 | 7,4 | 497 | 1 983 | 3 972 | -1 342 |
+
+Constats :
+- **Le versement de 10 000 FCFA est hors d'atteinte avec les valeurs actuelles, même sans carburant.** Une journée dure 600 s réelles : à 40 km/h, c'est à peine plus d'un aller simple dispensaire → Étoudi (6,1 km). Même taxi plein toute la journée (5 places au lieu de 3 en moyenne), la recette plafonne vers 3 500 FCFA.
+- Le carburant ×8 (`consumptionScale`) coûte 2 500 à 4 000 FCFA par journée, soit **plus que la recette** : chaque journée fait perdre de l'argent. ×8 rend la consommation d'une « vraie » journée de taxi, alors que la recette, elle, reste celle d'une journée de 10 minutes : les deux ne sont pas à la même échelle.
+- Sur une semaine aux valeurs par défaut (3 manques sur 7 jours → renvoi), **le chauffeur est renvoyé le 3ᵉ jour (mercredi), quoi qu'il fasse.**
+
+| Jour | Courses | Recette | Carburant acheté | Versement remis | Manque | Épargne | Propriétaire |
+|---|---|---|---|---|---|---|---|
+| 1 lun. | 7 | 2 800 | 0 | 2 800 | 7 200 | 0 | menace |
+| 2 mar. | 6 | 2 000 | 12 000 | 0 | 10 000 | -10 000 | menace |
+| 3 mer. | 6 | 2 000 | 0 | 2 000 | 8 000 | -10 000 | renvoyé |
+
+Pistes à trancher par Kevin (une seule suffit, toutes se règlent dans les données) :
+- **A. Versement à l'échelle de la journée de jeu** : environ 2 000 FCFA (`day.json` : `versement`), carburant ×1 à ×2 ; la journée reste de 10 minutes.
+- **B. Journée plus longue** : 30 à 40 min réelles (`dayLengthRealSeconds` 1 800 à 2 400) pour 3 à 4 allers-retours ; versement à environ 7 000, carburant ×4.
+- **C. Tout à l'échelle « réelle »** : prix des courses ×3 à ×4 (`fares.json`) en gardant 10 000 et le carburant ×8 ; les prix affichés ne sont alors plus les vrais prix de Yaoundé (300 à 800).
+
 ## Questions pour Kevin (jalon 3)
 
 1. Réputation **visible ou cachée** ? (réglée visible en attendant)
@@ -65,5 +91,5 @@ Sauvegarde automatique toutes les 30 s réelles ; aussi à la mise en arrière-p
 3. **Panne sèche** : que se passe-t-il vraiment (pousser, bidon au bord de la route, passagers qui descendent, remorquage payant) ?
 4. **Station-service** : laquelle, et où, sur la portion Messassi → Étoudi ?
 5. **Jours de marché** de Messassi et **jour de repos** éventuel (dimanche ?).
-6. **Équilibre du carburant** : environ 4 300 FCFA par journée de jeu par défaut, contre 500 avant ; à régler avec le versement.
+6. **Équilibre recettes / carburant / versement** : voir « Équilibrage » ci-dessus ; avec les valeurs actuelles le versement est hors d'atteinte et le chauffeur est renvoyé le 3ᵉ jour. Choisir la piste A, B ou C.
 7. Niveau de concurrence des taxis (question 4 du jalon 2) : réglable dans `traffic.json`.
