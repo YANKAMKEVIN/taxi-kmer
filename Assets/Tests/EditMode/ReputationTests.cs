@@ -146,7 +146,7 @@ namespace TaxiKmer.Core.Tests
             storage.Files[SaveStore.MainFile] = SaveStoreTests.Serializer.ToJson(new SaveEnvelope { version = 3, checksum = SaveStore.Checksum(payload), payload = payload });
             var r = new SaveStore(storage, SaveStoreTests.Serializer).Load();
             Assert.AreEqual(LoadStatus.Loaded, r.Status);
-            Assert.AreEqual(4, r.Data.version);
+            Assert.AreEqual(SaveMigrations.CurrentVersion, r.Data.version);
             Assert.AreEqual(-1, r.Data.career.reputation);
             Assert.AreEqual(20f, r.Data.career.fuelLitres, "Le réservoir de la version 3 est gardé.");
             Assert.AreEqual(50, SaveSnapshot.LoadReputation(r.Data, new ReputationConfig()).Score);

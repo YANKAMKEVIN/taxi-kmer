@@ -21,6 +21,11 @@ namespace TaxiKmer.Core.Career
         /// verse que la recette et le reste manque). Choix de Claude, à confirmer par Kevin.
         /// </summary>
         public bool payShortfallFromSavings = true;
+        /// <summary>
+        /// Fourrière (jalon 4) : le propriétaire renvoie le chauffeur seulement à la 2ᵉ fois (tranché par Kevin le 21/11) ;
+        /// la 1ʳᵉ fois, il menace. 0 : jamais.
+        /// </summary>
+        public int impoundsBeforeFired = 2;
     }
 
     /// <summary>Humeur du propriétaire après la journée.</summary>
@@ -67,6 +72,8 @@ namespace TaxiKmer.Core.Career
         public int Savings { get; private set; }
         /// <summary>Le propriétaire a repris son taxi : la carrière s'arrête.</summary>
         public bool Fired { get; private set; }
+        /// <summary>Fois où le taxi est parti à la fourrière (le propriétaire renvoie à la 2ᵉ).</summary>
+        public int Impounds { get; private set; }
         /// <summary>Jours où le versement a manqué (encore dans la fenêtre ou non).</summary>
         public IReadOnlyList<int> MissedDays => _missedDays;
 
@@ -76,9 +83,9 @@ namespace TaxiKmer.Core.Career
         }
 
         /// <summary>Reprend une carrière sauvegardée.</summary>
-        public static DriverCareer Restore(OwnerConfig owner, int dayNumber, int savings, IEnumerable<int> missedDays, bool fired)
+        public static DriverCareer Restore(OwnerConfig owner, int dayNumber, int savings, IEnumerable<int> missedDays, bool fired, int impounds = 0)
         {
-            var c = new DriverCareer(owner) { DayNumber = Math.Max(1, dayNumber), Savings = savings, Fired = fired };
+            var c = new DriverCareer(owner) { DayNumber = Math.Max(1, dayNumber), Savings = savings, Fired = fired, Impounds = Math.Max(0, impounds) };
             if (missedDays != null) c._missedDays.AddRange(missedDays);
             return c;
         }
@@ -134,6 +141,13 @@ namespace TaxiKmer.Core.Career
             }
             // Arrêté et taxi saisi par la gendarmerie : le propriétaire le renvoie aussi (son taxi est à la fourrière).
             if (summary.VehicleSeized) mood = OwnerMood.Fired;
+            // Fourrière : il menace la 1ʳᵉ fois, renvoie à la 2ᵉ (décision de Kevin du 21/11).
+            if (summary.Impounded)
+            {
+                Impounds++;
+                if (_owner.impoundsBeforeFired > 0 && Impounds >= _owner.impoundsBeforeFired) mood = OwnerMood.Fired;
+                else if (mood == OwnerMood.Satisfied) mood = OwnerMood.Threatens;
+            }
 
             var closure = new DayClosure
             {

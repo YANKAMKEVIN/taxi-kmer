@@ -265,11 +265,20 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
-        public void Police_MatchesDefaults_StaysOffUntilKevinDecides()
+        public void Police_MatchesDefaults_OnSinceKevinDecided()
         {
             var p = Load<TaxiKmer.Core.Police.PoliceConfig>("police.json");
             Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Police.PoliceConfig(), Opts), JsonSerializer.Serialize(p, Opts));
-            Assert.IsFalse(p.enabled, "Contrôles coupés tant que Kevin n'a pas fixé montants et issues (jalon-04.md).");
+            Assert.IsTrue(p.enabled, "Jalon 4 activé le 21/11 : ce qui reste est en valeurs par défaut (jalon-04.md).");
+            Assert.IsFalse(p.contactsEnabled, "Contacts : crochet du jalon 7, coupé tant qu'il n'existe pas.");
+            Assert.AreEqual(0, p.reputationPaid, "Payer ne change pas la réputation (Kevin, 21/11).");
+            foreach (var o in p.contestOutcomes.Concat(p.callOutcomes)) Assert.AreEqual(0, o.reputation, $"{o.id} : refuser ou contester ne change pas la réputation");
+            Assert.IsTrue(p.contestOutcomes.Any(o => o.id == "gagne" && o.requiresInvented && o.weight > 0f), "Contester : gagne parfois, seulement si inventé.");
+            Assert.IsTrue(p.contestOutcomes.Any(o => o.impound && o.weight > 0f), "Contester : fourrière possible.");
+            Assert.IsTrue(p.callOutcomes.Any(o => o.requiresContact && o.weight > 0f), "Appeler : marche avec un contact.");
+            Assert.IsTrue(p.fleeEnabled && p.fleeOutcomes.Any(o => o.wanted) && p.fleeOutcomes.Any(o => o.impound), "Fuir : poursuite, fourrière ou recherché.");
+            Assert.IsTrue(p.wantedOutcomes.Any(o => o.impound) && p.wantedOutcomes.Any(o => o.arrest), "Recherché : fourrière ou arrestation au prochain poste.");
+            Assert.AreEqual(2, Load<OwnerConfig>("owner.json").impoundsBeforeFired, "Fourrière : renvoyé à la 2ᵉ fois.");
             var stops = Load<StopsConfig>("stops_messassi_etoudi.json");
             var end = stops.stops[stops.stops.Length - 1].distanceAlongRouteMeters;
             foreach (var c in p.checkpoints) Assert.That(c.distanceAlongRouteMeters, Is.InRange(0f, end), c.id);

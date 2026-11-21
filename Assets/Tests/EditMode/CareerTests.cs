@@ -5,6 +5,15 @@ using TaxiKmer.Core.Day;
 
 namespace TaxiKmer.Core.Tests
 {
+    internal static class LedgerTestExtensions
+    {
+        public static DayLedger With(this DayLedger ledger, int revenue)
+        {
+            ledger.AddFare(revenue);
+            return ledger;
+        }
+    }
+
     public class CareerTests
     {
         /// <summary>Bilan d'une journée : recette, distance (carburant), frais imprévus.</summary>
@@ -118,6 +127,29 @@ namespace TaxiKmer.Core.Tests
         {
             var c = new DriverCareer(new OwnerConfig());
             Assert.AreEqual(OwnerMood.Fired, c.CloseDay(Day(20000, seized: true)).Mood);
+        }
+
+        /// <summary>Fourrière (Kevin, 21/11) : le propriétaire renvoie le chauffeur seulement à la 2ᵉ fois.</summary>
+        [Test]
+        public void Impound_OwnerFiresOnlyTheSecondTime_SurvivesASave()
+        {
+            DaySummary Impounded() => DaySummary.From(new DayLedger(new DayConfig { versement = 10000 }).With(20000), impounded: true);
+            var c = new DriverCareer(new OwnerConfig());
+            var first = c.CloseDay(Impounded());
+            Assert.AreEqual(OwnerMood.Threatens, first.Mood, "1ʳᵉ fourrière : il menace.");
+            Assert.AreEqual(1, c.Impounds);
+            Assert.IsFalse(c.Fired);
+            c.CloseDay(Day(20000));
+
+            var data = new Save.SaveData();
+            data.career.impounds = c.Impounds;
+            var restored = Save.SaveSnapshot.LoadCareer(data, new OwnerConfig());
+            Assert.AreEqual(1, restored.Impounds, "Le compte passe par la sauvegarde.");
+            Assert.AreEqual(OwnerMood.Fired, restored.CloseDay(Impounded()).Mood, "2ᵉ fourrière : renvoyé.");
+            Assert.IsTrue(restored.Fired);
+
+            var never = new DriverCareer(new OwnerConfig { impoundsBeforeFired = 0 });
+            for (var i = 0; i < 3; i++) Assert.AreNotEqual(OwnerMood.Fired, never.CloseDay(Impounded()).Mood);
         }
 
         [Test]

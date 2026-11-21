@@ -106,7 +106,7 @@ namespace TaxiKmer.Core.Save
 
         /// <summary>La carrière sauvegardée (jour, épargne, manques, renvoi).</summary>
         public static DriverCareer LoadCareer(SaveData data, OwnerConfig owner) =>
-            DriverCareer.Restore(owner, data.career.dayNumber, data.career.savings, data.career.missedVersementDays, data.career.fired);
+            DriverCareer.Restore(owner, data.career.dayNumber, data.career.savings, data.career.missedVersementDays, data.career.fired, data.career.impounds);
 
         /// <summary>
         /// Ajoute le bilan d'une journée terminée et l'état de la carrière après sa clôture (<paramref name="career"/>
@@ -145,6 +145,7 @@ namespace TaxiKmer.Core.Save
             data.career.savings = career.Savings;
             data.career.missedVersementDays = new List<int>(career.MissedDays).ToArray();
             data.career.fired = career.Fired;
+            data.career.impounds = career.Impounds;
             if (summary.TankLitres >= 0f) data.career.fuelLitres = summary.TankLitres;
             if (summary.Reputation >= 0) data.career.reputation = summary.Reputation;
             data.hasDayInProgress = false;

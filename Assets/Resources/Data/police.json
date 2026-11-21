@@ -1,6 +1,6 @@
 {
-    "_note": "Contrôles de police (jalon 4, docs/tech/jalon-04.md). enabled = false : rien n'est actif dans le jeu tant que Kevin n'a pas fixé les montants et l'issue des choix (questions du jalon 4). Positions des postes fixes : provisoires (m le long de l'itinéraire). Chances entre 0 et 1, sommes en FCFA, durées en minutes de jeu. contestOutcomes / callOutcomes : issues tirées selon weight ; une issue de poids 0 n'arrive jamais (« gagne » et « arrange » attendent la décision de Kevin). payFactor : part de la somme demandée que le chauffeur paie. Les prétextes et les coûts de renouvellement des papiers sont des exemples à remplacer. Ton réaliste (décision de Kevin du 2026-11-21) : on suggère la corruption sans la montrer crûment ; les prétextes doivent être plausibles (ce qu'un vrai policier pourrait reprocher), jamais de mot cru (liste dans PoliceTexts.CrudeWords, vérifiée par les tests).",
-    "enabled": false,
+    "_note": "Contrôles de police (jalon 4, docs/tech/jalon-04.md). ACTIVÉ le 21/11 après les décisions de Kevin (tranché par Kevin le 21/11) : papiers option A (assurance 30 j, visite technique 180 j, licence 365 j de jeu) ; contester option B (gagne environ 1 fois sur 3, seulement si le problème est inventé et les papiers en règle : requiresInvented ; sinon perd ou fourrière) ; fuir option B (fleeOutcomes : poursuite, rattrapé = fourrière, échappé = recherché ; wantedOutcomes au prochain contrôle : fourrière, arrestation ou contrôle ordinaire) ; appeler quelqu'un option B (arrange seulement avec un contact : requiresContact ; contacts = crochet du jalon 7, contactsEnabled = false tant qu'il n'existe pas) ; fourrière : le propriétaire renvoie à la 2e fois (owner.json, impoundsBeforeFired) ; réputation : payer, refuser ou contester ne la changent pas (reputation = 0). VALEURS PAR DÉFAUT encore ouvertes : sommes demandées, fréquence des contrôles, positions des postes fixes (m le long de l'itinéraire), poids des issues, coûts de renouvellement des papiers. Chances entre 0 et 1, sommes en FCFA, durées en minutes de jeu. payFactor : part de la somme demandée que le chauffeur paie. Les prétextes sont des exemples à remplacer. Ton réaliste (décision de Kevin du 2026-11-21) : on suggère la corruption sans la montrer crûment ; les prétextes doivent être plausibles, jamais de mot cru (liste dans PoliceTexts.CrudeWords, vérifiée par les tests).",
+    "enabled": true,
     "checkpoints": [
         { "id": "poste-messassi", "name": "Poste de contrôle de Messassi", "distanceAlongRouteMeters": 900 },
         { "id": "poste-etoudi", "name": "Poste de contrôle d'Étoudi", "distanceAlongRouteMeters": 5200 }
@@ -26,13 +26,26 @@
     "maxNegotiations": 2,
     "negotiateFloor": 500,
     "contestOutcomes": [
-        { "id": "perd", "weight": 1, "payFactor": 1.5, "lostMinutes": 60, "impound": false, "reputation": 0 },
-        { "id": "fourriere", "weight": 0, "payFactor": 0, "lostMinutes": 0, "impound": true, "reputation": 0 },
-        { "id": "gagne", "weight": 0, "payFactor": 0, "lostMinutes": 30, "impound": false, "reputation": 0 }
+        { "id": "perd", "weight": 1.5, "payFactor": 1.5, "lostMinutes": 60, "impound": false, "reputation": 0, "requiresInvented": false, "requiresContact": false, "onlyWithoutContact": false, "arrest": false, "wanted": false },
+        { "id": "fourriere", "weight": 0.5, "payFactor": 0, "lostMinutes": 0, "impound": true, "reputation": 0, "requiresInvented": false, "requiresContact": false, "onlyWithoutContact": false, "arrest": false, "wanted": false },
+        { "id": "gagne", "weight": 1, "payFactor": 0, "lostMinutes": 30, "impound": false, "reputation": 0, "requiresInvented": true, "requiresContact": false, "onlyWithoutContact": false, "arrest": false, "wanted": false }
     ],
     "callOutcomes": [
-        { "id": "personne", "weight": 1, "payFactor": 1, "lostMinutes": 20, "impound": false, "reputation": 0 },
-        { "id": "arrange", "weight": 0, "payFactor": 0, "lostMinutes": 20, "impound": false, "reputation": 0 }
+        { "id": "personne", "weight": 1, "payFactor": 1, "lostMinutes": 20, "impound": false, "reputation": 0, "requiresInvented": false, "requiresContact": false, "onlyWithoutContact": true, "arrest": false, "wanted": false },
+        { "id": "arrange", "weight": 1, "payFactor": 0, "lostMinutes": 20, "impound": false, "reputation": 0, "requiresInvented": false, "requiresContact": true, "onlyWithoutContact": false, "arrest": false, "wanted": false }
+    ],
+    "contactsEnabled": false,
+    "fleeEnabled": true,
+    "fleeOutcomes": [
+        { "id": "echappe", "weight": 0.6, "payFactor": 0, "lostMinutes": 5, "impound": false, "reputation": 0, "requiresInvented": false, "requiresContact": false, "onlyWithoutContact": false, "arrest": false, "wanted": true },
+        { "id": "rattrape", "weight": 0.4, "payFactor": 0, "lostMinutes": 15, "impound": true, "reputation": 0, "requiresInvented": false, "requiresContact": false, "onlyWithoutContact": false, "arrest": false, "wanted": false }
+    ],
+    "wantedStopChance": 1,
+    "demandFled": 10000,
+    "wantedOutcomes": [
+        { "id": "fourriere", "weight": 0.4, "payFactor": 0, "lostMinutes": 0, "impound": true, "reputation": 0, "requiresInvented": false, "requiresContact": false, "onlyWithoutContact": false, "arrest": false, "wanted": false },
+        { "id": "arrestation", "weight": 0.2, "payFactor": 0, "lostMinutes": 0, "impound": false, "reputation": 0, "requiresInvented": false, "requiresContact": false, "onlyWithoutContact": false, "arrest": true, "wanted": false },
+        { "id": "oublie", "weight": 0.4, "payFactor": 0, "lostMinutes": 0, "impound": false, "reputation": 0, "requiresInvented": false, "requiresContact": false, "onlyWithoutContact": false, "arrest": false, "wanted": false }
     ],
     "impoundFee": 15000,
     "reputationPaid": 0,
@@ -40,8 +53,8 @@
         { "id": "permis", "name": "Permis de conduire", "validityDays": 0, "startDaysLeft": 0, "renewalCost": 0 },
         { "id": "carte-grise", "name": "Carte grise", "validityDays": 0, "startDaysLeft": 0, "renewalCost": 0 },
         { "id": "assurance", "name": "Assurance", "validityDays": 30, "startDaysLeft": 12, "renewalCost": 0 },
-        { "id": "visite-technique", "name": "Visite technique", "validityDays": 60, "startDaysLeft": 25, "renewalCost": 0 },
-        { "id": "licence-taxi", "name": "Licence de taxi", "validityDays": 90, "startDaysLeft": 40, "renewalCost": 0 }
+        { "id": "visite-technique", "name": "Visite technique", "validityDays": 180, "startDaysLeft": 25, "renewalCost": 0 },
+        { "id": "licence-taxi", "name": "Licence de taxi", "validityDays": 365, "startDaysLeft": 40, "renewalCost": 0 }
     ],
     "pretexts": [
         { "id": "extincteur", "label": "Extincteur introuvable (exemple à remplacer)" },

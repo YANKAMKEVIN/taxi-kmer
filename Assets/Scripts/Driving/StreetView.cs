@@ -57,6 +57,8 @@ namespace TaxiKmer.Driving
         private Text _pushText, _technicianText;
         // Radio du taxi (radio.json ; créée seulement si enabled).
         private RadioView _radio;
+        // Contrôles de police (police.json ; créés seulement si enabled, jalon 4 activé le 21/11).
+        private PoliceView _police;
         private DaySummaryView _summaryView;
         private Tutorial _tutorial;
         private Image _tutorialPanel;
@@ -185,6 +187,11 @@ namespace TaxiKmer.Driving
             _technicianButton.gameObject.SetActive(false);
             var radio = Load("Data/radio", new Core.Radio.RadioConfig());
             if (radio.enabled) _radio = new RadioView(controls.Overlay, controls.Font, taxi.gameObject, radio);
+            var police = Load("Data/police", new Core.Police.PoliceConfig());
+            var dayCfg = Load("Data/day", new DayConfig());
+            if (police.enabled)
+                _police = new PoliceView(controls.Overlay, controls.Font, police, Save.Career.DayNumber, _cum[_cum.Length - 1],
+                    dayCfg.startHour * 60, dayCfg.endHour * 60, actualSeed + 47);
             _menu = new GameMenu(!TitleDone);
             _menuView = new GameMenuView(transform, controls.Font);
             _settings.Volume = PlayerPrefs.GetFloat(VolumeKey, GameSettings.DefaultVolume);
@@ -260,7 +267,7 @@ namespace TaxiKmer.Driving
             // Le bilan passe devant tout (l'écran titre ne reste pas affiché par-dessus).
             ApplyMenu(_menuView.Update(Street.DayFinished ? MenuScreen.None : _menu.Screen, _settings, shift.Cabin.PassengerCount));
             if (controls.PauseTriggered && !Street.DayFinished && _menu.Pause()) SetTimeStopped(true);
-            controls.Locked = _menu.Frozen || _summaryView != null;
+            controls.Locked = _menu.Frozen || _summaryView != null || (_police != null && _police.Active);
 
             if (!Street.DayFinished && !_menu.Frozen)
             {
@@ -300,6 +307,11 @@ namespace TaxiKmer.Driving
                 OnHonk(state);
             }
             if (Street.DryTankLeft > 0) Toast(FuelGauge.PassengersLeftMessage(Street.DryTankLeft), 6f);
+            if (_police != null)
+            {
+                var policeDone = _police.Update(Street, state, !_menu.Frozen && _summaryView == null);
+                if (policeDone.Length > 0) Toast(policeDone, 6f);
+            }
             UpdateDryTank(state);
             // La radio se tait en pause et au bilan ; pas encore de bulles de dialogue dans Unity (jalon 5 coupé).
             _radio?.Update(dt, !Street.DayFinished && !_menu.Frozen && _summaryView == null, false);

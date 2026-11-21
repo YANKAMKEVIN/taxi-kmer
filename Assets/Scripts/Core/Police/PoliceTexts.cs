@@ -33,6 +33,7 @@ namespace TaxiKmer.Core.Police
             ControlChoice.Negotiate => "Négocier",
             ControlChoice.Contest => "Contester",
             ControlChoice.Call => "Appeler quelqu'un",
+            ControlChoice.Flee => "Fuir",
             _ => "",
         };
 
@@ -40,7 +41,9 @@ namespace TaxiKmer.Core.Police
         public static string Closed(PoliceControl control)
         {
             if (control == null) throw new ArgumentNullException(nameof(control));
-            if (control.Impounded) return "Le taxi part à la fourrière.";
+            if (control.Arrested) return "Le chauffeur est emmené au poste. La journée s'arrête.";
+            if (control.Impounded) return control.OutcomeId == "rattrape" ? "Rattrapé. Le taxi part à la fourrière." : "Le taxi part à la fourrière.";
+            if (control.BecameWanted) return "Le taxi s'échappe. Mais ils ont relevé la plaque…";
             return control.Paid > 0 ? $"{DaySummary.Money(control.Paid)} laissés au contrôle. Bonne route." : "Bonne route.";
         }
 

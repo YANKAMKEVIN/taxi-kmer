@@ -40,6 +40,8 @@ namespace TaxiKmer.Core.Save
         public float fuelLitres = -1f;
         /// <summary>Réputation à la fin de la dernière journée (version 4) ; -1 = inconnue (réputation de départ).</summary>
         public int reputation = -1;
+        /// <summary>Fois où le taxi est parti à la fourrière (version 5) ; le propriétaire renvoie à la 2ᵉ.</summary>
+        public int impounds;
         public DayRecordData[] history = Array.Empty<DayRecordData>();
     }
 

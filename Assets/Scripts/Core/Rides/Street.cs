@@ -494,7 +494,8 @@ namespace TaxiKmer.Core.Rides
 
         /// <summary>
         /// Applique à la journée un contrôle de police terminé (jalon 4) : somme payée (dépense du bilan), temps perdu,
-        /// réputation ; fourrière → frais de fourrière, les passagers descendent sans payer et la journée s'arrête.
+        /// réputation ; fourrière → frais de fourrière, les passagers descendent sans payer et la journée s'arrête ;
+        /// arrestation (recherché après une fuite) → garde à vue, la journée s'arrête aussi.
         /// Rend false si le contrôle n'est pas terminé ou si la journée l'est déjà.
         /// </summary>
         public bool ApplyPoliceControl(Police.PoliceControl control, int impoundFee)
@@ -503,18 +504,11 @@ namespace TaxiKmer.Core.Rides
             _shift.Ledger.AddExpense(PoliceExpenseLabel, control.Paid);
             Reputation?.Add(control.ReputationDelta);
             _shift.Clock.AdvanceGameMinutes(control.LostMinutes);
-            if (control.Impounded)
+            if (control.Impounded || control.Arrested)
             {
-                _shift.Ledger.AddExpense(ImpoundExpenseLabel, Math.Max(0, impoundFee));
-                var passengers = new List<Client>(_shift.Cabin.Passengers);
-                Reputation?.PassengersNotDelivered(passengers.Count);
-                foreach (var p in passengers)
-                {
-                    _leftUnpaid++;
-                    _leftUnpaidFares += p.ProposedFare;
-                    _shift.Cabin.Remove(p);
-                }
-                Finish(impounded: true);
+                if (control.Impounded) _shift.Ledger.AddExpense(ImpoundExpenseLabel, Math.Max(0, impoundFee));
+                LeaveUnpaid();
+                Finish(arrested: control.Arrested, impounded: control.Impounded);
                 return true;
             }
             if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();

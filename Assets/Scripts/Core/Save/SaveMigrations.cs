@@ -10,7 +10,7 @@ namespace TaxiKmer.Core.Save
     public static class SaveMigrations
     {
         /// <summary>Version écrite par ce jeu. À augmenter à chaque changement du contenu, avec son étape ci-dessous.</summary>
-        public const int CurrentVersion = 4;
+        public const int CurrentVersion = 5;
 
         public static void Upgrade(SaveData data, int fromVersion)
         {
@@ -51,6 +51,10 @@ namespace TaxiKmer.Core.Save
                     }
                     if (data.day != null) { data.day.reputationDayStart = -1; data.day.reputation = -1; }
                     break;
+                case 4:
+                    // Version 5 : fourrières comptées (le propriétaire renvoie à la 2ᵉ). Avant : aucune.
+                    if (data.career != null) data.career.impounds = 0;
+                    break;
             }
         }
 
@@ -66,6 +70,7 @@ namespace TaxiKmer.Core.Save
             if (data.day.passengers == null) data.day.passengers = Array.Empty<PassengerData>();
             if (data.day.elapsedRealSeconds < 0f) data.day.elapsedRealSeconds = 0f;
             if (data.day.taxiDirection != -1) data.day.taxiDirection = 1;
+            if (data.career.impounds < 0) data.career.impounds = 0;
         }
     }
 }
