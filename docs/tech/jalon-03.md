@@ -11,9 +11,9 @@
 | 3.1 Sauvegarde sûre | **faite** (2026-11-15, session cloud) : `Core/Save` ; 13 tests (coupure de courant à chaque étape d'une écriture, fichier tronqué, modifié, vide, illisible, sans copie de secours, version plus récente, version ancienne, journée sauvegardée puis reprise, bilan ajouté à la carrière) |
 | 3.2 Sauvegarde dans le jeu | **écrite, à essayer dans Unity** : `SaveService` (créé par `StreetView`) ; sauvegarde la journée en cours toutes les 30 s et quand l'appli passe en arrière-plan ou se ferme ; enregistre le bilan en fin de journée ; reprise au lancement **coupée** (`resumeOnStart: false` dans `save.json`) jusqu'à la validation du jalon ; test PlayMode de bout en bout (sauvegarder, relancer, reprendre) dans un dossier temporaire |
 | 3.3 Journée suivante, épargne et propriétaire | **faite, à essayer dans Unity** (2026-11-15, décisions de Kevin) : l'argent qui reste passe d'un jour à l'autre (épargne) ; horaires du patron (6 h - 20 h, `day.json`), annoncés au début de chaque jour ; versement manqué → le propriétaire menace ; 3 manques sur 7 jours → renvoyé, la carrière s'arrête et le bouton du bilan propose « Nouvelle carrière » ; sinon « Jour suivant » (jour + 1, épargne gardée). `Core/Career/DriverCareer` (8 tests), `owner.json` ; sauvegarde passée en version 2 (épargne, manques, renvoi) avec sa migration testée |
-| 3.4 Calendrier | **fait, à essayer dans Unity** (2026-11-21, session cloud) : `Core/Day/Calendar` (5 tests), `calendar.json` ; le jour 1 est un lundi ; chaque jour de la semaine multiplie la cadence d'arrivée des clients (`Street.SpawnRateScale`) et la densité du trafic et des piétons ; dimanche plus calme (×0,6), jours de marché mercredi et samedi (clients ×1,25, trafic ×1,15), annoncés au début de la journée ; « Jour 3 · mer. » dans le HUD, jour de la semaine dans le titre du bilan. Valeurs par défaut, à régler avec Kevin |
+| 3.4 Calendrier | **fait, à essayer dans Unity** (2026-11-21, session cloud) : `Core/Day/Calendar` (5 tests), `calendar.json` ; le jour 1 est un lundi ; chaque jour de la semaine multiplie la cadence d'arrivée des clients (`Street.SpawnRateScale`) et la densité du trafic et des piétons ; dimanche plus calme (×0,6), jours de marché mercredi et samedi (clients ×1,25, trafic ×1,15), annoncés au début de la journée ; « Jour 3 · mer. » dans le HUD, jour de la semaine dans le titre du bilan. Calendrier validé par Kevin le 2026-11-21 |
 | 3.5 Carburant et station-service | **fait, à essayer dans Unity** (2026-11-21, session cloud) : `Core/Fuel` (réservoir, station, textes ; 11 tests), `fuel.json` ; le réservoir se vide en roulant et passe d'un jour à l'autre ; à l'arrêt à la station-service, le bouton contextuel achète pour 2 000 FCFA de carburant à chaque appui (sans dépasser le plein) ; le bilan compte le carburant **acheté** dans la journée (et non plus brûlé) ; réservoir vide : ~~le taxi ne dépasse plus 8 km/h~~ panne sèche avec choix « pousser » ou « technicien du quartier » (2026-11-21) ; jauge à droite de l'heure (rouge sous 15 %) ; station provisoire (auvent rouge et blanc) ; sauvegarde version 3 (réservoir, carburant acheté) avec sa migration testée ; test PlayMode de la station |
-| 3.6 Réputation | **faite, à essayer dans Unity** (2026-11-21, session cloud) : `Core/Career/Reputation` (7 tests), `reputation.json` ; score de 0 à 100 (50 au départ) qui passe d'un jour à l'autre ; monte à chaque course payée, baisse quand un client accepté abandonne, quand des passagers descendent sans arriver (accident, journée terminée avec eux), quand on renverse un piéton, et en roulant trop vite avec des passagers ; **visible ou cachée réglable** (`visible`, visible par défaut) : « Réputation 52 » à droite de la jauge de versement et une ligne dans le bilan ; sauvegarde version 4 avec sa migration testée. **Aucun effet sur le jeu** tant que Kevin ne l'a pas décidé |
+| 3.6 Réputation | **faite, à essayer dans Unity** (2026-11-21, session cloud) : `Core/Career/Reputation` (7 tests), `reputation.json` ; score de 0 à 100 (50 au départ) qui passe d'un jour à l'autre ; monte à chaque course payée, baisse quand un client accepté abandonne, quand des passagers descendent sans arriver (accident, journée terminée avec eux), quand on renverse un piéton, et en roulant trop vite avec des passagers ; **visible** (décision de Kevin du 2026-11-21 ; réglable par `visible`) : « Réputation 52 » à droite de la jauge de versement et une ligne dans le bilan ; sauvegarde version 4 avec sa migration testée. **Aucun effet sur le jeu** tant que Kevin ne l'a pas décidé |
 
 ## Choix techniques
 
@@ -37,12 +37,12 @@
 
 Sauvegarde automatique toutes les 30 s réelles ; aussi à la mise en arrière-plan et à la fermeture ; reprise au lancement coupée.
 
-## Valeurs par défaut du calendrier (`calendar.json`, à régler avec Kevin)
+## Calendrier (`calendar.json`, validé par Kevin le 2026-11-21)
 
 - Le jour 1 de la carrière est un **lundi** (`firstWeekday`).
 - **Dimanche plus calme** : clients et trafic ×0,6.
-- **Jours de marché : mercredi et samedi** (« marché de Messassi ») : clients ×1,25, trafic ×1,15. Les vrais jours de marché de Messassi sont à confirmer par Kevin.
-- Le patron fait travailler tous les jours, dimanche compris (horaires inchangés) : un jour de repos serait une décision de Kevin.
+- **Jours de marché : mercredi et samedi** (« marché de Messassi ») : clients ×1,25, trafic ×1,15 (validé par Kevin).
+- Le patron fait travailler tous les jours, **dimanche compris** (calme mais travaillé, validé par Kevin) ; les coefficients ×0,6 / ×1,25 / ×1,15 restent réglables.
 
 ## Valeurs par défaut du carburant (`fuel.json`, à régler avec Kevin)
 
@@ -58,7 +58,7 @@ Sauvegarde automatique toutes les 30 s réelles ; aussi à la mise en arrière-p
 
 ## Valeurs par défaut de la réputation (`reputation.json`, à régler avec Kevin)
 
-- **Visible** par défaut (`visible: true`), pour que Kevin la voie bouger pendant l'essai ; `false` la cache (elle compte toujours). **Décision de Kevin** (question 3 du jalon 3).
+- **Visible** (`visible: true`) : **validé par Kevin le 2026-11-21** ; `false` la cacherait (elle compterait toujours).
 - Score de 0 à 100, 50 au départ ; paliers : très mauvaise, mauvaise (20), correcte (40), bonne (60), excellente (80).
 - +1 par client payé ; -2 par client accepté qui abandonne ; -2 par passager descendu sans arriver ; -10 piéton blessé léger, -25 blessé grave ; avec des passagers, au-delà de 60 km/h, -1 toutes les 10 s.
 
@@ -137,10 +137,10 @@ Pistes à trancher par Kevin (une seule suffit, toutes se règlent dans les donn
 
 ## Questions pour Kevin (jalon 3)
 
-1. Réputation **visible ou cachée** ? (réglée visible en attendant)
+1. ~~Réputation visible ou cachée ?~~ → **visible**, validé par Kevin (2026-11-21).
 2. **Effets de la réputation** : rien n'est branché. Pistes : clients plus ou moins patients, prix acceptés, attitude du propriétaire, contrôles de police (jalon 4).
 3. ~~Panne sèche~~ → **« On pousse, ou on appelle un technicien du quartier »** (Kevin, 2026-11-21), fait. Reste à régler : vitesse en poussant, délai et prix du technicien (`fuel.json`), et ce que font les passagers pendant la panne (ils restent à bord par défaut).
 4. **Station-service** : laquelle, et où, sur la portion Messassi → Étoudi ?
-5. **Jours de marché** de Messassi et **jour de repos** éventuel (dimanche ?).
+5. ~~Jours de marché et jour de repos~~ → **calendrier par défaut validé par Kevin** (2026-11-21) : marché le mercredi et le samedi, dimanche plus calme mais travaillé.
 6. ~~Équilibre recettes / carburant / versement : piste A, B ou C~~ → **piste B, journée de 35 min, carburant inchangé** (Kevin, 2026-11-21). **Reste ouvert** : même ainsi, le versement de 10 000 FCFA n'est atteint dans aucune journée simulée (le carburant coûte ≈ 540 FCFA par km pour ≈ 400 FCFA de recette) : que faut-il changer (consommation, versement, prix) ? Voir « Équilibrage, piste B ».
 7. Niveau de concurrence des taxis (question 4 du jalon 2) : réglable dans `traffic.json`.

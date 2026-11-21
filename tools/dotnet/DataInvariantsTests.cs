@@ -228,6 +228,31 @@ namespace TaxiKmer.Core.DotnetTests
             Assert.Less(r.pedestrianSerious, r.pedestrianLight);
         }
 
+        /// <summary>Décisions de Kevin du 2026-11-21 : elles doivent rester vraies dans les données.</summary>
+        [Test]
+        public void KevinDecisions_2026_11_21_AreInTheData()
+        {
+            var d = Load<DayConfig>("day.json");
+            Assert.That(d.dayLengthRealSeconds, Is.InRange(1800f, 2400f), "Piste B : journée de 30 à 40 min réelles.");
+            var f = Load<FuelConfig>("fuel.json");
+            Assert.AreEqual(8f, d.fuelLitresPer100Km, "Carburant : réalisme actuel gardé.");
+            Assert.AreEqual(8f, f.consumptionScale, "Carburant : réalisme actuel gardé.");
+            Assert.Greater(f.pushKmh, 0f, "Panne sèche : on peut pousser…");
+            Assert.Less(f.pushKmh, 8f, "… très lentement.");
+            Assert.Greater(f.technicianDelayMinutes, 0, "Le technicien arrive après un délai…");
+            Assert.Greater(f.technicianFeeFcfa + f.technicianLitres * d.fuelPricePerLitre, 0f, "… et coûte un prix, carburant compris.");
+            Assert.Greater(f.technicianLitres, 0f, "… puis on repart.");
+
+            Assert.IsTrue(Load<ReputationConfig>("reputation.json").visible, "Réputation visible.");
+
+            var c = Load<CalendarConfig>("calendar.json");
+            var markets = c.weekdays.Where(w => w.market).Select(w => w.name).ToArray();
+            CollectionAssert.AreEquivalent(new[] { "mercredi", "samedi" }, markets, "Marché le mercredi et le samedi.");
+            var sunday = c.weekdays.Single(w => w.name == "dimanche");
+            Assert.Less(sunday.clients, 1f, "Dimanche calme…");
+            Assert.Greater(sunday.clients, 0f, "… mais travaillé.");
+        }
+
         [Test]
         public void Police_MatchesDefaults_StaysOffUntilKevinDecides()
         {

@@ -1,5 +1,5 @@
 {
-    "_note": "Réputation du chauffeur (jalon 3). visible : le joueur la voit (HUD et bilan) ou elle reste cachée — question ouverte de Kevin, visible par défaut pour l'essai. Points gagnés et perdus : valeurs par défaut à régler avec Kevin. roughSpeedKmh / roughSecondsPerPoint : avec des passagers, au-delà de cette vitesse on perd un point toutes les N secondes réelles. Ses effets sur le jeu ne sont pas encore décidés (question pour Kevin).",
+    "_note": "Réputation du chauffeur (jalon 3). visible : le joueur la voit (HUD et bilan) — décision de Kevin du 2026-11-21 (false la cacherait). Points gagnés et perdus : valeurs par défaut à régler avec Kevin. roughSpeedKmh / roughSecondsPerPoint : avec des passagers, au-delà de cette vitesse on perd un point toutes les N secondes réelles. Ses effets sur le jeu ne sont pas encore décidés (question pour Kevin).",
     "visible": true,
     "start": 50,
     "min": 0,
