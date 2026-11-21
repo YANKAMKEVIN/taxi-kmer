@@ -75,6 +75,9 @@ namespace TaxiKmer.Core.Day
 
         public int WeekLength => _config.weekdays.Length;
 
+        /// <summary>Nom du marché des jours de marché (« marché de Messassi »).</summary>
+        public string MarketName => _config.marketName ?? "";
+
         public CalendarDay For(int dayNumber)
         {
             var n = WeekLength;

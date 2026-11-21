@@ -64,6 +64,9 @@ namespace TaxiKmer.Driving
         private TalkView _talk;
         // La route est dure (road.json ; créée seulement si enabled, jalon 6 activé le 21/11).
         private RoadView _road;
+        // Rédaction de la radio : événements du jeu → flashs d'information (décision de Kevin du 21/11).
+        private readonly Core.Radio.RadioNewsDesk _news = new Core.Radio.RadioNewsDesk();
+        private Stop[] _stopList = new Stop[0];
         private DaySummaryView _summaryView;
         private Tutorial _tutorial;
         private Image _tutorialPanel;
@@ -144,6 +147,7 @@ namespace TaxiKmer.Driving
             _camera = Camera.main;
 
             var stops = Load("Data/stops_messassi_etoudi", new StopsConfig());
+            _stopList = stops.stops ?? new Stop[0];
             var fares = Load("Data/fares", FareConfig.Default());
             _fuel = Load("Data/fuel", new FuelConfig());
             var shift = new Shift(Load("Data/day", new DayConfig()), Load("Data/seating", new SeatingConfig()), _fuel);
@@ -339,6 +343,7 @@ namespace TaxiKmer.Driving
                 if (_road.IncidentStarted) _talk?.Say(Core.Talk.TalkTriggers.Breakdown, TalkView.AnyPassenger(Street));
                 Street.SpawnRateScale = Today.ClientsFactor * _road.Road.Weather.ClientsFactor(shift.Clock.GameMinutes);
             }
+            if (_radio != null) UpdateRadioNews();
             if (_talk != null)
             {
                 var said = _talk.Update(dt, Street, state, !_menu.Frozen && _summaryView == null);
@@ -570,6 +575,30 @@ namespace TaxiKmer.Driving
                     }
                     break;
             }
+        }
+
+        /// <summary>« vers Emana » : le lieu à clients le plus proche d'une position de l'itinéraire (pour les flashs).</summary>
+        private string PlaceNear(float along)
+        {
+            Stop best = null;
+            foreach (var st in _stopList)
+                if (best == null || Mathf.Abs(st.distanceAlongRouteMeters - along) < Mathf.Abs(best.distanceAlongRouteMeters - along)) best = st;
+            return best != null ? $"vers {ShortName(best.id)}" : "";
+        }
+
+        /// <summary>Flashs d'information : pluie, contrôles volants, heures de pointe, jour de marché (radio.json → flashes).</summary>
+        private void UpdateRadioNews()
+        {
+            if (Street.DayFinished) return;
+            var minute = Street.Shift.Clock.GameMinutes;
+            var controls = new List<(string, string)>();
+            if (_police != null)
+                foreach (var p in _police.Police.Schedule.Posts)
+                    if (p.Flying && p.ActiveAt(minute)) controls.Add((p.Id, PlaceNear(p.Along)));
+            var raining = _road != null && _road.Raining;
+            var jam = _stopList.Length > 0 ? PlaceNear(_stopList[_stopList.Length - 1].distanceAlongRouteMeters) : "";
+            foreach (var item in _news.Update(minute, raining, Today.Market, _calendar.MarketName, controls, jam))
+                _radio.Radio.PushEvent(item.Event, item.Place);
         }
 
         /// <summary>Réservoir : vitesse limitée quand il est vide, messages de réserve et de panne sèche (une fois chacun).</summary>

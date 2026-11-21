@@ -352,34 +352,73 @@ namespace TaxiKmer.Core.DotnetTests
             Assert.Greater(d.charsPerSecond, 0f);
         }
 
+        /// <summary>Vrais noms de stations et de marques à ne jamais reprendre (stations fictives, décision de Kevin du 21/11).</summary>
+        private static readonly string[] RealRadioNames =
+        {
+            "crtv", "équinoxe", "equinoxe", "magic", "balafon", "siantou", "amplitude", "sweet fm", "nostalgie", "rfi", "africa n",
+            "abk", "satellite", "royal fm", "tiemeni", "lord", "veritas", "bonne nouvelle", "radio france", "bbc", "voa", "trace",
+        };
+
+        /// <summary>
+        /// Radio activée le 21/11 avec des pistes vides : stations fictives proposées, aucun son ni vrai nom, textes proposés
+        /// dans les trois langues, flashs pour chaque événement du jeu, musique CC0 ou CC-BY seulement.
+        /// </summary>
         [Test]
-        public void Radio_Off_EmptySlots_ToBeProvidedByKevin()
+        public void Radio_On_FictionalStations_ProposedTexts_NoSound_FreeLicencesOnly()
         {
             var r = Load<TaxiKmer.Core.Radio.RadioConfig>("radio.json");
-            Assert.IsFalse(r.enabled, "Coupée tant que Kevin n'a pas fourni stations et musiques (radio.md).");
-            Assert.IsNotEmpty(r.stations);
+            Assert.IsTrue(r.enabled, "Radio activée avec des pistes vides (Kevin, 21/11).");
+            Assert.IsTrue(r.skipSilentProgrammes, "Pistes vides : seulement les annonces et les flashs, en texte.");
+            Assert.That(r.duckVolume, Is.InRange(0.05f, 0.9f), "Quand un passager parle, le volume baisse (pas de silence total).");
             Assert.That(r.volume, Is.InRange(0f, 1f));
             Assert.Greater(r.defaultProgramSeconds, 0f);
+            Assert.That(r.stations.Length, Is.InRange(3, 4), "3 ou 4 stations proposées.");
             Assert.AreEqual(r.stations.Length, r.stations.Select(s => s.id).Distinct().Count());
             foreach (var s in r.stations)
             {
-                StringAssert.Contains("à fournir par Kevin", s.name, "Noms des stations : question pour Kevin.");
-                Assert.GreaterOrEqual(s.frequencyMHz, 0f);
+                Assert.AreEqual("proposé", s.statut, s.id);
+                Assert.That(s.frequencyMHz, Is.InRange(87.5f, 108f), $"{s.id} : fréquence FM crédible");
+                foreach (var real in RealRadioNames) StringAssert.DoesNotContain(real, s.name.ToLowerInvariant(), $"{s.id} : vrai nom de station");
                 Assert.IsNotEmpty(s.programmes, s.id);
                 Assert.AreEqual(s.programmes.Length, s.programmes.Select(p => p.id).Distinct().Count(), s.id);
+                Assert.IsTrue(s.programmes.Any(p => p.text.Length > 0), $"{s.id} : au moins une annonce en texte");
                 foreach (var p in s.programmes)
                 {
-                    Assert.AreEqual("", p.clip, $"{s.id}/{p.id} : aucun son fourni par Claude (emplacement vide).");
-                    StringAssert.Contains("à fournir par Kevin", p.title);
                     CollectionAssert.Contains(new[] { "musique", "emission", "publicite", "flash" }, p.kind, p.id);
                     Assert.GreaterOrEqual(p.seconds, 0f);
+                    if (p.text.Length > 0)
+                    {
+                        Assert.AreEqual("proposée", p.statut, $"{s.id}/{p.id}");
+                        CollectionAssert.Contains(TaxiKmer.Core.Talk.TalkRegisters.All, p.register, $"{s.id}/{p.id}");
+                        Assert.IsTrue(p.traduction == "" || p.traduction == "à traduire", p.id);
+                        Assert.LessOrEqual(p.text.Length, 110, $"{s.id}/{p.id} : lisible en conduisant");
+                    }
+                    if (p.clip.Length > 0)
+                    {
+                        CollectionAssert.Contains(new[] { "CC0", "CC-BY" }, p.licence, $"{s.id}/{p.id} : CC0 ou CC-BY seulement (radio.md)");
+                        Assert.IsNotEmpty(p.credit, $"{s.id}/{p.id} : crédit obligatoire");
+                        Assert.IsNotEmpty(p.source, $"{s.id}/{p.id} : source obligatoire");
+                    }
+                    else Assert.AreEqual("", p.licence, $"{s.id}/{p.id} : pas de licence sans son");
                 }
+            }
+            var all = r.stations.SelectMany(s => s.programmes).Where(p => p.text.Length > 0).ToList();
+            Assert.IsTrue(all.Any(p => p.kind == "emission") && all.Any(p => p.kind == "publicite"), "Animateurs et publicités.");
+            foreach (var reg in TaxiKmer.Core.Talk.TalkRegisters.All)
+                Assert.IsTrue(all.Any(p => p.register == reg && p.traduction == ""), $"Animateur ou publicité en {reg}");
+            foreach (var e in TaxiKmer.Core.Radio.RadioEvents.All)
+                Assert.IsTrue(r.flashes.Any(f => f.@event == e), $"Flash pour « {e} »");
+            foreach (var f in r.flashes)
+            {
+                CollectionAssert.Contains(TaxiKmer.Core.Radio.RadioEvents.All, f.@event, f.id);
+                Assert.AreEqual("proposée", f.statut, f.id);
+                Assert.IsFalse(TaxiKmer.Core.Police.PoliceTexts.IsCrude(f.text), $"{f.id} : ton réaliste");
             }
             // Aucun fichier son ni musique dans le dépôt.
             var assets = Path.Combine(Path.GetDirectoryName(SourceDataDir), "..");
             var audio = Directory.GetFiles(assets, "*.*", SearchOption.AllDirectories)
                 .Where(f => new[] { ".mp3", ".ogg", ".wav", ".aiff", ".flac", ".m4a" }.Contains(Path.GetExtension(f).ToLowerInvariant())).ToList();
-            CollectionAssert.IsEmpty(audio, "Les musiques sont à fournir par Kevin.");
+            CollectionAssert.IsEmpty(audio, "Aucun son ajouté par Claude.");
         }
 
         [Test]
