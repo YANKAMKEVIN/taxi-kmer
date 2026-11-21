@@ -1,7 +1,26 @@
 # Équilibrage : étude par simulation (2026-11-21)
 
-Demande de Kevin : « Teste plusieurs réglages et propose-moi le meilleur ». **Aucune valeur de jeu n'a été changée** :
-les réglages sont appliqués à des copies des données, en mémoire, par l'outil de simulation. C'est Kevin qui choisit.
+Demande de Kevin : « Teste plusieurs réglages et propose-moi le meilleur ». Pendant l'étude, aucune valeur de jeu n'a été
+changée : les réglages sont appliqués à des copies des données, en mémoire, par l'outil de simulation. C'est Kevin qui choisit.
+
+## Décision de Kevin (21/11 au soir) : réglage recommandé appliqué
+
+**Carburant ×1, prix ×2 (600 à 1 600 FCFA), versement de 6 000 FCFA**, appliqués dans `fuel.json`, `fares.json` et
+`day.json` (et les valeurs par défaut du code). Étude relancée sur les données du jeu (`tools/test_core.sh
+"Name=Decision_Report"`, mêmes graines) : le chiffre attendu est confirmé.
+
+| Cas (avant le renouvellement des papiers) | Versement | Versement atteint | Reste moyen / jour | Recette | Carburant acheté | Frais imprévus | Renvoyé en 7 j | Renvoyé en 14 j | Épargne à 7 j (moy. / méd.) |
+|---|---|---|---|---|---|---|---|---|---|
+| sans trafic, 200 carrières | 5 000 | 68 % | 1 983 | 15 342 | 1 429 | 6 930 | 3 % | 6 % | 23 780 / 25 900 |
+| sans trafic, 200 carrières | **6 000** | **65 %** | 983 | 15 342 | 1 429 | 6 930 | 6 % | 10 % | 18 440 / 19 750 |
+| sans trafic, 200 carrières | 7 000 | 62 % | -17 | 15 342 | 1 429 | 6 930 | 9 % | 16 % | 13 693 / 14 550 |
+| avec trafic, 15 carrières | 5 000 | 57 % | -1 143 | 12 760 | 1 429 | 7 474 | 7 % | 20 % | 13 487 / 17 400 |
+| avec trafic, 15 carrières | **6 000** | **54 %** | -2 143 | 12 760 | 1 429 | 7 474 | 27 % | 40 % | 8 030 / 11 550 |
+| avec trafic, 15 carrières | 7 000 | 49 % | -3 143 | 12 760 | 1 429 | 7 474 | 33 % | 53 % | 4 130 / 6 050 |
+
+Depuis cette décision, `fares.json` vaut ×2 des prix de Yaoundé : dans l'outil, le multiplicateur de prix est relatif à
+`fares.json`, donc « prix ×2 » des tableaux ci-dessous (calculés sur les anciens prix, 300 à 800) correspond à « ×1 »
+aujourd'hui. `Decision_Report` et `DayContents_Report` prennent directement les réglages des données.
 
 Point de départ (données de `main`) : journée de 35 min, versement de 7 000 FCFA, carburant ×8 (`consumptionScale`),
 prix de 300 à 800 FCFA ; effets de la réputation, contrôles (jalon 4) et incidents de la route (jalon 6) actifs.
@@ -10,10 +29,10 @@ prix de 300 à 800 FCFA ; effets de la réputation, contrôles (jalon 4) et inci
 
 | | Réglage | Versement atteint (sans trafic / avec trafic) | Renvoyé en 14 jours (sans / avec) | Épargne après 7 jours (moyenne, sans / avec) |
 |---|---|---|---|---|
-| Aujourd'hui | carburant ×8, prix ×1, versement 7 000 | 3 % / 2 % | 100 % (le 4ᵉ jour) / 100 % | -35 936 / -38 097 |
+| Avant la décision | carburant ×8, prix ×1, versement 7 000 | 3 % / 2 % | 100 % (le 4ᵉ jour) / 100 % | -35 936 / -38 097 |
 | | carburant ×1, prix ×1, versement 7 000 | 15 % / – | 100 % (le 4ᵉ jour) | -14 405 |
 | | carburant ×1, prix ×1, versement 5 000 | 30 % / – | 96 % (le 6ᵉ jour) | -13 822 |
-| **Recommandé** | **carburant ×1, prix ×2, versement 6 000** | **65 % / 54 %** | **10 % / 40 %** | **18 440 / 8 030** |
+| **Recommandé, appliqué le 21/11** | **carburant ×1, prix ×2, versement 6 000** | **65 % / 54 %** | **10 % / 40 %** | **18 440 / 8 030** |
 | Plus facile | carburant ×1, prix ×2, versement 5 000 | 68 % / 57 % | 6 % / 20 % | 23 780 / 13 487 |
 | Plus dur | carburant ×1, prix ×2, versement 7 000 (celui de Kevin) | 62 % / 49 % | 16 % / 53 % | 13 693 / 4 130 |
 

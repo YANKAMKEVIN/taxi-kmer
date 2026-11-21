@@ -40,6 +40,13 @@ Tests : `Assets/Tests/EditMode/PoliceTests.cs` (13 tests, dont le ton des textes
 - **Réputation** : payer, refuser ou contester **ne la changent pas** (`reputationPaid` et `reputation` des issues à 0, vérifié par `PoliceTests.Reputation_PayRefuseContest_DoNotChangeIt` et `DataInvariantsTests`). Fuir ne la change pas non plus (valeur par défaut). En revanche, la réputation change la **chance d'être arrêté** (effet décidé au jalon 3 : ×1,3 à ×0,7).
 - **Activé** : `enabled: true`.
 
+## Décisions de Kevin du 21/11 au soir (après l'étude d'équilibrage)
+
+- **Équilibrage** : carburant ×1, prix des courses ×2 (600 à 1 600 FCFA), versement de 6 000 FCFA (`jalon-03.md`,
+  « Équilibrage appliqué »). Rien ne change dans `police.json` ; les contrôles restent le premier poste de frais imprévus
+  (≈ 3 600 FCFA par journée pour le joueur moyen, `equilibrage.md`), mais la recette doublée les absorbe : versement
+  atteint dans 65 % des journées sans trafic, 54 % avec.
+
 ## Valeurs par défaut encore ouvertes (à confirmer par Kevin)
 
 - **Sommes demandées** : papier expiré 5 000, surcharge 3 000, prétexte 1 000 à 3 000, recherché 10 000 ; fourrière 15 000 FCFA.
@@ -79,7 +86,7 @@ Questions 1 à 5, 7 et 8 tranchées ; **6 (sommes, fréquence) et 9 (positions d
 3. ~~Contester~~ → **option B, tranché par Kevin le 21/11** (1 chance sur 3 si inventé et papiers en règle, sinon fourrière possible). Ancienne question : **Contester peut-il gagner** (question 3) ? Propositions : **A.** jamais (perd, paie plus) ; **B.** parfois, seulement si le problème est inventé et les papiers en règle (par ex. 1 chance sur 3), sinon fourrière possible ; **C.** selon la réputation (quand Kevin aura décidé de ses effets). Réglable : poids de `gagne` / `fourriere` dans `contestOutcomes`.
 4. ~~Fuir~~ → **option B, tranché par Kevin le 21/11** (poursuite, fourrière ou arrestation au prochain poste). Ancienne question : **Fuir un contrôle** (question 4) ? Non codé. Propositions : **A.** impossible (le policier se met devant) ; **B.** possible, avec poursuite et risque de fourrière ou d'arrestation au prochain poste ; **C.** possible seulement sur un contrôle volant.
 5. ~~Appeler quelqu'un~~ → **option B, tranché par Kevin le 21/11** (marche avec un contact ; crochet du jalon 7, coupé). Ancienne question : **Appeler quelqu'un** : qui (un « grand frère », le propriétaire, un ami policier) et ce que ça change ? Propositions : **A.** coûte du temps, marche rarement ; **B.** marche si on a un contact (événement de vie, jalon 7) ; **C.** le propriétaire paie et le retient sur l'épargne.
-6. **Sommes demandées** et **fréquence** : valeurs ci-dessus à confirmer (combien de contrôles par jour, combien demandé) ; à mettre en face de l'équilibrage du jalon 3 (journée de 35 min : 6 600 à 10 500 FCFA de recette pour ≈ 11 400 de carburant ; le versement n'est déjà pas atteint).
+6. **Sommes demandées** et **fréquence** : valeurs ci-dessus à confirmer (combien de contrôles par jour, combien demandé) ; à mettre en face de l'équilibrage (depuis le 21/11 au soir : carburant ×1, prix ×2, versement 6 000 ; les contrôles coûtent ≈ 3 600 FCFA par journée au joueur moyen, `equilibrage.md`).
 7. ~~Fourrière~~ → **tranché par Kevin le 21/11 : renvoyé seulement à la 2ᵉ fois.** Ancienne question : **Fourrière** : la journée s'arrête et coûte 15 000 FCFA (provisoire) ; le propriétaire renvoie-t-il le chauffeur, comme pour une saisie ? (non par défaut).
 8. ~~Réputation~~ → **tranché par Kevin le 21/11 : payer, refuser ou contester ne la changent pas.** Ancienne question : **Réputation** : payer, refuser ou contester changent-ils la réputation ? Dans quel sens (0 par défaut) ?
 9. **Positions des postes fixes** sur la portion (comme les feux et la station).

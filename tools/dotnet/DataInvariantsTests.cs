@@ -237,7 +237,11 @@ namespace TaxiKmer.Core.DotnetTests
             Assert.That(d.dayLengthRealSeconds, Is.InRange(1800f, 2400f), "Piste B : journée de 30 à 40 min réelles.");
             var f = Load<FuelConfig>("fuel.json");
             Assert.AreEqual(8f, d.fuelLitresPer100Km, "Carburant : réalisme actuel gardé.");
-            Assert.AreEqual(8f, f.consumptionScale, "Carburant : réalisme actuel gardé.");
+            Assert.AreEqual(1f, f.consumptionScale, "Équilibrage (Kevin, 21/11) : carburant ×1, consommation réelle.");
+            Assert.AreEqual(6000, d.versement, "Équilibrage (Kevin, 21/11) : versement de 6 000 FCFA.");
+            var fares = Load<FareConfig>("fares.json");
+            Assert.AreEqual(600, fares.bands.Min(b => b.fare), "Équilibrage (Kevin, 21/11) : prix ×2, de 600…");
+            Assert.AreEqual(1600, fares.longDistanceFare, "… à 1 600 FCFA.");
             Assert.Greater(f.pushKmh, 0f, "Panne sèche : on peut pousser…");
             Assert.Less(f.pushKmh, 8f, "… très lentement.");
             Assert.Greater(f.technicianDelayMinutes, 0, "Le technicien arrive après un délai…");

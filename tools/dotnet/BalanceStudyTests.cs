@@ -27,13 +27,17 @@ namespace TaxiKmer.Core.DotnetTests
         [Test]
         public void ScaleFares_RoundsTo50_AndKeepsDistances()
         {
-            var f = BalanceStudy.ScaleFares(FareConfig.Default(), 1.25f);
+            // Anciens prix de Yaoundé (300 à 800), sur lesquels la grille de l'étude a été calculée.
+            var yaounde = BalanceStudy.ScaleFares(FareConfig.Default(), 0.5f);
+            Assert.AreEqual(new[] { 300, 400, 500, 600 }, yaounde.bands.Select(b => b.fare).ToArray());
+            Assert.AreEqual(800, yaounde.longDistanceFare);
+            var f = BalanceStudy.ScaleFares(yaounde, 1.25f);
             Assert.AreEqual(new[] { 400, 500, 650, 750 }, f.bands.Select(b => b.fare).ToArray()); // 375 → 400, 625 → 650
             Assert.AreEqual(1000, f.longDistanceFare);
             Assert.AreEqual(2000, f.bands[0].maxDistanceMeters);
             var same = BalanceStudy.ScaleFares(FareConfig.Default(), 1f);
-            Assert.AreEqual(new[] { 300, 400, 500, 600 }, same.bands.Select(b => b.fare).ToArray());
-            Assert.AreEqual(800, same.longDistanceFare);
+            Assert.AreEqual(new[] { 600, 800, 1000, 1200 }, same.bands.Select(b => b.fare).ToArray());
+            Assert.AreEqual(1600, same.longDistanceFare);
         }
 
         [Test]
@@ -43,10 +47,11 @@ namespace TaxiKmer.Core.DotnetTests
             var s = new BalanceSetting { ConsumptionScale = 1.5f, PriceMultiplier = 2f, Versement = 5000 };
             Assert.AreEqual(1.5f, data.FuelFor(s).consumptionScale);
             Assert.AreEqual(5000, data.DayFor(s).versement);
-            Assert.AreEqual(600, data.FaresFor(s).bands[0].fare);
+            var first = BalanceBot.Load<FareConfig>("fares.json").bands[0].fare;
+            Assert.AreEqual(2 * first, data.FaresFor(s).bands[0].fare);
             // Les fichiers du jeu, relus, n'ont pas bougé.
             Assert.AreEqual(Current(data).ConsumptionScale, BalanceBot.Load<Fuel.FuelConfig>("fuel.json").consumptionScale);
-            Assert.AreEqual(300, BalanceBot.Load<FareConfig>("fares.json").bands[0].fare);
+            Assert.AreEqual(first, BalanceBot.Load<FareConfig>("fares.json").bands[0].fare);
         }
 
         [Test]
@@ -74,7 +79,7 @@ namespace TaxiKmer.Core.DotnetTests
             Assert.That(days.All(d => d.Summary.RideCount > 0), "Le joueur moyen fait des courses chaque jour.");
             Assert.Greater(days.Sum(d => d.Controls), 0, "Des contrôles de police en 4 jours.");
             Assert.Greater(days.Sum(d => d.PolicePaid), 0);
-            Assert.Greater(days.Sum(d => d.Summary.FuelCost), 0, "Du carburant acheté au carburant ×8.");
+            Assert.Greater(days.Sum(d => d.Summary.FuelCost), 0, "Du carburant acheté en 4 jours.");
             Assert.That(days.Any(d => d.Reputation != data.Reputation.start), "La réputation bouge et passe d'un jour à l'autre.");
         }
 
@@ -110,6 +115,9 @@ namespace TaxiKmer.Core.DotnetTests
         // Grille complète (≈ 5 min sur 4 cœurs) : tools/test_core.sh "Category=Equilibrage". Rapport dans
         // tools/dotnet/bin/Debug/net8.0/equilibrage/grille.md, recopié dans docs/tech/equilibrage.md.
 
+        // Multiplicateurs de la grille : consommation absolue (fuel.json → consumptionScale remplacé), prix relatifs à
+        // fares.json. Depuis la décision de Kevin du 21/11, fares.json vaut déjà ×2 des prix de Yaoundé : la grille de
+        // docs/tech/equilibrage.md a été calculée sur les anciens prix (300 à 800).
         public static readonly float[] Scales = { 1f, 1.5f, 2f, 3f, 4f, 8f };
         public static readonly float[] Prices = { 1f, 1.25f, 1.5f, 2f };
         public static readonly int[] Versements = { 5000, 6000, 7000 };
@@ -202,7 +210,30 @@ namespace TaxiKmer.Core.DotnetTests
             TestContext.WriteLine(sb.ToString());
         }
 
-        /// <summary>Ce qui se passe dans une journée type, conso ×1 et prix ×2, carrières de 14 jours (pour la méthode) : contrôles, incidents, disputes, concurrence.</summary>
+        /// <summary>
+        /// Réglage du jeu tel qu'il est dans les données (décision de Kevin du 21/11 : carburant ×1, prix ×2 soit
+        /// 600 à 1 600 FCFA, versement 6 000) : 200 carrières de 14 jours sans trafic et 15 avec le trafic, versements
+        /// 5 000 / 6 000 / 7 000 pour situer. Rapport : equilibrage/decision.md.
+        /// </summary>
+        [Test, Explicit("Long : lancer à la demande"), Category("Equilibrage")]
+        public void Decision_Report()
+        {
+            var sb = new StringBuilder();
+            var current = Current(GameData.Load());
+            sb.AppendLine($"Données du jeu : conso ×{BalanceStudy.Num(current.ConsumptionScale)}, fares.json ×1, versement {BalanceStudy.Money(current.Versement)} (day.json).");
+            sb.AppendLine();
+            sb.AppendLine(BalanceStudy.TableHeader.Replace("{H}", Horizon.ToString()).Replace("| Conso |", "| Cas | Conso |").Replace("\n|---|", "\n|---|---|"));
+            foreach (var (name, withCity, careers) in new[] { ("sans trafic, 200 carrières", false, 200), ("avec trafic, 15 carrières", true, 15) })
+            {
+                var data = GameData.Load(withWorld: withCity);
+                foreach (var r in BalanceStudy.RunCareers(data, current.ConsumptionScale, 1f, Versements, careers, Horizon, new AveragePlayer { WithCity = withCity }))
+                    sb.AppendLine("| " + name + " " + BalanceStudy.Row(r));
+            }
+            Write("decision.md", sb.ToString());
+            TestContext.WriteLine(sb.ToString());
+        }
+
+        /// <summary>Ce qui se passe dans une journée type, réglage des données (conso et prix de fuel.json et fares.json), carrières de 14 jours (pour la méthode) : contrôles, incidents, disputes, concurrence.</summary>
         [Test, Explicit("Long : lancer à la demande"), Category("Equilibrage")]
         public void DayContents_Report()
         {
@@ -215,7 +246,7 @@ namespace TaxiKmer.Core.DotnetTests
             {
                 var days = new List<StudyDay>();
                 for (var k = 0; k < careers; k++)
-                    days.AddRange(BalanceStudy.PlayCareer(data, new BalanceSetting { ConsumptionScale = 1f, PriceMultiplier = 2f, Versement = 7000 }, p, Horizon, 500 + k));
+                    days.AddRange(BalanceStudy.PlayCareer(data, Current(data), p, Horizon, 500 + k));
                 double n = days.Count;
                 var byLabel = new SortedDictionary<string, double>();
                 foreach (var d in days)

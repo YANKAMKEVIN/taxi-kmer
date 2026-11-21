@@ -1,9 +1,9 @@
 {
-    "_note": "Journée de travail. dayLengthRealSeconds : durée de startHour à endHour en secondes réelles ; 2100 = 35 min (décision de Kevin du 2026-11-21, piste B de l'équilibrage : 30 à 40 min, soit 1800 à 2400). versement : somme due au propriétaire chaque jour (FCFA) ; environ 7 000, tranché par Kevin le 21/11 (2026). fuelPricePerLitre et fuelLitresPer100Km : prix et consommation réelle du carburant (réalisme gardé, décision de Kevin).",
+    "_note": "Journée de travail. dayLengthRealSeconds : durée de startHour à endHour en secondes réelles ; 2100 = 35 min (décision de Kevin du 2026-11-21, piste B de l'équilibrage : 30 à 40 min, soit 1800 à 2400). versement : somme due au propriétaire chaque jour (FCFA) ; 6 000, tranché par Kevin le 21/11 (2026) après l'étude d'équilibrage (docs/tech/equilibrage.md, réglage recommandé : carburant ×1, prix ×2, versement 6 000) ; avant : 7 000. fuelPricePerLitre et fuelLitresPer100Km : prix et consommation réelle du carburant (réalisme gardé, décision de Kevin).",
     "dayLengthRealSeconds": 2100,
     "startHour": 6,
     "endHour": 20,
-    "versement": 7000,
+    "versement": 6000,
     "fuelPricePerLitre": 840,
     "fuelLitresPer100Km": 8
 }

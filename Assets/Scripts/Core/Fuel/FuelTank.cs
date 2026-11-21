@@ -25,10 +25,11 @@ namespace TaxiKmer.Core.Fuel
         /// <summary>Réservoir au début d'une carrière (L) ; ensuite, il passe d'un jour à l'autre.</summary>
         public float startLitres = 12f;
         /// <summary>
-        /// Multiplie la consommation réelle (day.json : fuelLitresPer100Km) : une journée de jeu fait peu de kilomètres,
-        /// ce facteur lui fait consommer comme une vraie journée de taxi (sinon la jauge ne bougerait presque pas).
+        /// Multiplie la consommation réelle (day.json : fuelLitresPer100Km). 1 = consommation réelle, tranché par Kevin le
+        /// 21/11 après l'étude d'équilibrage (docs/tech/equilibrage.md) : avec la journée de 35 min, la consommation
+        /// réelle est déjà à l'échelle des kilomètres parcourus (avant : 8, choisi pour une journée de 10 min).
         /// </summary>
-        public float consumptionScale = 8f;
+        public float consumptionScale = 1f;
         /// <summary>Un appui sur le bouton à la station achète pour ce montant (on « met 2 000 »), sans dépasser le plein.</summary>
         public int refuelStepFcfa = 2000;
         /// <summary>Zone de la station le long de l'itinéraire (m de part et d'autre).</summary>
