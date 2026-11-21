@@ -1,9 +1,10 @@
 {
+    "_note": "Prix d'une place en course partagée selon la distance (FCFA). Prix ×2 tranché par Kevin le 21/11 après l'étude d'équilibrage (docs/tech/equilibrage.md, réglage recommandé : carburant ×1, prix ×2, versement 6 000) : 600 à 1 600 FCFA ; avant : 300 à 800 (prix réels de Yaoundé).",
     "bands": [
-        { "maxDistanceMeters": 2000, "fare": 300 },
-        { "maxDistanceMeters": 4000, "fare": 400 },
-        { "maxDistanceMeters": 7000, "fare": 500 },
-        { "maxDistanceMeters": 10000, "fare": 600 }
+        { "maxDistanceMeters": 2000, "fare": 600 },
+        { "maxDistanceMeters": 4000, "fare": 800 },
+        { "maxDistanceMeters": 7000, "fare": 1000 },
+        { "maxDistanceMeters": 10000, "fare": 1200 }
     ],
-    "longDistanceFare": 800
+    "longDistanceFare": 1600
 }

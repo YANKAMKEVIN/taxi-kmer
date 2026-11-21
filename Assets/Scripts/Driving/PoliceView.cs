@@ -28,10 +28,11 @@ namespace TaxiKmer.Driving
         private readonly List<ControlChoice> _choices = new List<ControlChoice>();
         private float _lastAlong = -1f;
 
-        public PoliceView(RectTransform overlay, Font font, PoliceConfig config, int day, float routeLength, int startMinute, int endMinute, int seed)
+        /// <param name="papers">Papiers de la carrière (sauvegardés, renouvelés au début de la journée) ; null : ceux du début de carrière.</param>
+        public PoliceView(RectTransform overlay, Font font, PoliceConfig config, PaperSet papers, int day, float routeLength, int startMinute, int endMinute, int seed)
         {
             _config = config;
-            Police = new PoliceDay(config, new PaperSet(config), new PoliceContacts(config), day, routeLength, startMinute, endMinute, new System.Random(seed));
+            Police = new PoliceDay(config, papers ?? new PaperSet(config), new PoliceContacts(config), day, routeLength, startMinute, endMinute, new System.Random(seed));
             _panel = UiKit.NewImage(overlay, "Contrôle de police", new Color(0.08f, 0.1f, 0.18f, 0.92f), UiKit.Rounded);
             _text = UiKit.NewText(_panel.transform, font, TextAnchor.UpperCenter, Color.white);
             for (var i = 0; i < 5; i++)

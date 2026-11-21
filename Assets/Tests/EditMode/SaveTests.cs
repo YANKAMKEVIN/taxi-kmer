@@ -199,10 +199,73 @@ namespace TaxiKmer.Core.Tests
             storage.Files[SaveStore.MainFile] = Serializer.ToJson(new SaveEnvelope { version = 4, checksum = SaveStore.Checksum(payload), payload = payload });
             var r = new SaveStore(storage, Serializer).Load();
             Assert.AreEqual(LoadStatus.Loaded, r.Status);
-            Assert.AreEqual(5, SaveMigrations.CurrentVersion);
+            Assert.GreaterOrEqual(SaveMigrations.CurrentVersion, 5);
             Assert.AreEqual(0, r.Data.career.impounds, "Avant la version 5 : aucune fourrière comptée.");
             Assert.AreEqual(0f, r.Data.career.vehicleDamage);
             Assert.AreEqual(3, r.Data.career.dayNumber);
+        }
+
+        [Test]
+        public void Version5File_UpgradesTo6_PapersFromCareerStart()
+        {
+            // Version 6 (décision de Kevin du 21/11) : dates des papiers, renouvelés automatiquement. Avant : aucune date.
+            var payload = "{\"version\":5,\"career\":{\"dayNumber\":20,\"savings\":3000}}";
+            var storage = new MemoryStorage();
+            storage.Files[SaveStore.MainFile] = Serializer.ToJson(new SaveEnvelope { version = 5, checksum = SaveStore.Checksum(payload), payload = payload });
+            var r = new SaveStore(storage, Serializer).Load();
+            Assert.AreEqual(LoadStatus.Loaded, r.Status);
+            Assert.AreEqual(6, SaveMigrations.CurrentVersion);
+            Assert.IsNotNull(r.Data.career.papers);
+            Assert.IsEmpty(r.Data.career.papers);
+            var police = new Police.PoliceConfig();
+            var papers = SaveSnapshot.LoadPapers(r.Data, police);
+            Assert.AreEqual(12, papers.LastValidDay("assurance"), "Sans date : papiers du début de carrière (jour 1), comme avant.");
+            // Au début du jour 20, l'assurance expirée depuis le jour 13 se renouvelle (gratuite : jalon-04.md).
+            var career = SaveSnapshot.LoadCareer(r.Data, new Career.OwnerConfig());
+            var done = SaveSnapshot.RenewPapersAtDayStart(r.Data, papers, career, police);
+            Assert.AreEqual(1, done.Count);
+            Assert.AreEqual(20 + 30 - 1, papers.LastValidDay("assurance"));
+            Assert.AreEqual(3000, r.Data.career.savings);
+        }
+
+        [Test]
+        public void Papers_RenewedAtDayStart_DatesAndSavingsSaved_RoundTrip()
+        {
+            var police = new Police.PoliceConfig();
+            police.papers[2].renewalCost = 4000; // assurance (montant d'essai)
+            var data = new SaveData();
+            data.career.dayNumber = 13;
+            data.career.savings = 10000;
+            var career = SaveSnapshot.LoadCareer(data, new Career.OwnerConfig());
+            var papers = SaveSnapshot.LoadPapers(data, police);
+            var done = SaveSnapshot.RenewPapersAtDayStart(data, papers, career, police);
+            Assert.AreEqual(1, done.Count);
+            Assert.IsTrue(done[0].Renewed);
+            Assert.AreEqual(6000, career.Savings);
+            Assert.AreEqual(6000, data.career.savings, "L'épargne payée est gardée tout de suite.");
+
+            var storage = new MemoryStorage();
+            Assert.IsTrue(new SaveStore(storage, Serializer).Save(data));
+            var back = new SaveStore(storage, Serializer).Load().Data;
+            var again = SaveSnapshot.LoadPapers(back, police);
+            Assert.AreEqual(13 + 30 - 1, again.LastValidDay("assurance"));
+            Assert.AreEqual(25, again.LastValidDay("visite-technique"));
+            Assert.AreEqual(int.MaxValue, again.LastValidDay("permis"));
+            // Même journée relancée (application fermée puis rouverte) : rien à payer deux fois.
+            var career2 = SaveSnapshot.LoadCareer(back, new Career.OwnerConfig());
+            Assert.IsEmpty(SaveSnapshot.RenewPapersAtDayStart(back, again, career2, police));
+            Assert.AreEqual(6000, career2.Savings);
+        }
+
+        [Test]
+        public void Papers_AutoRenewOff_NothingRenewed()
+        {
+            var police = new Police.PoliceConfig { autoRenewPapers = false };
+            var data = new SaveData();
+            data.career.dayNumber = 20;
+            var papers = SaveSnapshot.LoadPapers(data, police);
+            Assert.IsEmpty(SaveSnapshot.RenewPapersAtDayStart(data, papers, SaveSnapshot.LoadCareer(data, new Career.OwnerConfig()), police));
+            Assert.IsFalse(papers.IsValid("assurance", 20));
         }
 
         [Test]

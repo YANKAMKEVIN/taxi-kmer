@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using TaxiKmer.Core.Career;
+using TaxiKmer.Core.Police;
 using TaxiKmer.Core.Rides;
 using TaxiKmer.Core.Save;
 using UnityEngine;
@@ -154,6 +156,20 @@ namespace TaxiKmer.Driving
             SaveSnapshot.RecordDay(Data, street.Street.Summary, closure, Career);
             Write();
             return closure;
+        }
+
+        /// <summary>
+        /// Début de journée : papiers de la carrière, et renouvellement automatique de ceux arrivés à échéance, payés sur
+        /// l'épargne (décision de Kevin du 21/11 ; épargne insuffisante : le papier reste expiré). Écrit la sauvegarde si
+        /// quelque chose a été renouvelé. Rend les papiers et les messages à afficher.
+        /// </summary>
+        public PaperSet StartDayPapers(PoliceConfig police, List<string> messages)
+        {
+            var papers = SaveSnapshot.LoadPapers(Data, police);
+            var done = SaveSnapshot.RenewPapersAtDayStart(Data, papers, Career, police);
+            foreach (var r in done) messages?.Add(PoliceTexts.Renewal(r));
+            if (done.Exists(r => r.Renewed)) Write();
+            return papers;
         }
 
         /// <summary>Nouvelle carrière après un renvoi : la sauvegarde repart de zéro (l'ancienne reste en copie de secours).</summary>

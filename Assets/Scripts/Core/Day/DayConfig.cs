@@ -9,8 +9,11 @@ namespace TaxiKmer.Core.Day
         public float dayLengthRealSeconds = 2100f;
         public int startHour = 6;
         public int endHour = 20;
-        /// <summary>Versement dû chaque jour (FCFA) : environ 7 000, tranché par Kevin le 21/11 (2026).</summary>
-        public int versement = 7000;
+        /// <summary>
+        /// Versement dû chaque jour (FCFA) : 6 000, tranché par Kevin le 21/11 (2026) après l'étude d'équilibrage
+        /// (docs/tech/equilibrage.md) ; avant : 7 000.
+        /// </summary>
+        public int versement = 6000;
         public int fuelPricePerLitre = 840;
         public float fuelLitresPer100Km = 8f;
     }

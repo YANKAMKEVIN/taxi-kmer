@@ -90,6 +90,16 @@ namespace TaxiKmer.Core.Career
             return c;
         }
 
+        /// <summary>
+        /// Paie une dépense hors journée sur l'épargne (renouvellement des papiers au début de la journée, décision de
+        /// Kevin du 21/11). Le contrôle « assez d'épargne ? » est fait par l'appelant.
+        /// </summary>
+        public void PayFromSavings(int amount)
+        {
+            if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            Savings -= amount;
+        }
+
         /// <summary>Versements manqués dans la fenêtre qui se termine au jour <paramref name="day"/>.</summary>
         public int MissesInWindow(int day)
         {

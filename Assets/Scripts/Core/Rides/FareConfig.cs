@@ -12,13 +12,14 @@ namespace TaxiKmer.Core.Rides
 
     /// <summary>
     /// Prix proposés par les clients selon la distance (données : Assets/Resources/Data/fares.json).
-    /// Au-delà de la dernière tranche, le client propose longDistanceFare.
+    /// Au-delà de la dernière tranche, le client propose longDistanceFare. Prix ×2 des prix de Yaoundé (600 à 1 600 FCFA
+    /// au lieu de 300 à 800), tranché par Kevin le 21/11 après l'étude d'équilibrage (docs/tech/equilibrage.md).
     /// </summary>
     [Serializable]
     public class FareConfig
     {
         public FareBand[] bands = Array.Empty<FareBand>();
-        public int longDistanceFare = 800;
+        public int longDistanceFare = 1600;
 
         public int FareFor(int distanceMeters)
         {
@@ -34,12 +35,12 @@ namespace TaxiKmer.Core.Rides
             {
                 bands = new[]
                 {
-                    new FareBand { maxDistanceMeters = 2000, fare = 300 },
-                    new FareBand { maxDistanceMeters = 4000, fare = 400 },
-                    new FareBand { maxDistanceMeters = 7000, fare = 500 },
-                    new FareBand { maxDistanceMeters = 10000, fare = 600 },
+                    new FareBand { maxDistanceMeters = 2000, fare = 600 },
+                    new FareBand { maxDistanceMeters = 4000, fare = 800 },
+                    new FareBand { maxDistanceMeters = 7000, fare = 1000 },
+                    new FareBand { maxDistanceMeters = 10000, fare = 1200 },
                 },
-                longDistanceFare = 800,
+                longDistanceFare = 1600,
             };
         }
     }

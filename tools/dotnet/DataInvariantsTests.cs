@@ -237,7 +237,11 @@ namespace TaxiKmer.Core.DotnetTests
             Assert.That(d.dayLengthRealSeconds, Is.InRange(1800f, 2400f), "Piste B : journée de 30 à 40 min réelles.");
             var f = Load<FuelConfig>("fuel.json");
             Assert.AreEqual(8f, d.fuelLitresPer100Km, "Carburant : réalisme actuel gardé.");
-            Assert.AreEqual(8f, f.consumptionScale, "Carburant : réalisme actuel gardé.");
+            Assert.AreEqual(1f, f.consumptionScale, "Équilibrage (Kevin, 21/11) : carburant ×1, consommation réelle.");
+            Assert.AreEqual(6000, d.versement, "Équilibrage (Kevin, 21/11) : versement de 6 000 FCFA.");
+            var fares = Load<FareConfig>("fares.json");
+            Assert.AreEqual(600, fares.bands.Min(b => b.fare), "Équilibrage (Kevin, 21/11) : prix ×2, de 600…");
+            Assert.AreEqual(1600, fares.longDistanceFare, "… à 1 600 FCFA.");
             Assert.Greater(f.pushKmh, 0f, "Panne sèche : on peut pousser…");
             Assert.Less(f.pushKmh, 8f, "… très lentement.");
             Assert.Greater(f.technicianDelayMinutes, 0, "Le technicien arrive après un délai…");
@@ -279,6 +283,8 @@ namespace TaxiKmer.Core.DotnetTests
             Assert.IsTrue(p.fleeEnabled && p.fleeOutcomes.Any(o => o.wanted) && p.fleeOutcomes.Any(o => o.impound), "Fuir : poursuite, fourrière ou recherché.");
             Assert.IsTrue(p.wantedOutcomes.Any(o => o.impound) && p.wantedOutcomes.Any(o => o.arrest), "Recherché : fourrière ou arrestation au prochain poste.");
             Assert.AreEqual(2, Load<OwnerConfig>("owner.json").impoundsBeforeFired, "Fourrière : renvoyé à la 2ᵉ fois.");
+            Assert.IsTrue(p.autoRenewPapers, "Papiers renouvelés automatiquement à l'échéance, payés sur l'épargne (Kevin, 21/11).");
+            foreach (var x in p.papers) Assert.GreaterOrEqual(x.renewalCost, 0, x.id);
             var stops = Load<StopsConfig>("stops_messassi_etoudi.json");
             var end = stops.stops[stops.stops.Length - 1].distanceAlongRouteMeters;
             foreach (var c in p.checkpoints) Assert.That(c.distanceAlongRouteMeters, Is.InRange(0f, end), c.id);

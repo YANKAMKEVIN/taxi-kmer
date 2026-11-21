@@ -15,6 +15,90 @@ namespace TaxiKmer.Core.Tests
             return c;
         }
 
+        private static (PoliceConfig, PaperSet, Career.DriverCareer) Renewal(int day, int savings, int insuranceCost, int technicalCost = 0)
+        {
+            var config = new PoliceConfig();
+            config.papers[2].renewalCost = insuranceCost;   // assurance (montants d'essai)
+            config.papers[3].renewalCost = technicalCost;   // visite technique
+            var career = Career.DriverCareer.Restore(new Career.OwnerConfig(), day, savings, null, false);
+            return (config, new PaperSet(config), career);
+        }
+
+        [Test]
+        public void AutoRenewal_AtDeadline_PaidFromSavings()
+        {
+            // Décision de Kevin (21/11) : renouvelés à l'échéance, payés sur l'épargne.
+            var (_, papers, career) = Renewal(12, 20000, 12000);
+            Assert.IsEmpty(PaperRenewal.AtDayStart(papers, career), "Jour 12 : l'assurance est encore valable, rien à faire.");
+            Assert.AreEqual(20000, career.Savings);
+
+            (_, papers, career) = Renewal(13, 20000, 12000);
+            var done = PaperRenewal.AtDayStart(papers, career);
+            Assert.AreEqual(1, done.Count);
+            Assert.AreEqual("assurance", done[0].Paper.id);
+            Assert.IsTrue(done[0].Renewed);
+            Assert.AreEqual(8000, career.Savings);
+            Assert.AreEqual(13 + 30 - 1, papers.LastValidDay("assurance"), "Pas de trou : la nouvelle période part de l'échéance.");
+            Assert.IsTrue(papers.IsValid("assurance", 13));
+            Assert.AreEqual("Assurance renouvelée (12 000 FCFA pris sur l'épargne).", PoliceTexts.Renewal(done[0]));
+            Assert.AreEqual(ControlFindingKind.Invented, PoliceControl.Find(new PoliceConfig { inventChanceWhenInOrder = 1f }, papers, 13, 1, 0, new Random(1)).Kind,
+                "Papiers renouvelés : le contrôle n'a plus de vrai problème à trouver.");
+        }
+
+        [Test]
+        public void AutoRenewal_NotEnoughSavings_StaysExpired_Announced_RetriedNextDay()
+        {
+            // Valeur par défaut de Claude (à confirmer par Kevin) : le papier reste expiré, un message l'annonce.
+            var (config, papers, career) = Renewal(13, 5000, 12000);
+            var done = PaperRenewal.AtDayStart(papers, career);
+            Assert.AreEqual(1, done.Count);
+            Assert.IsFalse(done[0].Renewed);
+            Assert.AreEqual(5000, career.Savings, "Rien n'est pris.");
+            Assert.IsFalse(papers.IsValid("assurance", 13));
+            Assert.AreEqual(12, done[0].LastValidDay);
+            var text = PoliceTexts.Renewal(done[0]);
+            Assert.AreEqual("Assurance expirée : pas assez d'épargne pour la renouveler (12 000 FCFA). Gare aux contrôles.", text);
+            Assert.IsFalse(PoliceTexts.IsCrude(text));
+            Assert.AreEqual(ControlFindingKind.ExpiredPaper, PoliceControl.Find(config, papers, 13, 1, 0, new Random(1)).Kind);
+
+            // Le lendemain, avec assez d'épargne : renouvelée à partir de ce jour.
+            var next = Career.DriverCareer.Restore(new Career.OwnerConfig(), 14, 15000, null, false);
+            done = PaperRenewal.AtDayStart(papers, next);
+            Assert.IsTrue(done[0].Renewed);
+            Assert.AreEqual(3000, next.Savings);
+            Assert.AreEqual(14 + 30 - 1, papers.LastValidDay("assurance"));
+        }
+
+        [Test]
+        public void AutoRenewal_SavingsShared_InDataOrder()
+        {
+            // Deux papiers à échéance le même jour : l'épargne paie le premier (ordre des données), pas le second.
+            var (_, papers, career) = Renewal(30, 10000, 8000, 6000);
+            var done = PaperRenewal.AtDayStart(papers, career);
+            Assert.AreEqual(new[] { "assurance", "visite-technique" }, new[] { done[0].Paper.id, done[1].Paper.id });
+            Assert.IsTrue(done[0].Renewed);
+            Assert.IsFalse(done[1].Renewed);
+            Assert.AreEqual(2000, career.Savings);
+            Assert.AreEqual(8000, PaperRenewal.TotalPaid(done));
+        }
+
+        [Test]
+        public void AutoRenewal_Free_AlwaysRenewed_EvenInDebt()
+        {
+            // Montants de jalon-04.md : 0 FCFA pour tous les papiers ; une épargne négative n'empêche rien.
+            var (_, papers, career) = Renewal(13, -4000, 0);
+            var done = PaperRenewal.AtDayStart(papers, career);
+            Assert.IsTrue(done[0].Renewed);
+            Assert.AreEqual(-4000, career.Savings);
+            Assert.AreEqual("Assurance renouvelée.", PoliceTexts.Renewal(done[0]));
+            // Toute une carrière : les papiers ne sont jamais expirés au moment de rouler.
+            for (var day = 14; day <= 400; day++)
+            {
+                PaperRenewal.AtDayStart(papers, Career.DriverCareer.Restore(new Career.OwnerConfig(), day, 0, null, false));
+                Assert.IsEmpty(papers.Expired(day), $"jour {day}");
+            }
+        }
+
         [Test]
         public void Papers_ExpireAndRenew()
         {
