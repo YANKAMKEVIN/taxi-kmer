@@ -60,6 +60,7 @@ namespace TaxiKmer.Core.DotnetTests
             ["dialogues.json"] = typeof(TaxiKmer.Core.Talk.DialogueConfig),
             ["road.json"] = typeof(TaxiKmer.Core.Road.RoadConfig),
             ["home.json"] = typeof(TaxiKmer.Core.Home.HomeConfig),
+            ["ride_types.json"] = typeof(RideTypesConfig),
         };
 
         [Test]
@@ -295,6 +296,19 @@ namespace TaxiKmer.Core.DotnetTests
                     Assert.GreaterOrEqual(c.everyDays, 1);
                 }
             foreach (var e in h.lifeEvents) Assert.AreEqual(0f, e.chancePerDay, e.id);
+        }
+
+        [Test]
+        public void RideTypes_MatchDefaults_OnlySharedUntilKevinDecides()
+        {
+            var r = Load<RideTypesConfig>("ride_types.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new RideTypesConfig(), Opts), JsonSerializer.Serialize(r, Opts));
+            Assert.IsFalse(r.enabled);
+            Assert.AreEqual(0f, r.app.commission, "Commission : question 2 du jalon 8.");
+            Assert.AreEqual(0f, r.app.ordersPerHour);
+            Assert.AreEqual(0f, r.depot.depotClientChance);
+            Assert.AreEqual(Load<SeatingConfig>("seating.json").frontMaxPassengers + Load<SeatingConfig>("seating.json").backMaxPassengers, r.depot.seatsPaid,
+                "Un dépôt paie toutes les places du taxi.");
         }
 
         [Test]

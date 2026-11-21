@@ -1,6 +1,6 @@
 # État du projet — Taxi Kmer
 
-**Phase** : jalons 4 à 7 ouverts (logique pure, coupée en attendant Kevin, 2026-11-21) ; jalon 1 terminé côté code (validation sur téléphone en attente) ; jalon 2 « La ville vit » ouvert le 2026-11-14 (`docs/tech/jalon-02.md`) ; jalon 3, partie technique (sauvegarde) ouverte le 2026-11-15 à la demande de Kevin (`docs/tech/jalon-03.md`).
+**Phase** : jalons 4 à 8 ouverts (logique pure, coupée en attendant Kevin, 2026-11-21) ; jalon 1 terminé côté code (validation sur téléphone en attente) ; jalon 2 « La ville vit » ouvert le 2026-11-14 (`docs/tech/jalon-02.md`) ; jalon 3, partie technique (sauvegarde) ouverte le 2026-11-15 à la demande de Kevin (`docs/tech/jalon-03.md`).
 
 **Décidé** (Kevin, 2026-11-11) : nom « Taxi Kmer » ; dépôt séparé de Pokemake ; trois types de course (partagée, dépôt, via une appli fictive) ; monde libre ; style réaliste ; Unity 6.3 LTS (6000.3.28f1, URP) avec réglages bas / moyen / haut ; Street View et internet = référence seulement, textures libres puis photos sur place fournies par Kevin.
 
@@ -23,6 +23,8 @@
 **Jalon 6 « La route est dure », logique pure** (2026-11-21, `docs/tech/jalon-06.md`) : état du véhicule, accrochages (le fautif paie, négocie ou fuit), nids-de-poule, crevaisons, pannes, pluie, garage (`Core/Road`, `road.json`) ; **coupé** (`enabled: false`) en attendant la fréquence voulue et qui paie ; 285 tests dotnet.
 
 **Jalon 7 « La vie à la maison », mécanisme** (2026-11-21, `docs/tech/jalon-07.md`) : situations et charges, événements de vie, tontine, écran du soir « gagné / dépensé / mis de côté » (`Core/Home`, `home.json`) ; **tous les montants à 0** et coupé : les charges et situations sont des décisions de Kevin ; 291 tests dotnet.
+
+**Jalon 8 « Dépôt et appli », logique pure** (2026-11-21, `docs/tech/jalon-08.md`) : règles de passagers par type de course, offre et marchandage du dépôt, commandes de l'appli (proposition, acceptation taxi vide, note, commission) (`RideTypes.cs`, `ride_types.json`) ; coupé, sans commande ni commission en attendant Kevin ; 297 tests dotnet.
 
 **Fusion avec les 15 améliorations UI/UX de `main`** (2026-11-21) : pause, frise, jauges, messages empilés, bilan animé, pictogrammes, sons et vibrations gardés avec le jalon 2 et la sauvegarde ; bilan animé à lignes variables (dépenses, épargne, propriétaire, garde à vue), « Jour N » à droite de l'horloge, bouton Qualité (commande 8) entre le plan des places et les flèches ; 210 tests dotnet et 19 Python verts, code Unity compilé hors Unity. **Pas encore lancé dans Unity.**
 
