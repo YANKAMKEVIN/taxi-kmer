@@ -108,6 +108,14 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void Calendar_MatchesDefaults()
+        {
+            var c = Load<CalendarConfig>("calendar.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new CalendarConfig(), Opts), JsonSerializer.Serialize(c, Opts));
+            Assert.AreEqual(7, c.weekdays.Length);
+        }
+
+        [Test]
         public void World_MessassiEtoudi_IsUsable()
         {
             var w = Load<TaxiKmer.Core.World.WorldData>("world_messassi_etoudi.json");

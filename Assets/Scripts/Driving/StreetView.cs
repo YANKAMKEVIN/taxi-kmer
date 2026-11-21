@@ -79,6 +79,9 @@ namespace TaxiKmer.Driving
         private QualityView _quality;
         private bool _cityPopulated;
         private AccidentConfig _accidents;
+        private Calendar _calendar;
+        /// <summary>Jour de la semaine de la journée en cours (calendrier, jalon 3).</summary>
+        public CalendarDay Today { get; private set; }
         private System.Random _random;
 
         /// <summary>Bulle d'un client : fond sombre arrondi, pointe, bordure (rentre / à déplacer / ne rentre pas), carrure, texte.</summary>
@@ -144,6 +147,11 @@ namespace TaxiKmer.Driving
             Save.street = this;
             Save.taxi = taxi;
             Save.Initialize(actualSeed, Load("Data/save", new SaveConfig()), Load("Data/owner", new Core.Career.OwnerConfig()));
+            // Calendrier : le jour de la semaine règle les clients et le trafic (dimanche plus calme, jours de marché).
+            _calendar = new Calendar(Load("Data/calendar", new CalendarConfig()));
+            Today = _calendar.For(Save.Career.DayNumber);
+            Street.SpawnRateScale = Today.ClientsFactor;
+            ApplyTrafficScale();
             var trafficView = gameObject.AddComponent<TrafficView>();
             trafficView.baseMaterial = personMaterial;
             trafficView.City = City;
@@ -198,7 +206,7 @@ namespace TaxiKmer.Driving
 
         private void ApplyTrafficScale()
         {
-            var scale = _quality != null ? _quality.Current.trafficScale : 1f;
+            var scale = (_quality != null ? _quality.Current.trafficScale : 1f) * (_calendar != null ? Today.TrafficFactor : 1f);
             City.Traffic.DensityScale = scale;
             City.Pedestrians.DensityScale = scale;
         }
@@ -249,13 +257,15 @@ namespace TaxiKmer.Driving
                 if (Save.TryResume())
                 {
                     state = TaxiState();
-                    Toast($"Jour {Save.Career.DayNumber} repris à {Street.Shift.Clock.Display}", 4f);
+                    Toast($"Jour {Save.Career.DayNumber} ({Today.Name}) repris à {Street.Shift.Clock.Display}", 4f);
                 }
                 else
                 {
                     var start = Load("Data/day", new DayConfig());
                     var career = Save.StartedNewCareer ? "Nouvelle carrière. " : "";
-                    Toast($"{career}Jour {Save.Career.DayNumber} : le patron te veut sur la route de {start.startHour} h à {start.endHour} h", 6f);
+                    Toast($"{career}Jour {Save.Career.DayNumber}, {Today.Name} : le patron te veut sur la route de {start.startHour} h à {start.endHour} h", 6f);
+                    var news = _calendar.Announcement(Today);
+                    if (news.Length > 0) Toast(news, 6f);
                 }
                 City.Populate(Hour, PlayerState());
             }
@@ -487,7 +497,7 @@ namespace TaxiKmer.Driving
             _pops.Clear();
             var closure = Save.CloseDay();
             _summaryView = gameObject.AddComponent<DaySummaryView>();
-            _summaryView.Show(Street.Summary, closure, Street.Shift.Clock.Display, controls.Font);
+            _summaryView.Show(Street.Summary, closure, Street.Shift.Clock.Display, controls.Font, Today.Name);
             _summaryView.NewCareerRequested += Save.StartNewCareer;
         }
 
@@ -781,7 +791,7 @@ namespace TaxiKmer.Driving
             var h = Screen.height;
             var shift = Street.Shift;
             UpdatePaymentPops();
-            _gauges.Update(shift, Save.Career.DayNumber, _revenue.Shown, !Street.DayFinished);
+            _gauges.Update(shift, Calendar.HudLabel(Today), _revenue.Shown, !Street.DayFinished);
 
             var reminder = Street.DayFinished ? "" : HudGauges.EndOfDayReminder(shift.Clock, shift.Cabin.PassengerCount);
             _endReminder.enabled = reminder.Length > 0;

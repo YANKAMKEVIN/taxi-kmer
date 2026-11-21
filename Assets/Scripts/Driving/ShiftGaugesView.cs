@@ -61,7 +61,7 @@ namespace TaxiKmer.Driving
         /// <summary>Texte de l'heure (la fin de journée le colore et le fait battre).</summary>
         public Text Clock => _clock;
 
-        public void Update(Shift shift, int dayNumber, int shownRevenue, bool visible)
+        public void Update(Shift shift, string dayLabel, int shownRevenue, bool visible)
         {
             _root.gameObject.SetActive(visible);
             if (!visible) return;
@@ -79,8 +79,8 @@ namespace TaxiKmer.Driving
             UiKit.PlaceTopLeft(_clock.rectTransform, x, h * 0.115f, w, h * 0.06f);
             UiKit.PlaceTopLeft(_dayTrack.rectTransform, x, h * 0.175f, w * 0.6f, h * 0.012f);
             Fill(_dayFill.rectTransform, HudGauges.DayLeft(shift.Clock));
-            // « Jour 3 » dans la place libre à droite de la barre de journée (les journées s'enchaînent, jalon 3).
-            _day.text = $"Jour {dayNumber}";
+            // « Jour 3 · mer. » dans la place libre à droite de la barre de journée (jours et calendrier, jalon 3).
+            _day.text = dayLabel;
             _day.fontSize = Mathf.RoundToInt(h * 0.028f);
             UiKit.PlaceTopLeft(_day.rectTransform, x + w * 0.64f, h * 0.162f, w * 0.36f, h * 0.038f);
 

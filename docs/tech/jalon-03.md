@@ -1,6 +1,6 @@
 # Jalon 3 — Les jours s'enchaînent (plan technique)
 
-> Ouvert le 2026-11-15, **partie technique seulement** (la sauvegarde), à la demande de Kevin, pendant que le jalon 1 attend sa validation et que le jalon 2 attend l'essai sur téléphone. Contenu et critères : `docs/design/roadmap.md`. Le reste du jalon (calendrier, carburant, propriétaire, réputation) attend les réponses de Kevin.
+> Ouvert le 2026-11-15, **partie technique seulement** (la sauvegarde), à la demande de Kevin, pendant que le jalon 1 attend sa validation et que le jalon 2 attend l'essai sur téléphone. Contenu et critères : `docs/design/roadmap.md`. Le propriétaire a suivi le 2026-11-15 (décisions de Kevin) ; calendrier, carburant et réputation le 2026-11-21 avec des valeurs par défaut (questions ouvertes réglables dans les données).
 
 **Accepté si** (feuille de route) : on joue 3 jours de suite, on quitte l'appli à n'importe quel moment et on reprend sans perte ; tests de la sauvegarde, y compris fichier corrompu ou version ancienne.
 
@@ -11,7 +11,9 @@
 | 3.1 Sauvegarde sûre | **faite** (2026-11-15, session cloud) : `Core/Save` ; 13 tests (coupure de courant à chaque étape d'une écriture, fichier tronqué, modifié, vide, illisible, sans copie de secours, version plus récente, version ancienne, journée sauvegardée puis reprise, bilan ajouté à la carrière) |
 | 3.2 Sauvegarde dans le jeu | **écrite, à essayer dans Unity** : `SaveService` (créé par `StreetView`) ; sauvegarde la journée en cours toutes les 30 s et quand l'appli passe en arrière-plan ou se ferme ; enregistre le bilan en fin de journée ; reprise au lancement **coupée** (`resumeOnStart: false` dans `save.json`) jusqu'à la validation du jalon ; test PlayMode de bout en bout (sauvegarder, relancer, reprendre) dans un dossier temporaire |
 | 3.3 Journée suivante, épargne et propriétaire | **faite, à essayer dans Unity** (2026-11-15, décisions de Kevin) : l'argent qui reste passe d'un jour à l'autre (épargne) ; horaires du patron (6 h - 20 h, `day.json`), annoncés au début de chaque jour ; versement manqué → le propriétaire menace ; 3 manques sur 7 jours → renvoyé, la carrière s'arrête et le bouton du bilan propose « Nouvelle carrière » ; sinon « Jour suivant » (jour + 1, épargne gardée). `Core/Career/DriverCareer` (8 tests), `owner.json` ; sauvegarde passée en version 2 (épargne, manques, renvoi) avec sa migration testée |
-| 3.4 Calendrier, carburant et station, propriétaire, réputation | attend Kevin (questions de la feuille de route) |
+| 3.4 Calendrier | **fait, à essayer dans Unity** (2026-11-21, session cloud) : `Core/Day/Calendar` (5 tests), `calendar.json` ; le jour 1 est un lundi ; chaque jour de la semaine multiplie la cadence d'arrivée des clients (`Street.SpawnRateScale`) et la densité du trafic et des piétons ; dimanche plus calme (×0,6), jours de marché mercredi et samedi (clients ×1,25, trafic ×1,15), annoncés au début de la journée ; « Jour 3 · mer. » dans le HUD, jour de la semaine dans le titre du bilan. Valeurs par défaut, à régler avec Kevin |
+| 3.5 Carburant et station-service | à faire |
+| 3.6 Réputation | à faire (question ouverte : visible ou cachée) |
 
 ## Choix techniques
 
@@ -34,3 +36,10 @@
 ## Valeurs par défaut (`save.json`)
 
 Sauvegarde automatique toutes les 30 s réelles ; aussi à la mise en arrière-plan et à la fermeture ; reprise au lancement coupée.
+
+## Valeurs par défaut du calendrier (`calendar.json`, à régler avec Kevin)
+
+- Le jour 1 de la carrière est un **lundi** (`firstWeekday`).
+- **Dimanche plus calme** : clients et trafic ×0,6.
+- **Jours de marché : mercredi et samedi** (« marché de Messassi ») : clients ×1,25, trafic ×1,15. Les vrais jours de marché de Messassi sont à confirmer par Kevin.
+- Le patron fait travailler tous les jours, dimanche compris (horaires inchangés) : un jour de repos serait une décision de Kevin.

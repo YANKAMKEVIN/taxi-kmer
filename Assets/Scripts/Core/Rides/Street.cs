@@ -167,6 +167,12 @@ namespace TaxiKmer.Core.Rides
         public Shift Shift => _shift;
 
         /// <summary>
+        /// Cadence d'arrivée des clients (1 = <see cref="StreetConfig.spawnIntervalSeconds"/>) : le calendrier la
+        /// règle selon le jour (dimanche plus calme, jours de marché).
+        /// </summary>
+        public float SpawnRateScale { get; set; } = 1f;
+
+        /// <summary>
         /// La journée est terminée et le bilan est arrêté : à l'heure de fin dès que le taxi est vide,
         /// ou quand le joueur choisit de terminer avec des passagers à bord (<see cref="StreetActionKind.EndDay"/>).
         /// </summary>
@@ -198,7 +204,7 @@ namespace TaxiKmer.Core.Rides
                 {
                     var stop = _stops.stops[i];
                     if (CountAt(stop) >= _config.maxWaitingPerStop) { _spawnTimers[i] = 0f; continue; }
-                    _spawnTimers[i] += dt;
+                    _spawnTimers[i] += dt * Math.Max(0f, SpawnRateScale);
                     if (_spawnTimers[i] >= _config.spawnIntervalSeconds)
                     {
                         _spawnTimers[i] = 0f;

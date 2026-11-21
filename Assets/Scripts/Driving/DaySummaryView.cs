@@ -41,7 +41,7 @@ namespace TaxiKmer.Driving
         private static readonly Color Negative = new Color(1f, 0.45f, 0.4f);
         private static readonly Color ButtonColor = new Color(0.1f, 0.45f, 0.2f, 0.95f);
 
-        public void Show(DaySummary s, DayClosure c, string clock, Font font)
+        public void Show(DaySummary s, DayClosure c, string clock, Font font, string weekday = "")
         {
             if (Visible) return;
             Visible = true;
@@ -73,7 +73,8 @@ namespace TaxiKmer.Driving
 
             Build();
             _buttonLabel.text = Fired ? "Nouvelle carrière" : "Jour suivant";
-            _title.text = $"Bilan du jour {c.DayNumber} — {clock}";
+            var dayName = string.IsNullOrEmpty(weekday) ? "" : $" ({weekday})";
+            _title.text = $"Bilan du jour {c.DayNumber}{dayName} — {clock}";
             for (var i = 0; i < _labels.Length; i++) _labels[i].text = labels[i];
             _total.color = c.SavingsAfter - c.SavingsBefore >= 0 ? Positive : Negative;
 
