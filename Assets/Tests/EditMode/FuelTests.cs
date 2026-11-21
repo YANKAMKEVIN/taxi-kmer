@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using NUnit.Framework;
 using TaxiKmer.Core.Day;
@@ -47,7 +48,7 @@ namespace TaxiKmer.Core.Tests
             Assert.AreEqual(9.2f, tank.Litres, 1e-4);
             Assert.AreEqual(9.2f, tank.Consume(100000f), 1e-4, "On ne brûle pas plus que ce qu'il y a.");
             Assert.IsTrue(tank.IsEmpty);
-            Assert.AreEqual(Fuel().emptyCrawlKmh, tank.SpeedCapKmh);
+            Assert.AreEqual(0f, tank.SpeedCapKmh, "Panne sèche : le taxi s'arrête, le joueur choisit.");
             tank.Add(1f);
             Assert.IsTrue(float.IsPositiveInfinity(tank.SpeedCapKmh));
             Assert.IsTrue(tank.IsLow);
@@ -139,6 +140,96 @@ namespace TaxiKmer.Core.Tests
             SaveSnapshot.RecordDay(data, street.Summary, closure, career);
             Assert.AreEqual(street.Shift.Tank.Litres, SaveSnapshot.TankAtDayStart(data, Fuel()), 1e-4, "Le réservoir passe d'un jour à l'autre.");
             Assert.AreEqual(2000, data.career.history.Single().fuelCost);
+        }
+
+        [Test]
+        public void DryTank_StopsTheTaxi_UntilThePlayerChooses_ThenPushingIsSlow()
+        {
+            var street = NewStreet(Fuel(), 0.001f);
+            var tank = street.Shift.Tank;
+            tank.Consume(10f);
+            Assert.IsTrue(tank.IsEmpty);
+            Assert.IsTrue(tank.Stranded);
+            Assert.AreEqual(0f, tank.SpeedCapKmh, "Plus de règle des 8 km/h : le taxi est arrêté.");
+            Assert.IsTrue(street.DryTankChoice(At(300f)), "Hors de la station : on propose le choix.");
+            Assert.IsFalse(street.DryTankChoice(At(700f)), "À la station : on achète du carburant.");
+            Assert.AreEqual(StreetActionKind.Refuel, street.AvailableAction(At(700f)).Kind);
+
+            Assert.IsTrue(street.PushTaxi());
+            Assert.IsTrue(tank.Pushing);
+            Assert.IsFalse(tank.Stranded);
+            Assert.IsFalse(street.DryTankChoice(At(300f)));
+            Assert.AreEqual(3f, tank.SpeedCapKmh, "On pousse au pas.");
+            // 400 m jusqu'à la station au pas : 8 min réelles, plus de 3 h de jeu avec la journée de 35 min.
+            var day = new DayConfig();
+            var realSeconds = 400f / (tank.SpeedCapKmh / 3.6f);
+            Assert.AreEqual(480f, realSeconds, 1e-2);
+            Assert.Greater(realSeconds / day.dayLengthRealSeconds * (day.endHour - day.startHour) * 60f, 180f, "Très coûteux en temps.");
+
+            street.Perform(At(700f)); // carburant à la station
+            Assert.IsFalse(tank.IsEmpty);
+            Assert.IsFalse(tank.Pushing, "Avec du carburant, on ne pousse plus.");
+            Assert.IsTrue(float.IsPositiveInfinity(tank.SpeedCapKmh));
+            Assert.IsFalse(street.PushTaxi(), "Rien à pousser avec du carburant.");
+        }
+
+        [Test]
+        public void DryTank_Technician_ComesAfterADelay_ChargesFuelIncluded_ThenWeGo()
+        {
+            var street = NewStreet(Fuel(), 0f);
+            var shift = street.Shift;
+            var quote = street.TechnicianQuote();
+            Assert.AreEqual(5f, quote.Litres, 1e-4);
+            Assert.AreEqual(2000 + 4200, quote.Cost, "Déplacement 2 000 + 5 L à 840 FCFA.");
+            Assert.AreEqual(45, quote.DelayMinutes);
+            var before = shift.Clock.GameMinutes;
+
+            Assert.IsTrue(street.CallTechnician(out var call));
+            Assert.AreEqual(quote.Cost, call.Cost);
+            Assert.AreEqual(5f, shift.Tank.Litres, 1e-4);
+            Assert.IsFalse(shift.Tank.Stranded);
+            Assert.IsTrue(float.IsPositiveInfinity(shift.Tank.SpeedCapKmh), "On repart.");
+            Assert.AreEqual(before + 45, shift.Clock.GameMinutes, 1, "Le temps de son arrivée passe.");
+            Assert.AreEqual(FuelGauge.TechnicianExpenseLabel, shift.Ledger.Expenses.Single().Label);
+            Assert.AreEqual(6200, shift.Ledger.ExpensesTotal);
+            Assert.AreEqual(0, shift.Ledger.FuelCost, "Une seule ligne au bilan : son prix, carburant compris.");
+            Assert.IsFalse(street.CallTechnician(out _), "Plus de panne : pas de technicien.");
+            Assert.AreEqual(6200, shift.Ledger.ExpensesTotal);
+        }
+
+        [Test]
+        public void DryTank_TechnicianArrivesAfterTheEnd_EmptyTaxi_DayEnds()
+        {
+            var street = NewStreet(Fuel(), 0f);
+            var day = new DayConfig();
+            street.Shift.Clock.Advance(day.dayLengthRealSeconds * 0.98f);
+            Assert.IsTrue(street.DryTankChoice(At(300f)));
+            Assert.IsTrue(street.CallTechnician(out _));
+            Assert.IsTrue(street.DayFinished);
+            Assert.AreEqual(6200, street.Summary.ExpensesTotal);
+            Assert.IsFalse(street.DryTankChoice(At(300f)), "Journée finie : plus de choix.");
+        }
+
+        [Test]
+        public void DryTank_Texts()
+        {
+            var quote = new TechnicianCall { Litres = 5f, Cost = 6200, DelayMinutes = 45 };
+            Assert.AreEqual("Appeler un technicien (6 200 FCFA, 45 min)", FuelGauge.TechnicianLabel(quote));
+            Assert.AreEqual("Le technicien est arrivé après 45 min : +5,0 L, 6 200 FCFA. On repart !", FuelGauge.TechnicianCame(quote));
+            StringAssert.Contains("technicien", FuelGauge.EmptyMessage);
+            StringAssert.Contains("pousse", FuelGauge.EmptyMessage);
+        }
+
+        [Test]
+        public void SpeedCap_AlsoHoldsInReverse()
+        {
+            var logic = new DriveLogic(new DriveConfig()) { SpeedCapKmh = 0f };
+            var brake = new DriveInput { Brake = true };
+            for (var i = 0; i < 200; i++) Assert.AreEqual(0f, Math.Max(0f, -logic.Step(brake, 0f, 0.02f).Throttle), 1e-6, "Panne sèche : pas de marche arrière non plus.");
+            logic.SpeedCapKmh = float.PositiveInfinity;
+            var reversed = false;
+            for (var i = 0; i < 200; i++) reversed |= logic.Step(brake, 0f, 0.02f).Throttle < 0f;
+            Assert.IsTrue(reversed);
         }
 
         [Test]

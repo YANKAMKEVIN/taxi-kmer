@@ -385,6 +385,36 @@ namespace TaxiKmer.Core.Rides
             if (!DayFinished) Finish();
         }
 
+        /// <summary>
+        /// Panne sèche (décision de Kevin) : le taxi est arrêté sans carburant hors de la station-service, le joueur doit
+        /// choisir entre <see cref="PushTaxi"/> et <see cref="CallTechnician"/>. À la station, le bouton contextuel
+        /// propose d'acheter du carburant.
+        /// </summary>
+        public bool DryTankChoice(TaxiOnRoute taxi)
+        {
+            var tank = _shift.Tank;
+            return !DayFinished && tank != null && tank.Stranded && tank.StationAt(taxi.Along) == null;
+        }
+
+        /// <summary>Devis du technicien du quartier pour le réservoir actuel.</summary>
+        public Fuel.TechnicianCall TechnicianQuote() =>
+            _shift.Tank == null ? default : Fuel.TechnicianCall.Quote(_shift.Tank, _shift.Ledger.FuelPricePerLitre);
+
+        /// <summary>Panne sèche : le chauffeur pousse le taxi (au pas, jusqu'à la station). False si rien à pousser.</summary>
+        public bool PushTaxi() => !DayFinished && _shift.Tank != null && _shift.Tank.StartPushing();
+
+        /// <summary>
+        /// Panne sèche : le technicien du quartier arrive après son délai, verse du carburant et se fait payer ; si
+        /// l'heure de fin est passée pendant l'attente et que le taxi est vide, la journée se termine.
+        /// </summary>
+        public bool CallTechnician(out Fuel.TechnicianCall call)
+        {
+            call = default;
+            if (DayFinished || !_shift.CallTechnician(out call)) return false;
+            if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
+            return true;
+        }
+
         /// <summary>Passagers descendus sans payer plus tôt dans la journée (pour la sauvegarde).</summary>
         public int LeftUnpaid => _leftUnpaid;
         public int LeftUnpaidFares => _leftUnpaidFares;

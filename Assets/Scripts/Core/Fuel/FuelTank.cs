@@ -33,8 +33,17 @@ namespace TaxiKmer.Core.Fuel
         public int refuelStepFcfa = 2000;
         /// <summary>Zone de la station le long de l'itinéraire (m de part et d'autre).</summary>
         public float stationRadiusMeters = 30f;
-        /// <summary>Réservoir vide : le taxi ne dépasse plus cette vitesse (km/h), de quoi se traîner jusqu'à la station.</summary>
-        public float emptyCrawlKmh = 8f;
+        /// <summary>
+        /// Panne sèche (décision de Kevin, 2026-11-21 : « On pousse, ou on appelle un technicien du quartier ») :
+        /// le taxi s'arrête et le joueur choisit. Pousser : le taxi avance au pas, à cette vitesse (km/h).
+        /// </summary>
+        public float pushKmh = 3f;
+        /// <summary>Appeler un technicien du quartier : il arrive après ce délai (minutes de jeu)…</summary>
+        public int technicianDelayMinutes = 45;
+        /// <summary>… prend ce prix pour le déplacement (FCFA)…</summary>
+        public int technicianFeeFcfa = 2000;
+        /// <summary>… et verse ces litres (payés au prix du litre de day.json, compris dans son prix), puis on repart.</summary>
+        public float technicianLitres = 5f;
         /// <summary>En dessous de cette part du réservoir, la jauge passe au rouge et un message prévient.</summary>
         public float lowFraction = 0.15f;
         /// <summary>Stations sur l'itinéraire (position provisoire, à corriger par Kevin).</summary>
@@ -69,7 +78,25 @@ namespace TaxiKmer.Core.Fuel
         }
 
         /// <summary>Remet le réservoir à ce niveau (sauvegarde), borné à sa contenance.</summary>
-        public void Set(float litres) => Litres = Math.Max(0f, Math.Min(Capacity, litres));
+        public void Set(float litres)
+        {
+            Litres = Math.Max(0f, Math.Min(Capacity, litres));
+            if (!IsEmpty) Pushing = false;
+        }
+
+        /// <summary>Panne sèche : le chauffeur a choisi de pousser (jusqu'à ce qu'il remette du carburant).</summary>
+        public bool Pushing { get; private set; }
+
+        /// <summary>Panne sèche, le taxi est arrêté : le joueur doit choisir (pousser ou appeler un technicien).</summary>
+        public bool Stranded => IsEmpty && !Pushing;
+
+        /// <summary>Panne sèche : on pousse le taxi (au pas, <see cref="FuelConfig.pushKmh"/>). Sans effet s'il reste du carburant.</summary>
+        public bool StartPushing()
+        {
+            if (!IsEmpty) return false;
+            Pushing = true;
+            return true;
+        }
 
         /// <summary>Consommation pour <paramref name="meters"/> m parcourus ; rend les litres brûlés.</summary>
         public float Consume(float meters)
@@ -103,8 +130,33 @@ namespace TaxiKmer.Core.Fuel
             return null;
         }
 
-        /// <summary>Vitesse maximale permise par le réservoir (infinie s'il reste du carburant).</summary>
-        public float SpeedCapKmh => IsEmpty ? Math.Max(0f, _config.emptyCrawlKmh) : float.PositiveInfinity;
+        /// <summary>
+        /// Vitesse maximale permise par le réservoir : infinie s'il reste du carburant ; au pas si l'on pousse ;
+        /// 0 en panne sèche tant que le joueur n'a pas choisi.
+        /// </summary>
+        public float SpeedCapKmh => !IsEmpty ? float.PositiveInfinity : Pushing ? Math.Max(0f, _config.pushKmh) : 0f;
+    }
+
+    /// <summary>Le technicien du quartier appelé en panne sèche : ce qu'il verse, son prix (carburant compris), son délai.</summary>
+    public struct TechnicianCall
+    {
+        public float Litres;
+        /// <summary>Prix total : déplacement + carburant versé.</summary>
+        public int Cost;
+        public int DelayMinutes;
+
+        /// <summary>Devis du technicien pour ce réservoir (sans rien appliquer).</summary>
+        public static TechnicianCall Quote(FuelTank tank, int pricePerLitre)
+        {
+            var c = tank.Config;
+            var litres = Math.Min(tank.Missing, Math.Max(0f, c.technicianLitres));
+            return new TechnicianCall
+            {
+                Litres = litres,
+                Cost = Math.Max(0, c.technicianFeeFcfa) + FuelTank.Cost(litres, pricePerLitre),
+                DelayMinutes = Math.Max(0, c.technicianDelayMinutes),
+            };
+        }
     }
 }
 
@@ -125,6 +177,23 @@ namespace TaxiKmer.Core.Fuel
             $"+{TaxiKmer.Core.Day.DaySummary.OneDecimal(litres)} L pour {TaxiKmer.Core.Day.DaySummary.Money(cost)} · réservoir {Label(tank).Replace(" L", "")} / {(int)System.Math.Round(tank.Capacity)} L";
 
         public const string LowMessage = "Réserve de carburant : passe à la station-service";
-        public const string EmptyMessage = "Panne sèche : le taxi se traîne, pousse jusqu'à la station-service";
+        public const string EmptyMessage = "Panne sèche : pousse le taxi, ou appelle un technicien du quartier";
+
+        /// <summary>Bouton « pousser » de la panne sèche.</summary>
+        public const string PushLabel = "Pousser le taxi";
+
+        /// <summary>Après avoir choisi de pousser.</summary>
+        public const string PushingMessage = "Tu pousses le taxi au pas : direction la station-service";
+
+        /// <summary>Bouton du technicien : « Appeler un technicien (6 200 FCFA, 45 min) ».</summary>
+        public static string TechnicianLabel(TechnicianCall quote) =>
+            $"Appeler un technicien ({TaxiKmer.Core.Day.DaySummary.Money(quote.Cost)}, {quote.DelayMinutes} min)";
+
+        /// <summary>Le technicien est passé : « Le technicien est arrivé après 45 min : +5 L, 6 200 FCFA. On repart ! ».</summary>
+        public static string TechnicianCame(TechnicianCall call) =>
+            $"Le technicien est arrivé après {call.DelayMinutes} min : +{TaxiKmer.Core.Day.DaySummary.OneDecimal(call.Litres)} L, {TaxiKmer.Core.Day.DaySummary.Money(call.Cost)}. On repart !";
+
+        /// <summary>Libellé de la dépense dans le bilan.</summary>
+        public const string TechnicianExpenseLabel = "Technicien du quartier (carburant compris)";
     }
 }

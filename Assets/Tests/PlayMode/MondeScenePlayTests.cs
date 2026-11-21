@@ -108,7 +108,10 @@ namespace TaxiKmer.PlayModeTests
 
             tank.Set(0f);
             yield return new WaitForSeconds(0.2f);
-            Assert.AreEqual(tank.Config.emptyCrawlKmh, taxi.SpeedCapKmh, "Réservoir vide : vitesse limitée");
+            Assert.AreEqual(0f, taxi.SpeedCapKmh, "Panne sèche : le taxi s'arrête jusqu'au choix du joueur");
+            Assert.IsTrue(view.Street.PushTaxi());
+            yield return new WaitForSeconds(0.2f);
+            Assert.AreEqual(tank.Config.pushKmh, taxi.SpeedCapKmh, "On pousse : au pas");
             Assert.IsNotNull(view.Street.Reputation, "Réputation suivie (reputation.json)");
         }
 

@@ -76,6 +76,8 @@ namespace TaxiKmer.Core.DotnetTests
             var seconds = 0f;
             while (!street.DayFinished && guard++ < 1000000)
             {
+                // Panne sèche hors de la station : le chauffeur automatique appelle le technicien du quartier.
+                if (street.DryTankChoice(new TaxiOnRoute { Along = along, Direction = dir, Lateral = dir * 1.7f })) street.CallTechnician(out _);
                 var moving = wait <= 0f;
                 var speed = moving ? Math.Min(CruiseKmh, shift.Tank.SpeedCapKmh) : 0f;
                 var taxi = new TaxiOnRoute { Along = along, Direction = dir, Lateral = dir * 1.7f, SpeedKmh = speed };

@@ -52,6 +52,9 @@ namespace TaxiKmer.Driving
         private bool _dayOverShown;
         private bool _lastHourShown;
         private Text _endReminder;
+        // Panne sèche : choix « pousser » ou « appeler un technicien du quartier » (décision de Kevin, 2026-11-21).
+        private Image _pushButton, _technicianButton;
+        private Text _pushText, _technicianText;
         private DaySummaryView _summaryView;
         private Tutorial _tutorial;
         private Image _tutorialPanel;
@@ -174,6 +177,10 @@ namespace TaxiKmer.Driving
             _tutorial = new Tutorial(PlayerPrefs.GetInt(TutorialDoneKey, 0) == 0, shift.Ledger.Versement);
             BuildHud();
             _gauges = new ShiftGaugesView(controls.Overlay, controls.Font);
+            _pushButton = UiKit.NewButton(controls.Overlay, controls.Font, FuelGauge.PushLabel, new Color(0.3f, 0.3f, 0.35f, 0.95f), out _pushText);
+            _technicianButton = UiKit.NewButton(controls.Overlay, controls.Font, "", new Color(0.12f, 0.55f, 0.25f, 0.95f), out _technicianText);
+            _pushButton.gameObject.SetActive(false);
+            _technicianButton.gameObject.SetActive(false);
             _menu = new GameMenu(!TitleDone);
             _menuView = new GameMenuView(transform, controls.Font);
             _settings.Volume = PlayerPrefs.GetFloat(VolumeKey, GameSettings.DefaultVolume);
@@ -288,6 +295,7 @@ namespace TaxiKmer.Driving
                 Haptics.Play(HapticEvent.Honk);
                 OnHonk(state);
             }
+            UpdateDryTank(state);
             var action = Street.AvailableAction(state);
             if (controls.ActionTriggered && action.Kind != StreetActionKind.None) OnAction(state);
             action = Street.AvailableAction(state);
@@ -522,6 +530,47 @@ namespace TaxiKmer.Driving
                 Toast(FuelGauge.EmptyMessage, 7f);
                 Haptics.Play(HapticEvent.Refused);
             }
+        }
+
+        /// <summary>
+        /// Panne sèche hors de la station : deux boutons au milieu de l'écran (le taxi est arrêté), « Pousser le taxi »
+        /// (au pas) ou « Appeler un technicien (prix, délai) » ; touches P et T au clavier. Toute la règle est dans Core.
+        /// </summary>
+        private void UpdateDryTank(TaxiOnRoute state)
+        {
+            if (_pushButton == null || _technicianButton == null) return;
+            var show = !_menu.Frozen && _summaryView == null && Street.DryTankChoice(state);
+            _pushButton.gameObject.SetActive(show);
+            _technicianButton.gameObject.SetActive(show);
+            if (!show) return;
+
+            var h = Screen.height;
+            var bw = h * 0.6f;
+            var bh = h * 0.11f;
+            var y = h * 0.55f;
+            UiKit.PlaceTopCenter(_pushButton.rectTransform, y, bw, bh);
+            _pushButton.rectTransform.anchoredPosition = new Vector2(-bw * 0.55f, -y);
+            UiKit.PlaceTopCenter(_technicianButton.rectTransform, y, bw, bh);
+            _technicianButton.rectTransform.anchoredPosition = new Vector2(bw * 0.55f, -y);
+            _pushText.fontSize = _technicianText.fontSize = Mathf.RoundToInt(h * 0.032f);
+            _technicianText.text = FuelGauge.TechnicianLabel(Street.TechnicianQuote());
+
+            if (UiKit.Tapped(_pushButton.rectTransform) || UnityEngine.Input.GetKeyDown(KeyCode.P))
+            {
+                if (Street.PushTaxi()) Toast(FuelGauge.PushingMessage, 5f);
+            }
+            else if (UiKit.Tapped(_technicianButton.rectTransform) || UnityEngine.Input.GetKeyDown(KeyCode.T))
+            {
+                if (Street.CallTechnician(out var call))
+                {
+                    _sounds.PlayCoins();
+                    Haptics.Play(HapticEvent.Payment);
+                    Toast(FuelGauge.TechnicianCame(call), 6f);
+                }
+            }
+            var stillShown = Street.DryTankChoice(state);
+            _pushButton.gameObject.SetActive(stillShown);
+            _technicianButton.gameObject.SetActive(stillShown);
         }
 
         /// <summary>Station-service provisoire (auvent et pompe en primitives) à droite de la route dans le sens vers Étoudi.</summary>

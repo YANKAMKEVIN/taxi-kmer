@@ -77,7 +77,7 @@ namespace TaxiKmer.Core.Driving
 
         public Gear Gear { get; private set; } = Gear.Forward;
 
-        /// <summary>Vitesse maximale imposée en marche avant (km/h), en plus du limiteur : réservoir vide (jalon 3).</summary>
+        /// <summary>Vitesse maximale imposée (km/h), en plus du limiteur, en marche avant comme en arrière : panne sèche (jalon 3), panne.</summary>
         public float SpeedCapKmh { get; set; } = float.PositiveInfinity;
 
         public DriveLogic(DriveConfig config)
@@ -121,7 +121,7 @@ namespace TaxiKmer.Core.Driving
             {
                 if (Gear == Gear.Reverse && speedKmh <= _pedals.stoppedKmh)
                 {
-                    cmd.Throttle = -Limiter(-speedKmh, _pedals.maxReverseKmh);
+                    cmd.Throttle = -Limiter(-speedKmh, Math.Min(_pedals.maxReverseKmh, SpeedCapKmh));
                 }
                 else if (!stopped)
                 {
@@ -134,7 +134,7 @@ namespace TaxiKmer.Core.Driving
                     if (_holdTimer >= _pedals.reverseHoldSeconds)
                     {
                         Gear = Gear.Reverse;
-                        cmd.Throttle = -Limiter(-speedKmh, _pedals.maxReverseKmh);
+                        cmd.Throttle = -Limiter(-speedKmh, Math.Min(_pedals.maxReverseKmh, SpeedCapKmh));
                     }
                     else cmd.Brake = 1f;
                 }

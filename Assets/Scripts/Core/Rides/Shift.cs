@@ -68,6 +68,22 @@ namespace TaxiKmer.Core.Rides
             return litres;
         }
 
+        /// <summary>
+        /// Panne sèche : un technicien du quartier vient (décision de Kevin) ; il verse du carburant, son prix
+        /// (déplacement + carburant) est une dépense de la journée, et le temps de son arrivée passe. False s'il reste
+        /// du carburant (ou sans réservoir).
+        /// </summary>
+        public bool CallTechnician(out TechnicianCall call)
+        {
+            call = default;
+            if (Tank == null || !Tank.IsEmpty) return false;
+            call = TechnicianCall.Quote(Tank, Ledger.FuelPricePerLitre);
+            Tank.Add(call.Litres);
+            Ledger.AddExpense(FuelGauge.TechnicianExpenseLabel, call.Cost);
+            Clock.AdvanceGameMinutes(call.DelayMinutes);
+            return true;
+        }
+
         public BoardResult Board(Client client, out BenchSide side)
         {
             side = default;
