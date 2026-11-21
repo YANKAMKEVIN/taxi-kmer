@@ -61,6 +61,7 @@ namespace TaxiKmer.Core.DotnetTests
             ["road.json"] = typeof(TaxiKmer.Core.Road.RoadConfig),
             ["home.json"] = typeof(TaxiKmer.Core.Home.HomeConfig),
             ["ride_types.json"] = typeof(RideTypesConfig),
+            ["taxi_market.json"] = typeof(TaxiMarketConfig),
         };
 
         [Test]
@@ -309,6 +310,17 @@ namespace TaxiKmer.Core.DotnetTests
             Assert.AreEqual(0f, r.depot.depotClientChance);
             Assert.AreEqual(Load<SeatingConfig>("seating.json").frontMaxPassengers + Load<SeatingConfig>("seating.json").backMaxPassengers, r.depot.seatsPaid,
                 "Un dépôt paie toutes les places du taxi.");
+        }
+
+        [Test]
+        public void TaxiMarket_MatchesDefaults_NoOfferInvented()
+        {
+            var m = Load<TaxiMarketConfig>("taxi_market.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiMarketConfig(), Opts), JsonSerializer.Serialize(m, Opts));
+            Assert.IsFalse(m.enabled);
+            Assert.IsEmpty(m.offers, "Modèles et prix : question 2 du jalon 9.");
+            Assert.That(m.loan.minDownPayment, Is.InRange(0f, 1f));
+            Assert.Greater(m.loan.days, 0);
         }
 
         [Test]
