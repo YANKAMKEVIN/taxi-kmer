@@ -15,12 +15,24 @@ namespace TaxiKmer.Core.Talk
         public const string Detour = "detour";
         /// <summary>Un passager descend à sa destination et paie.</summary>
         public const string Paid = "paiement";
-        /// <summary>Négociation du prix (conséquence à décider par Kevin : seulement le mécanisme).</summary>
+        /// <summary>Négociation du prix : le client propose moins (option A, tranché par Kevin le 21/11).</summary>
         public const string Haggle = "negociation";
-        /// <summary>Client qui ne veut pas payer (conséquence à décider par Kevin : seulement le mécanisme).</summary>
+        /// <summary>Client qui ne veut pas payer (option C, tranché par Kevin le 21/11 : on peut appeler la police).</summary>
         public const string RefusesToPay = "refus-paiement";
+        /// <summary>Un passager précise ou rappelle sa destination.</summary>
+        public const string Destination = "destination";
+        /// <summary>Un passager parle du prix annoncé.</summary>
+        public const string Price = "prix";
+        /// <summary>Panne sèche, crevaison ou panne (jalons 3 et 6).</summary>
+        public const string Breakdown = "panne";
+        /// <summary>Contrôle de police (jalon 4), pendant ou juste après.</summary>
+        public const string Control = "controle";
+        /// <summary>Il pleut (jalon 6).</summary>
+        public const string Rain = "pluie";
+        /// <summary>Long silence dans le taxi : un passager le rompt (ou le savoure).</summary>
+        public const string Silence = "silence";
 
-        public static readonly string[] All = { Boarding, Chat, SeatMove, Detour, Paid, Haggle, RefusesToPay };
+        public static readonly string[] All = { Boarding, Chat, SeatMove, Detour, Paid, Haggle, RefusesToPay, Destination, Price, Breakdown, Control, Rain, Silence };
     }
 
     /// <summary>
@@ -52,6 +64,25 @@ namespace TaxiKmer.Core.Talk
         public string name = "";
         /// <summary>Registre que parle toujours ce personnage (<see cref="TalkRegisters"/>) ; vide : tiré comme pour les autres passagers.</summary>
         public string register = "";
+        /// <summary>Petit son de voix par défaut du personnage (id de <see cref="DialogueConfig.voiceSounds"/>) ; vide : aucun.</summary>
+        public string voice = "";
+        /// <summary>« proposé » : personnage écrit par Claude, à valider par Kevin.</summary>
+        public string statut = "";
+    }
+
+    /// <summary>
+    /// Un petit son de voix (« hmm », « eh ! ») joué avec une bulle (texte + petits sons, option B, tranché par Kevin le
+    /// 21/11). Aucun son fourni : <see cref="clip"/> vide = emplacement « à fournir ».
+    /// </summary>
+    [Serializable]
+    public class VoiceSoundData
+    {
+        public string id = "";
+        /// <summary>Ce qu'on entend (« hmm », « eh ! »), pour celui qui enregistrera le son.</summary>
+        public string label = "";
+        /// <summary>Chemin du son sous Resources (sans extension) ; vide : à fournir, rien ne joue.</summary>
+        public string clip = "";
+        public string statut = "à fournir";
     }
 
     /// <summary>Une réponse rapide du chauffeur (un bouton qui ne bloque pas la conduite).</summary>
@@ -60,8 +91,10 @@ namespace TaxiKmer.Core.Talk
     {
         public string id = "";
         public string text = "";
-        /// <summary>Effet sur la réputation (0 par défaut : les effets des réponses sont à décider par Kevin).</summary>
+        /// <summary>Effet sur la réputation (décision de Kevin du 21/11 : les réponses comptent).</summary>
         public int reputation;
+        /// <summary>Pourboire promis (FCFA), payé avec la course (décision de Kevin du 21/11).</summary>
+        public int tip;
     }
 
     /// <summary>Une réplique : dite dans une situation, éventuellement par un personnage type, avec des réponses possibles.</summary>
@@ -77,11 +110,17 @@ namespace TaxiKmer.Core.Talk
         public string register = "";
         public string text = "";
         public ReplyData[] replies = Array.Empty<ReplyData>();
+        /// <summary>Petit son de voix (id de <see cref="DialogueConfig.voiceSounds"/>) ; vide : celui du personnage, ou aucun.</summary>
+        public string voice = "";
+        /// <summary>« proposée » : écrite par Claude, à valider par Kevin (« validée » ensuite).</summary>
+        public string statut = "";
+        /// <summary>« à traduire » : écrite en français faute de tournure sûre dans le registre visé.</summary>
+        public string traduction = "";
     }
 
     /// <summary>
-    /// Dialogues des passagers (jalon 5 ; données : Assets/Resources/Data/dialogues.json). Le mécanisme est codé ;
-    /// les répliques sont le contenu de Kevin (question 3 du jalon 5) : celles des données sont des exemples à remplacer.
+    /// Dialogues des passagers (jalon 5 ; données : Assets/Resources/Data/dialogues.json). Répliques écrites par Claude,
+    /// validées par Kevin (option B, tranché par Kevin le 21/11) : <see cref="LineData.statut"/> « proposée » jusqu'à sa validation.
     /// </summary>
     [Serializable]
     public class DialogueConfig
@@ -104,10 +143,27 @@ namespace TaxiKmer.Core.Talk
         public float chatEverySeconds = 45f;
         /// <summary>Plainte sur le détour quand le taxi s'est éloigné de … m de la destination d'un passager.</summary>
         public float detourMeters = 150f;
-        /// <summary>Chance qu'un client négocie le prix à la montée (0 : jamais ; conséquences à décider par Kevin).</summary>
+        /// <summary>
+        /// Négociation, option A (tranché par Kevin le 21/11) : chance qu'un client accepté propose moins (multipliée par
+        /// l'effet de la réputation) ; il propose entre haggleDiscountMin et haggleDiscountMax de moins, arrondi à
+        /// haggleRoundTo FCFA, pas moins que haggleFloor. Le joueur accepte ou refuse.
+        /// </summary>
         public float haggleChance;
-        /// <summary>Chance qu'un client refuse de payer à l'arrivée (0 : jamais ; conséquences à décider par Kevin).</summary>
+        public float haggleDiscountMin = 0.15f;
+        public float haggleDiscountMax = 0.35f;
+        public int haggleRoundTo = 50;
+        public int haggleFloor = 100;
+        /// <summary>
+        /// Refus de payer, option C (tranché par Kevin le 21/11) : chance qu'un passager arrivé refuse de payer ; le joueur
+        /// le laisse partir ou appelle la police (refusalPoliceMinutes perdues, il paie selon refusalPolicePayChance).
+        /// </summary>
         public float refusesToPayChance;
+        public int refusalPoliceMinutes = 30;
+        public float refusalPolicePayChance = 0.6f;
+        /// <summary>Après … s sans bulle avec au moins un passager, un passager rompt le silence (situation « silence » ; 0 : jamais).</summary>
+        public float silenceAfterSeconds = 90f;
+        /// <summary>Petits sons de voix (texte + petits sons, option B, tranché par Kevin le 21/11) ; sons à fournir.</summary>
+        public VoiceSoundData[] voiceSounds = Array.Empty<VoiceSoundData>();
 
         /// <summary>
         /// Registres parlés par les passagers et leur part (décision de Kevin : français, camfranglais, pidgin). Chaque
@@ -126,7 +182,35 @@ namespace TaxiKmer.Core.Talk
         /// </summary>
         public string fallbackRegister = TalkRegisters.French;
 
+        /// <summary>Part des passagers qui sont un personnage type (les autres sont des passagers quelconques).</summary>
+        public float characterShare = 0.6f;
         public CharacterData[] characters = Array.Empty<CharacterData>();
         public LineData[] lines = Array.Empty<LineData>();
+
+        /// <summary>Règles des disputes d'argent pour la rue (négociation, refus de payer).</summary>
+        public Rides.FareDisputeRules FareRules() => new Rides.FareDisputeRules
+        {
+            HaggleChance = haggleChance,
+            HaggleDiscountMin = haggleDiscountMin,
+            HaggleDiscountMax = haggleDiscountMax,
+            HaggleRoundTo = haggleRoundTo,
+            HaggleFloor = haggleFloor,
+            RefusesToPayChance = refusesToPayChance,
+            PoliceMinutes = refusalPoliceMinutes,
+            PolicePayChance = refusalPolicePayChance,
+        };
+
+        /// <summary>Son de voix d'une réplique : le sien, sinon celui du personnage ; null si aucun ou son à fournir.</summary>
+        public VoiceSoundData VoiceFor(LineData line, string character)
+        {
+            if (line == null) return null;
+            var id = line.voice;
+            if (string.IsNullOrEmpty(id) && characters != null)
+                foreach (var c in characters)
+                    if (c.id == (string.IsNullOrEmpty(character) ? line.character : character)) { id = c.voice; break; }
+            if (string.IsNullOrEmpty(id) || voiceSounds == null) return null;
+            foreach (var v in voiceSounds) if (v.id == id) return v;
+            return null;
+        }
     }
 }

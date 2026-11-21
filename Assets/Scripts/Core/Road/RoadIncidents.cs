@@ -117,6 +117,42 @@ namespace TaxiKmer.Core.Road
             };
         }
 
+        /// <summary>
+        /// Le joueur fautif fuit (option B, tranché par Kevin le 21/11) : il perd de la réputation tout de suite ; la police
+        /// le retrouve selon une chance, et il paie alors plus que les dégâts de l'autre et perd du temps.
+        /// </summary>
+        public static PlayerFlightOutcome PlayerFlees(RoadConfig config, CollisionOutcome collision, Random random)
+        {
+            if (config == null) throw new ArgumentNullException(nameof(config));
+            if (random == null) throw new ArgumentNullException(nameof(random));
+            var o = new PlayerFlightOutcome { Fled = config.playerCanFlee && collision.PlayerAtFault };
+            if (!o.Fled) return o;
+            o.ReputationDelta = config.playerFleeReputation;
+            o.Found = random.NextDouble() < config.playerFleeFoundChance;
+            if (o.Found)
+            {
+                o.Fine = RoundTo500(collision.PaidToOther * Math.Max(0f, config.playerFleeFoundFactor));
+                o.LostMinutes = Math.Max(0, config.playerFleeFoundMinutes);
+            }
+            return o;
+        }
+
+        /// <summary>
+        /// Délit de fuite subi : le joueur poursuit le fautif (tranché par Kevin le 21/11). La poursuite prend du temps ;
+        /// rattrapé, le fautif paie les réparations.
+        /// </summary>
+        public static ChaseOutcome Chase(RoadConfig config, CollisionOutcome collision, Random random)
+        {
+            if (config == null) throw new ArgumentNullException(nameof(config));
+            if (random == null) throw new ArgumentNullException(nameof(random));
+            var o = new ChaseOutcome { LostMinutes = Math.Max(0, config.chaseMinutes) };
+            if (!collision.HitAndRun) return default;
+            o.Chased = true;
+            o.Caught = random.NextDouble() < config.chaseCatchChance;
+            if (o.Caught) o.Received = (int)Math.Ceiling(collision.Damage) * config.repairCostPerDamage;
+            return o;
+        }
+
         /// <summary>Panne pendant ces <paramref name="meters"/> m ? (chance par km, plus avec les dégâts).</summary>
         public static bool BreakdownWhileDriving(RoadConfig config, VehicleCondition car, float meters, Random random)
         {
@@ -144,6 +180,28 @@ namespace TaxiKmer.Core.Road
         }
 
         private static int RoundTo500(double v) => (int)(Math.Round(v / 500.0, MidpointRounding.AwayFromZero) * 500);
+    }
+
+    /// <summary>Ce qu'a donné la fuite du joueur fautif.</summary>
+    public struct PlayerFlightOutcome
+    {
+        public bool Fled;
+        /// <summary>La police l'a retrouvé.</summary>
+        public bool Found;
+        public int ReputationDelta;
+        /// <summary>Retrouvé : ce qu'il paie (FCFA).</summary>
+        public int Fine;
+        public int LostMinutes;
+    }
+
+    /// <summary>Ce qu'a donné la poursuite d'un fautif qui fuit.</summary>
+    public struct ChaseOutcome
+    {
+        public bool Chased;
+        public bool Caught;
+        /// <summary>Rattrapé : ce qu'il paie pour les réparations (FCFA).</summary>
+        public int Received;
+        public int LostMinutes;
     }
 
     /// <summary>Ce qu'a fait un nid-de-poule pris en roulant.</summary>
@@ -206,17 +264,29 @@ namespace TaxiKmer.Core.Road
         public int RainFromMinute { get; }
         public int RainToMinute { get; }
 
-        public WeatherDay(RoadConfig config, int startMinute, int endMinute, Random random)
+        /// <param name="month">Mois du calendrier (1 = janvier) : saisons des pluies de Yaoundé ; 0 = inconnu (chance fixe).</param>
+        public WeatherDay(RoadConfig config, int startMinute, int endMinute, Random random, int month = 0)
         {
             _config = config ?? throw new ArgumentNullException(nameof(config));
             if (random == null) throw new ArgumentNullException(nameof(random));
-            Rains = random.NextDouble() < config.rainChancePerDay;
+            Rains = random.NextDouble() < RainChance(config, month);
             if (!Rains) return;
             var duration = config.rainMinMinutes + (int)(random.NextDouble() * Math.Max(0, config.rainMaxMinutes - config.rainMinMinutes));
             var span = Math.Max(1, endMinute - startMinute - duration);
             RainFromMinute = startMinute + (int)(random.NextDouble() * span);
             RainToMinute = RainFromMinute + duration;
         }
+
+        /// <summary>Chance de pluie d'un jour de ce mois (saisons de Yaoundé), sinon la chance fixe.</summary>
+        public static float RainChance(RoadConfig config, int month)
+        {
+            var byMonth = config.rainChanceByMonth;
+            if (month >= 1 && month <= 12 && byMonth != null && byMonth.Length == 12) return byMonth[month - 1];
+            return config.rainChancePerDay;
+        }
+
+        /// <summary>Le mois est-il dans une saison des pluies de Yaoundé (mars-juin, septembre-novembre) ?</summary>
+        public static bool RainySeason(int month) => (month >= 3 && month <= 6) || (month >= 9 && month <= 11);
 
         public bool RainingAt(int minute) => Rains && minute >= RainFromMinute && minute < RainToMinute;
 

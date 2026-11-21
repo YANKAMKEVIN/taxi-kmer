@@ -44,6 +44,11 @@ namespace TaxiKmer.Core.Fuel
         public int technicianFeeFcfa = 2000;
         /// <summary>… et verse ces litres (payés au prix du litre de day.json, compris dans son prix), puis on repart.</summary>
         public float technicianLitres = 5f;
+        /// <summary>
+        /// Panne sèche avec des passagers : ils descendent sans payer (décision de Kevin du 2026-11-21) et cherchent un
+        /// autre taxi ; comptés comme passagers non déposés (bilan, réputation).
+        /// </summary>
+        public bool passengersLeaveWhenDry = true;
         /// <summary>En dessous de cette part du réservoir, la jauge passe au rouge et un message prévient.</summary>
         public float lowFraction = 0.15f;
         /// <summary>Stations sur l'itinéraire (position provisoire, à corriger par Kevin).</summary>
@@ -177,6 +182,10 @@ namespace TaxiKmer.Core.Fuel
             $"+{TaxiKmer.Core.Day.DaySummary.OneDecimal(litres)} L pour {TaxiKmer.Core.Day.DaySummary.Money(cost)} · réservoir {Label(tank).Replace(" L", "")} / {(int)System.Math.Round(tank.Capacity)} L";
 
         public const string LowMessage = "Réserve de carburant : passe à la station-service";
+        /// <summary>« Panne sèche : 3 passagers descendent sans payer » (décision de Kevin du 2026-11-21).</summary>
+        public static string PassengersLeftMessage(int count) =>
+            count > 1 ? $"Panne sèche : {count} passagers descendent sans payer" : "Panne sèche : ton passager descend sans payer";
+
         public const string EmptyMessage = "Panne sèche : pousse le taxi, ou appelle un technicien du quartier";
 
         /// <summary>Bouton « pousser » de la panne sèche.</summary>

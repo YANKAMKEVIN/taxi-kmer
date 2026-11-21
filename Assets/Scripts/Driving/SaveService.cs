@@ -149,7 +149,7 @@ namespace TaxiKmer.Driving
         public DayClosure CloseDay()
         {
             if (Closure.HasValue) return Closure.Value;
-            var closure = Career.CloseDay(street.Street.Summary);
+            var closure = Career.CloseDay(street.Street.Summary, street.Street.Reputation?.Config.effects);
             Closure = closure;
             SaveSnapshot.RecordDay(Data, street.Street.Summary, closure, Career);
             Write();

@@ -71,7 +71,7 @@ namespace TaxiKmer.Core.Tests
             var config = Enabled();
             var control = new PoliceControl(config, new PaperSet(config), 13, 0, 0, new Random(2));
             Assert.AreEqual(5000, control.Demand);
-            CollectionAssert.AreEqual(new[] { ControlChoice.Pay, ControlChoice.Negotiate, ControlChoice.Contest, ControlChoice.Call }, control.AvailableChoices());
+            CollectionAssert.AreEqual(new[] { ControlChoice.Pay, ControlChoice.Negotiate, ControlChoice.Contest, ControlChoice.Call, ControlChoice.Flee }, control.AvailableChoices());
             Assert.IsTrue(control.Choose(ControlChoice.Pay));
             Assert.IsTrue(control.Closed);
             Assert.AreEqual(5000, control.Paid);
@@ -104,24 +104,189 @@ namespace TaxiKmer.Core.Tests
             Assert.AreEqual(500, floor.Demand, "Jamais sous le plancher.");
         }
 
+        /// <summary>Contester, option B (Kevin, 21/11) : gagne 1 fois sur 3 seulement si le problème est inventé, papiers en règle.</summary>
         [Test]
-        public void Contest_DefaultData_NeverWins_ButCanIfKevinDecides()
+        public void Contest_WinsAboutOneInThree_OnlyWhenInventedAndPapersInOrder()
         {
             var config = Enabled();
-            for (var seed = 0; seed < 50; seed++)
+            var real = new PoliceControl(config, new PaperSet(config), 13, 0, 0, new Random(1)); // assurance expirée
+            Assert.IsTrue(real.Finding.Real);
+            Assert.AreEqual(0.0, real.ChanceOf(config.contestOutcomes, "gagne"), "Problème réel : jamais.");
+            Assert.AreEqual(0.25, real.ChanceOf(config.contestOutcomes, "fourriere"), 1e-9, "Sinon, fourrière possible.");
+            config.inventChanceWhenInOrder = 1f;
+            var invented = new PoliceControl(config, new PaperSet(config), 1, 0, 0, new Random(1));
+            Assert.AreEqual(ControlFindingKind.Invented, invented.Finding.Kind);
+            Assert.IsTrue(invented.PapersInOrder);
+            Assert.AreEqual(1.0 / 3.0, invented.ChanceOf(config.contestOutcomes, "gagne"), 1e-9);
+
+            int wins = 0, impounds = 0, n = 3000;
+            for (var seed = 0; seed < n; seed++)
+            {
+                var c = new PoliceControl(config, new PaperSet(config), 1, 0, 0, new Random(seed));
+                c.Choose(ControlChoice.Contest);
+                if (c.OutcomeId == "gagne") { wins++; Assert.AreEqual(0, c.Paid); }
+                if (c.Impounded) impounds++;
+                var r = new PoliceControl(config, new PaperSet(config), 13, 0, 0, new Random(seed));
+                r.Choose(ControlChoice.Contest);
+                Assert.AreNotEqual("gagne", r.OutcomeId, "Problème réel : on ne gagne jamais.");
+                if (r.OutcomeId == "perd") Assert.AreEqual(7500, r.Paid, "Perdre : on paie 1,5 fois.");
+            }
+            Assert.AreEqual(1.0 / 3.0, wins / (double)n, 0.03);
+            Assert.Greater(impounds, 0, "Fourrière possible même quand le problème est inventé.");
+        }
+
+        /// <summary>Appeler quelqu'un, option B : ça marche avec un contact ; contacts = crochet du jalon 7, coupé.</summary>
+        [Test]
+        public void Call_WorksOnlyWithAContact_HookOffUntilMilestone7()
+        {
+            var config = Enabled();
+            var contacts = new PoliceContacts(config);
+            contacts.Add("cousin-brigade");
+            Assert.IsFalse(contacts.HasContact, "Crochet du jalon 7 coupé : personne à appeler.");
+            var noContact = new PoliceControl(config, new PaperSet(config), 13, 0, 0, new Random(4), contacts.HasContact);
+            noContact.Choose(ControlChoice.Call);
+            Assert.AreEqual("personne", noContact.OutcomeId);
+            Assert.AreEqual(5000, noContact.Paid);
+
+            config.contactsEnabled = true;
+            var withHook = new PoliceContacts(config);
+            Assert.IsFalse(withHook.HasContact, "Pas encore de contact.");
+            withHook.Add("cousin-brigade");
+            withHook.Add("cousin-brigade");
+            Assert.AreEqual(1, withHook.Ids.Count);
+            for (var seed = 0; seed < 20; seed++)
+            {
+                var c = new PoliceControl(config, new PaperSet(config), 13, 0, 0, new Random(seed), withHook.HasContact);
+                c.Choose(ControlChoice.Call);
+                Assert.AreEqual("arrange", c.OutcomeId, "Avec un contact, ça marche.");
+                Assert.AreEqual(0, c.Paid);
+            }
+        }
+
+        /// <summary>Fuir, option B : poursuite, fourrière si rattrapé ; sinon recherché, et au prochain poste fourrière ou arrestation possibles.</summary>
+        [Test]
+        public void Flee_ChaseThenImpoundOrWanted_NextPostSettlesIt()
+        {
+            var config = Enabled();
+            int caught = 0, escaped = 0;
+            for (var seed = 0; seed < 400; seed++)
             {
                 var c = new PoliceControl(config, new PaperSet(config), 13, 0, 0, new Random(seed));
-                c.Choose(ControlChoice.Contest);
-                Assert.AreEqual("perd", c.OutcomeId, "« gagne » a un poids 0 tant que Kevin n'a pas décidé.");
-                Assert.AreEqual(7500, c.Paid);
-                Assert.AreEqual(config.checkMinutes + 60, c.LostMinutes);
+                Assert.IsTrue(c.Choose(ControlChoice.Flee));
+                Assert.IsTrue(c.Closed);
+                Assert.AreEqual(0, c.Paid);
+                Assert.AreEqual(0, c.ReputationDelta);
+                if (c.Impounded) { caught++; Assert.AreEqual("rattrape", c.OutcomeId); }
+                else { escaped++; Assert.IsTrue(c.BecameWanted); }
             }
-            config.contestOutcomes[0].weight = 0f;
-            config.contestOutcomes[2].weight = 1f;
-            var win = new PoliceControl(config, new PaperSet(config), 13, 0, 0, new Random(1));
-            win.Choose(ControlChoice.Contest);
-            Assert.AreEqual("gagne", win.OutcomeId);
-            Assert.AreEqual(0, win.Paid);
+            Assert.AreEqual(0.4, caught / 400.0, 0.08);
+            Assert.Greater(escaped, 0);
+
+            var outcomes = new HashSet<string>();
+            for (var seed = 0; seed < 200; seed++)
+            {
+                var w = new PoliceControl(config, new PaperSet(config), 1, 0, 0, new Random(seed), wanted: true);
+                Assert.AreEqual(ControlFindingKind.Fled, w.Finding.Kind);
+                outcomes.Add(w.OutcomeId);
+                if (w.OutcomeId == "fourriere") Assert.IsTrue(w.Impounded && w.Closed);
+                if (w.OutcomeId == "arrestation") Assert.IsTrue(w.Arrested && w.Closed);
+                if (w.OutcomeId == "oublie") { Assert.IsFalse(w.Closed); Assert.AreEqual(config.demandFled, w.Demand); }
+            }
+            CollectionAssert.AreEquivalent(new[] { "fourriere", "arrestation", "oublie" }, outcomes);
+
+            config.fleeEnabled = false;
+            var off = new PoliceControl(config, new PaperSet(config), 13, 0, 0, new Random(1));
+            Assert.IsFalse(off.Choose(ControlChoice.Flee));
+            CollectionAssert.DoesNotContain(off.AvailableChoices(), ControlChoice.Flee);
+        }
+
+        [Test]
+        public void PoliceDay_FleeThenNextPostStopsForSure()
+        {
+            var config = Enabled();
+            config.flyingChecksPerDay = 0;
+            config.checkpointStopChance = 1f;
+            config.fleeOutcomes = new[] { new ChoiceOutcomeData { id = "echappe", weight = 1f, payFactor = 0f, wanted = true } };
+            var day = new PoliceDay(config, null, null, 13, 6132f, 360, 1200, new Random(2));
+            var c = day.Update(890f, 905f, 400, 0, 0);
+            Assert.IsNotNull(c);
+            Assert.IsNull(day.Update(4000f, 5300f, 401, 0, 0), "Un contrôle à la fois.");
+            c.Choose(ControlChoice.Flee);
+            Assert.AreSame(c, day.Close());
+            Assert.IsTrue(day.Schedule.Wanted);
+            config.checkpointStopChance = 0f; // même sans chance d'arrêt ordinaire…
+            var next = day.Update(5100f, 5300f, 420, 0, 0);
+            Assert.IsNotNull(next, "… recherché, le prochain poste l'arrête.");
+            Assert.AreEqual(ControlFindingKind.Fled, next.Finding.Kind);
+            Assert.IsFalse(day.Schedule.Wanted, "L'affaire se règle à ce contrôle.");
+            Assert.AreEqual(2, day.Controls);
+        }
+
+        [Test]
+        public void Street_Arrest_EndsTheDay()
+        {
+            var (street, shift) = NewStreet();
+            shift.Cabin.TryBoard(new Client("p1", "etoudi", 3000, 400, Corpulence.Normal), out _);
+            var config = Enabled();
+            config.wantedOutcomes = new[] { new ChoiceOutcomeData { id = "arrestation", weight = 1f, arrest = true } };
+            var c = new PoliceControl(config, new PaperSet(config), 1, 1, 0, new Random(1), wanted: true);
+            Assert.IsTrue(c.Arrested);
+            Assert.IsTrue(street.ApplyPoliceControl(c, config.impoundFee));
+            Assert.IsTrue(street.DayFinished);
+            Assert.IsTrue(street.Summary.Arrested);
+            Assert.IsFalse(street.Summary.Impounded);
+            Assert.AreEqual(1, street.Summary.UnpaidPassengers);
+            StringAssert.Contains("poste", PoliceTexts.Closed(c));
+        }
+
+        /// <summary>Réputation (Kevin, 21/11) : payer, refuser ou contester ne la changent pas.</summary>
+        [Test]
+        public void Reputation_PayRefuseContest_DoNotChangeIt()
+        {
+            var config = new PoliceConfig();
+            Assert.AreEqual(0, config.reputationPaid);
+            foreach (var o in config.contestOutcomes) Assert.AreEqual(0, o.reputation, o.id);
+            foreach (var o in config.callOutcomes) Assert.AreEqual(0, o.reputation, o.id);
+            foreach (var choice in new[] { ControlChoice.Pay, ControlChoice.Contest, ControlChoice.Call })
+                for (var seed = 0; seed < 30; seed++)
+                {
+                    var c = new PoliceControl(config, new PaperSet(config), seed % 2 == 0 ? 13 : 1, 0, 0, new Random(seed));
+                    if (!c.Closed) c.Choose(choice);
+                    Assert.AreEqual(0, c.ReputationDelta, $"{choice}");
+                }
+        }
+
+        /// <summary>Effet de la réputation (Kevin, 21/11) : une bonne réputation fait moins arrêter.</summary>
+        [Test]
+        public void Schedule_StopFactor_FromReputation()
+        {
+            var config = Enabled();
+            config.flyingChecksPerDay = 0;
+            config.checkpointCooldownMinutes = 0;
+            int Count(float factor)
+            {
+                var s = new PoliceSchedule(config, 6132f, 360, 1200, new Random(3));
+                var n = 0;
+                for (var i = 0; i < 2000; i++) if (s.Update(890f, 905f, 400 + i, factor) != null) n++;
+                return n;
+            }
+            var good = Count(Career.ReputationEffects.PoliceStop(new Career.ReputationEffectsConfig(), 100));
+            var bad = Count(Career.ReputationEffects.PoliceStop(new Career.ReputationEffectsConfig(), 0));
+            Assert.AreEqual(0.35, good / 2000.0, 0.04);
+            Assert.AreEqual(0.65, bad / 2000.0, 0.04);
+        }
+
+        /// <summary>Papiers, option A (Kevin, 21/11) : assurance 30 j, visite technique 180 j, licence 365 j de jeu.</summary>
+        [Test]
+        public void Papers_OptionA_RealisticDurations()
+        {
+            var config = new PoliceConfig();
+            var byId = new Dictionary<string, int>();
+            foreach (var p in config.papers) byId[p.id] = p.validityDays;
+            Assert.AreEqual(30, byId["assurance"]);
+            Assert.AreEqual(180, byId["visite-technique"]);
+            Assert.AreEqual(365, byId["licence-taxi"]);
+            Assert.IsTrue(config.enabled, "Jalon 4 activé le 21/11.");
         }
 
         [Test]
@@ -142,7 +307,7 @@ namespace TaxiKmer.Core.Tests
         [Test]
         public void Schedule_Disabled_NeverStops()
         {
-            var s = new PoliceSchedule(new PoliceConfig(), 6000f, 360, 1200, new Random(1));
+            var s = new PoliceSchedule(new PoliceConfig { enabled = false }, 6000f, 360, 1200, new Random(1));
             Assert.IsEmpty(s.Posts);
             Assert.IsNull(s.Update(0f, 6000f, 600));
         }
@@ -218,7 +383,7 @@ namespace TaxiKmer.Core.Tests
             Assert.AreEqual(1, street.Summary.UnpaidPassengers);
             Assert.AreEqual(400, street.Summary.UnpaidFares);
             Assert.AreEqual(15000, street.Summary.ExpensesTotal);
-            Assert.IsFalse(street.Summary.VehicleSeized, "Fourrière ≠ saisie : le propriétaire ne renvoie pas (à décider par Kevin).");
+            Assert.IsFalse(street.Summary.VehicleSeized, "Fourrière ≠ saisie : le propriétaire renvoie seulement à la 2ᵉ fourrière (Kevin, 21/11).");
         }
 
         [Test]

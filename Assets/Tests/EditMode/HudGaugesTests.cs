@@ -9,7 +9,7 @@ namespace TaxiKmer.Core.Tests
         [Test]
         public void DayLeft_DrainsFromOneToZero()
         {
-            var day = new DayConfig();
+            var day = new DayConfig { versement = 10000 };
             var clock = new DayClock(day);
             Assert.AreEqual(1f, HudGauges.DayLeft(clock), 1e-6f);
             clock.Advance(day.dayLengthRealSeconds * 0.25f);
@@ -44,7 +44,7 @@ namespace TaxiKmer.Core.Tests
             Assert.AreEqual(0f, HudGauges.VersementFill(HudGauges.TowardVersement(1000, 2000, 15000), 10000), "Jamais négative.");
 
             // Même verdict que le bilan de fin de journée.
-            var ledger = new DayLedger(new DayConfig()) { UsesFuelPurchases = true };
+            var ledger = new DayLedger(new DayConfig { versement = 10000 }) { UsesFuelPurchases = true };
             ledger.AddFare(11000);
             ledger.BuyFuel(4.76f, 4000);
             var s = DaySummary.From(ledger);
@@ -57,7 +57,7 @@ namespace TaxiKmer.Core.Tests
         [Test]
         public void LastHour_StartsAt19h_AndStopsAtTheEnd()
         {
-            var day = new DayConfig(); // 6 h → 20 h en dayLengthRealSeconds : 1 h de jeu = durée / 14
+            var day = new DayConfig { versement = 10000 }; // 6 h → 20 h en dayLengthRealSeconds : 1 h de jeu = durée / 14
             var len = day.dayLengthRealSeconds;
             var clock = new DayClock(day);
             Assert.AreEqual(14 * 60, clock.MinutesLeft);
@@ -74,7 +74,7 @@ namespace TaxiKmer.Core.Tests
         [Test]
         public void EndOfDayReminder_StaysWhilePassengersAreOnBoard()
         {
-            var day = new DayConfig();
+            var day = new DayConfig { versement = 10000 };
             var clock = new DayClock(day);
             Assert.AreEqual("", HudGauges.EndOfDayReminder(clock, 2), "Avant 20 h, pas de rappel.");
             clock.Advance(day.dayLengthRealSeconds);

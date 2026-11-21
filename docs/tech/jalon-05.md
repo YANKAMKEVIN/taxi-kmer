@@ -1,6 +1,6 @@
 # Jalon 5 — Les passagers parlent (plan technique)
 
-> Ouvert le 2026-11-21 en session cloud, **mécanisme seulement** : les répliques sont le contenu de Kevin (question 3), les sons et la radio demandent des assets. Contenu et critères : `docs/design/roadmap.md` ; vision §4.1 ter (interactions entre clients, dialogues écrits pour le jeu, jamais recopiés). Rien n'est actif : `enabled: false` dans `dialogues.json`.
+> Ouvert le 2026-11-21 en session cloud. Contenu et critères : `docs/design/roadmap.md` ; vision §4.1 ter (interactions entre clients, dialogues écrits pour le jeu, jamais recopiés). **Activé le 21/11** (`enabled: true` dans `dialogues.json`) après la 2ᵉ série de décisions de Kevin : 43 répliques **proposées** par Claude, à valider par Kevin ; affichage minimal `Driving/TalkView.cs` (**non exécuté dans Unity**) ; petits sons de voix « à fournir ».
 
 **But** : l'ambiance camerounaise par les dialogues.
 
@@ -14,11 +14,31 @@
 | 5.2 Qui parle, quand | **faite** (`DialogueDirector`) : une bulle à la fois, 6 s de silence entre deux, temps d'affichage selon la longueur (2,5 s au moins, 14 caractères par seconde), une réplique ne revient pas avant 12 autres (on préfère se taire que se répéter ; les répliques pas encore dites dans la journée d'abord), discussions entre passagers quand ils sont au moins deux (toutes les 45 s en moyenne), compteur de répétitions de la journée |
 | 5.3 Réponses du chauffeur | **faite** : boutons rapides ouverts 4 s ; sans réponse, la bulle part seule (rien ne bloque la conduite) ; la réponse choisie part avec la bulle pour en appliquer l'effet (réputation, 0 par défaut) |
 | 5.4 Plaintes sur le détour | **faite** (`DetourWatch`) : le passager se plaint quand le taxi s'est éloigné de 150 m de sa destination depuis le point le plus proche atteint, puis de nouveau tous les 150 m |
-| 5.5 Disputes de place, négociation, refus de payer | **déclencheurs prêts** (`TalkTriggers`) ; la négociation et le refus de payer n'ont **aucune conséquence** et une chance de 0 (`haggleChance`, `refusesToPayChance`) tant que Kevin n'a pas décidé |
-| 5.6 Affichage dans Unity | **à faire avec les vraies répliques** : bulle au-dessus du taxi (ou du plan des places), 2 ou 3 boutons de réponse près du klaxon ; branchement dans `StreetView` (montée, changement de place, détour, paiement) |
+| 5.5 Disputes de place, négociation, refus de payer | **faite** (21/11, décisions de Kevin) : négociation option A (`FareDisputes.MaybeHaggle`, `Street.PendingHaggle` / `AnswerHaggle`), refus de payer option C (`Street.PendingRefusal` / `ResolveRefusal` : laisser partir ou appeler la police) ; voir « Décisions de Kevin du 21/11 » |
+| 5.6 Affichage dans Unity | **écrit, non exécuté** (21/11) : `Driving/TalkView.cs` : bulle en bas au centre, 3 réponses rapides au plus (F1 à F3), panneau de la contre-offre (accepter / refuser) et du refus de payer (laisser partir / appeler la police) ; déclenché par `StreetView` à la montée, au changement de place, à l'annonce du prix, au paiement, au détour, à la panne sèche, au contrôle de police, au long silence (et à la pluie avec le jalon 6) |
+| 5.8 Répliques et personnages | **proposés** (21/11) : 43 répliques, 6 personnages de Kevin, statut « proposée » ; voir « Répliques proposées » |
 | 5.7 Radio et ambiance sonore | **radio : mécanisme fait, coupé** (2026-11-21, priorité de Kevin ; `docs/tech/radio.md`) : stations dans `radio.json`, changement de station, silence hors du taxi et pendant les dialogues, bouton minimal ; aucun son fourni (pistes vides, à fournir par Kevin). **Ambiance sonore : non faite** (sons à produire) |
 
 Tests : `Assets/Tests/EditMode/DialogueTests.cs` (9 tests, dont une journée de la durée de `day.json` : moins d'une réplique sur quatre répétée avec 24 répliques par situation pour 35 min ; 8 suffisaient pour 10 min) ; `DataInvariantsTests.Dialogues_Readable_KnownTriggers_ExamplesMarked_Off` (situations connues, longueur lisible, personnages connus, lignes d'exemple marquées).
+
+## Décisions de Kevin du 21/11 (tranché par Kevin le 21/11)
+
+- **Texte, avec de petits sons de voix** (option B) : `voiceSounds` dans `dialogues.json` (« hmm », « eh ! », « tchip », « aïe ! », petit rire), chacun avec `clip` vide et `statut: "à fournir"` ; une réplique (`voice`) ou un personnage (`characters[].voice`) choisit son son ; `Bubble.Voice` ; `TalkView` le joue au début de la bulle s'il existe, sinon rien. **Aucun fichier audio.**
+- **Claude écrit les répliques, Kevin valide** (option B) : 43 répliques `"statut": "proposée"` (voir ci-dessous).
+- **Négociation, option A** : à l'acceptation d'un client (klaxon), il propose moins selon `haggleChance` (**0,15** par défaut) × l'effet de la réputation (jalon 3 : ×0,4 à ×1,6) : 15 à 35 % de moins, arrondi à 50 FCFA, pas moins de 100. Le joueur **accepte** (le client paiera ce prix) ou **refuse** (il reste au bord de la route). Tant qu'il n'a pas répondu, le client ne monte pas.
+- **Client qui refuse de payer, option C** : à l'arrivée, un passager refuse selon `refusesToPayChance` (**0,03**) ; il descend ; le joueur le **laisse partir** (course perdue, comptée « partis sans payer ») ou **appelle la police** (**30 min** de jeu perdues ; il paie **6 fois sur 10**, sinon rien).
+- **Effet des réponses du chauffeur** : sur la **réputation** (`replies[].reputation`, -1 à +1 dans les répliques proposées) et le **pourboire** (`replies[].tip`, payé avec la course, perdu s'il ne paie pas ; `DayLedger.Tips`, compris dans la recette, sans compter de course).
+- **Activé** (`enabled: true`). Silence : après **90 s** sans bulle avec un passager à bord, l'un d'eux rompt le silence (`silenceAfterSeconds`). Personnages : **6 passagers sur 10** sont un personnage type (`characterShare`), toujours le même pour un passager ; un passager quelconque ne dit pas les répliques d'un personnage.
+- Tests : `FareDisputeTests` (9 tests : contre-offre, accepter, refuser, sans règles, refus de payer et police, réponses et pourboire, sons et silence, règles depuis les données, personnages) ; `DialogueDayTests` (une journée de 35 min sur les vraies répliques) ; `DataInvariantsTests.Dialogues_Proposed_Readable_CoverKevinsCharactersAndSituations`.
+
+## Répliques proposées (à valider par Kevin)
+
+43 répliques dans `dialogues.json`, toutes `"statut": "proposée"`, de 90 caractères au plus, avec des réponses du chauffeur de 40 caractères au plus :
+- **Personnages de Kevin** (`characters`, `"statut": "proposé"`) : la commerçante du marché, l'écolier, l'étudiant, le fonctionnaire, la maman avec bébé, le professeur d'école ; chacun a au moins 3 répliques.
+- **Situations** : montée (8), destination (4), prix (3), négociation (4), refus de payer (3), panne (4), contrôle (4), pluie (4), silence (3), paiement (3), détour, discussion, changement de place (1 chacune).
+- **Langues** : français 29, camfranglais 7, pidgin 7 (parts des passagers par défaut : 0,5 / 0,35 / 0,15). Camfranglais et pidgin seulement avec des tournures courantes dont Claude est sûr (« le mbom », « mola », « on est ensemble », « je go », « le ndem », « je wanda » ; « How na? », « abeg », « I di go », « Rain don start! », « Na all wey I get ») ; **2 répliques sont écrites en français et marquées `"traduction": "à traduire"`** (une en camfranglais sur le prix, une en pidgin au contrôle). Kevin doit relire en priorité les tournures camfranglaises et pidgin.
+- Ton : quotidien, respectueux, sans caricature ; le contrôle reste suggéré (« arrange-toi vite avec eux »), jamais cru.
+- Pour une journée de 35 min sans répétition, il faudrait ≈ 24 répliques par situation (voir ci-dessous) : avec ce premier lot, les passagers se taisent plus souvent plutôt que de se répéter.
 
 ## Combien de répliques écrire
 
@@ -36,14 +56,14 @@ Mécanisme prêt (`Core/Talk`, testé), **aucune vraie réplique écrite** :
 
 ## Questions pour Kevin (jalon 5)
 
-Question 1 tranchée (français, camfranglais, pidgin) ; **les autres restent ouvertes** (la question 8, radio, a son propre document : `docs/tech/radio.md`).
+Questions 1, 2, 3, 4 (personnages), 5, 6 et 7 tranchées (la 4 en partie : les personnages sont choisis, leurs destinations et heures restent ouvertes) ; la question 8, radio, a son propre document : `docs/tech/radio.md`.
 
 
 1. ~~Langues à l'écran~~ → **Tranché par Kevin (2026-11-21) : français, camfranglais et pidgin.** Mécanisme fait (voir « Langues »). Reste à régler : la part de chaque langue parmi les passagers (0,5 / 0,35 / 0,15 par défaut).
-2. **Voix ou texte** (question 2) : **A.** texte seul au début ; **B.** texte + petits sons de voix (« hmm », « eh ! ») ; **C.** voix enregistrées.
-3. **Qui écrit les répliques** (question 3) : **A.** Kevin ; **B.** Claude propose à partir de situations données par Kevin, Kevin valide ; **C.** les deux. Format prêt : `dialogues.json` (`lines` : id, situation, personnage, texte ≤ 90 caractères, réponses).
-4. **Personnages types** : lesquels (par ex. la commerçante du marché, l'étudiant, le fonctionnaire, la maman avec bébé…) ? Choisissent-ils leurs destinations ou leurs heures ?
-5. **Négociation du prix** : **A.** le client propose moins, le joueur accepte ou refuse ; **B.** marchandage en 2 tours ; **C.** pas de négociation (le prix annoncé fait foi).
-6. **Client qui refuse de payer** : **A.** il part sans payer (perte sèche) ; **B.** le joueur peut insister (temps perdu, réputation) ; **C.** appeler la police (lien avec le jalon 4).
-7. **Effet des réponses** du chauffeur : sur la réputation, sur le pourboire, ou rien (ambiance seulement) ?
+2. ~~Voix ou texte~~ → **option B, tranché par Kevin le 21/11** : texte + petits sons (emplacements « à fournir »). Ancienne question : **Voix ou texte** (question 2) : **A.** texte seul au début ; **B.** texte + petits sons de voix (« hmm », « eh ! ») ; **C.** voix enregistrées.
+3. ~~Qui écrit~~ → **option B, tranché par Kevin le 21/11** : Claude propose, Kevin valide (43 répliques « proposée »). Ancienne question : **Qui écrit les répliques** (question 3) : **A.** Kevin ; **B.** Claude propose à partir de situations données par Kevin, Kevin valide ; **C.** les deux. Format prêt : `dialogues.json` (`lines` : id, situation, personnage, texte ≤ 90 caractères, réponses).
+4. ~~Personnages types~~ → **choisis par Kevin le 21/11** : commerçante, écolier, étudiant, fonctionnaire, maman avec bébé, professeur d'école. Reste ouvert : choisissent-ils leurs destinations ou leurs heures ? Ancienne question : **Personnages types** : lesquels (par ex. la commerçante du marché, l'étudiant, le fonctionnaire, la maman avec bébé…) ? Choisissent-ils leurs destinations ou leurs heures ?
+5. ~~Négociation~~ → **option A, tranché par Kevin le 21/11.** Ancienne question : **Négociation du prix** : **A.** le client propose moins, le joueur accepte ou refuse ; **B.** marchandage en 2 tours ; **C.** pas de négociation (le prix annoncé fait foi).
+6. ~~Refus de payer~~ → **option C, tranché par Kevin le 21/11** (appeler la police). Ancienne question : **Client qui refuse de payer** : **A.** il part sans payer (perte sèche) ; **B.** le joueur peut insister (temps perdu, réputation) ; **C.** appeler la police (lien avec le jalon 4).
+7. ~~Effet des réponses~~ → **tranché par Kevin le 21/11 : réputation et pourboire.** Ancienne question : **Effet des réponses** du chauffeur : sur la réputation, sur le pourboire, ou rien (ambiance seulement) ?
 8. **Radio** : questions détaillées dans `docs/tech/radio.md` (noms des stations, musique sous licence ou libre, animateurs, publicités locales).

@@ -265,11 +265,20 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
-        public void Police_MatchesDefaults_StaysOffUntilKevinDecides()
+        public void Police_MatchesDefaults_OnSinceKevinDecided()
         {
             var p = Load<TaxiKmer.Core.Police.PoliceConfig>("police.json");
             Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Police.PoliceConfig(), Opts), JsonSerializer.Serialize(p, Opts));
-            Assert.IsFalse(p.enabled, "Contrôles coupés tant que Kevin n'a pas fixé montants et issues (jalon-04.md).");
+            Assert.IsTrue(p.enabled, "Jalon 4 activé le 21/11 : ce qui reste est en valeurs par défaut (jalon-04.md).");
+            Assert.IsFalse(p.contactsEnabled, "Contacts : crochet du jalon 7, coupé tant qu'il n'existe pas.");
+            Assert.AreEqual(0, p.reputationPaid, "Payer ne change pas la réputation (Kevin, 21/11).");
+            foreach (var o in p.contestOutcomes.Concat(p.callOutcomes)) Assert.AreEqual(0, o.reputation, $"{o.id} : refuser ou contester ne change pas la réputation");
+            Assert.IsTrue(p.contestOutcomes.Any(o => o.id == "gagne" && o.requiresInvented && o.weight > 0f), "Contester : gagne parfois, seulement si inventé.");
+            Assert.IsTrue(p.contestOutcomes.Any(o => o.impound && o.weight > 0f), "Contester : fourrière possible.");
+            Assert.IsTrue(p.callOutcomes.Any(o => o.requiresContact && o.weight > 0f), "Appeler : marche avec un contact.");
+            Assert.IsTrue(p.fleeEnabled && p.fleeOutcomes.Any(o => o.wanted) && p.fleeOutcomes.Any(o => o.impound), "Fuir : poursuite, fourrière ou recherché.");
+            Assert.IsTrue(p.wantedOutcomes.Any(o => o.impound) && p.wantedOutcomes.Any(o => o.arrest), "Recherché : fourrière ou arrestation au prochain poste.");
+            Assert.AreEqual(2, Load<OwnerConfig>("owner.json").impoundsBeforeFired, "Fourrière : renvoyé à la 2ᵉ fois.");
             var stops = Load<StopsConfig>("stops_messassi_etoudi.json");
             var end = stops.stops[stops.stops.Length - 1].distanceAlongRouteMeters;
             foreach (var c in p.checkpoints) Assert.That(c.distanceAlongRouteMeters, Is.InRange(0f, end), c.id);
@@ -283,71 +292,148 @@ namespace TaxiKmer.Core.DotnetTests
             Assert.Greater(p.callOutcomes.Sum(o => o.weight), 0f);
         }
 
+        /// <summary>
+        /// Jalon 5 activé le 21/11 : répliques proposées par Claude (statut « proposée »), personnages de Kevin, situations
+        /// des jalons 3 à 6, trois langues, petits sons « à fournir », négociation et refus de payer branchés.
+        /// </summary>
         [Test]
-        public void Dialogues_Readable_KnownTriggers_ExamplesMarked_Off()
+        public void Dialogues_Proposed_Readable_CoverKevinsCharactersAndSituations()
         {
             var d = Load<TaxiKmer.Core.Talk.DialogueConfig>("dialogues.json");
-            Assert.IsFalse(d.enabled, "Coupé tant que Kevin n'a pas écrit ou validé les répliques (jalon-05.md).");
-            Assert.AreEqual(0f, d.haggleChance, "Conséquences de la négociation : décision de Kevin.");
-            Assert.AreEqual(0f, d.refusesToPayChance, "Conséquences du refus de payer : décision de Kevin.");
+            Assert.IsTrue(d.enabled, "Jalon 5 activé (Kevin, 21/11).");
+            Assert.That(d.haggleChance, Is.InRange(0.01f, 1f), "Négociation, option A : branchée.");
+            Assert.That(d.refusesToPayChance, Is.InRange(0.001f, 1f), "Refus de payer, option C : branché.");
+            Assert.That(d.refusalPolicePayChance, Is.InRange(0f, 1f));
+            Assert.LessOrEqual(d.haggleDiscountMin, d.haggleDiscountMax);
             Assert.AreEqual(d.lines.Length, d.lines.Select(l => l.id).Distinct().Count());
+            Assert.That(d.lines.Length, Is.InRange(35, 60), "Une quarantaine de répliques de qualité.");
             var characters = new HashSet<string>(d.characters.Select(c => c.id));
+            CollectionAssert.IsSupersetOf(characters, new[] { "commercante", "ecolier", "etudiant", "fonctionnaire", "maman-bebe", "professeur" },
+                "Personnages de Kevin.");
+            var voices = new HashSet<string>(d.voiceSounds.Select(v => v.id));
+            foreach (var v in d.voiceSounds)
+            {
+                Assert.AreEqual("", v.clip, $"{v.id} : aucun son fourni (emplacement).");
+                Assert.AreEqual("à fournir", v.statut, v.id);
+            }
+            foreach (var c in d.characters)
+            {
+                Assert.IsTrue(string.IsNullOrEmpty(c.voice) || voices.Contains(c.voice), $"{c.id} : son inconnu");
+                Assert.IsTrue(string.IsNullOrEmpty(c.register) || TaxiKmer.Core.Talk.TalkRegisters.All.Contains(c.register), $"{c.id} : registre inconnu");
+            }
             foreach (var l in d.lines)
             {
                 CollectionAssert.Contains(TaxiKmer.Core.Talk.TalkTriggers.All, l.trigger, l.id);
                 Assert.LessOrEqual(l.text.Length, d.maxChars, $"{l.id} : trop long pour être lu en conduisant");
                 Assert.IsTrue(string.IsNullOrEmpty(l.character) || characters.Contains(l.character), $"{l.id} : personnage inconnu");
-                StringAssert.Contains("exemple", l.text, "Seules des lignes d'exemple tant que Kevin n'a pas écrit les siennes.");
-                Assert.IsTrue(string.IsNullOrEmpty(l.register) || TaxiKmer.Core.Talk.TalkRegisters.All.Contains(l.register), $"{l.id} : registre inconnu « {l.register} »");
+                Assert.IsTrue(l.statut == "proposée" || l.statut == "validée", $"{l.id} : statut « proposée » tant que Kevin n'a pas validé");
+                Assert.IsTrue(l.traduction == "" || l.traduction == "à traduire", l.id);
+                Assert.IsTrue(string.IsNullOrEmpty(l.voice) || voices.Contains(l.voice), $"{l.id} : son inconnu");
+                Assert.IsTrue(TaxiKmer.Core.Talk.TalkRegisters.All.Contains(l.register) || l.register == "", $"{l.id} : registre inconnu « {l.register} »");
+                StringAssert.DoesNotContain("exemple", l.text, $"{l.id} : plus d'exemple à remplacer");
+                foreach (var r in l.replies)
+                {
+                    Assert.That(r.reputation, Is.InRange(-3, 3), $"{l.id}/{r.id} : effet modéré");
+                    Assert.That(r.tip, Is.InRange(0, 500), $"{l.id}/{r.id}");
+                    Assert.LessOrEqual(r.text.Length, 40, $"{l.id}/{r.id} : bouton lisible");
+                }
             }
+            foreach (var t in new[] { "montee", "destination", "prix", "negociation", "refus-paiement", "panne", "controle", "pluie", "silence" })
+                Assert.IsTrue(d.lines.Any(l => l.trigger == t), $"Situation « {t} » couverte.");
+            foreach (var c in characters)
+                Assert.IsTrue(d.lines.Any(l => l.character == c), $"{c} : au moins une réplique");
             // Langues décidées par Kevin (2026-11-21) : français, camfranglais et pidgin.
             CollectionAssert.AreEquivalent(TaxiKmer.Core.Talk.TalkRegisters.All, d.registers.Select(r => r.id).ToArray());
             foreach (var r in d.registers) Assert.Greater(r.weight, 0f, $"{r.id} : chaque langue décidée est parlée par des passagers");
             Assert.IsTrue(string.IsNullOrEmpty(d.fallbackRegister) || TaxiKmer.Core.Talk.TalkRegisters.All.Contains(d.fallbackRegister));
             foreach (var reg in TaxiKmer.Core.Talk.TalkRegisters.All)
-                Assert.IsTrue(d.lines.Any(l => l.register == reg), $"Au moins un exemple en {reg} (format montré à Kevin)");
-            foreach (var c in d.characters)
-                Assert.IsTrue(string.IsNullOrEmpty(c.register) || TaxiKmer.Core.Talk.TalkRegisters.All.Contains(c.register), $"{c.id} : registre inconnu");
+                Assert.GreaterOrEqual(d.lines.Count(l => l.register == reg && l.traduction == ""), 3, $"Au moins 3 répliques sûres en {reg}");
             Assert.Greater(d.minShowSeconds, 0f);
             Assert.Greater(d.charsPerSecond, 0f);
         }
 
+        /// <summary>Vrais noms de stations et de marques à ne jamais reprendre (stations fictives, décision de Kevin du 21/11).</summary>
+        private static readonly string[] RealRadioNames =
+        {
+            "crtv", "équinoxe", "equinoxe", "magic", "balafon", "siantou", "amplitude", "sweet fm", "nostalgie", "rfi", "africa n",
+            "abk", "satellite", "royal fm", "tiemeni", "lord", "veritas", "bonne nouvelle", "radio france", "bbc", "voa", "trace",
+        };
+
+        /// <summary>
+        /// Radio activée le 21/11 avec des pistes vides : stations fictives proposées, aucun son ni vrai nom, textes proposés
+        /// dans les trois langues, flashs pour chaque événement du jeu, musique CC0 ou CC-BY seulement.
+        /// </summary>
         [Test]
-        public void Radio_Off_EmptySlots_ToBeProvidedByKevin()
+        public void Radio_On_FictionalStations_ProposedTexts_NoSound_FreeLicencesOnly()
         {
             var r = Load<TaxiKmer.Core.Radio.RadioConfig>("radio.json");
-            Assert.IsFalse(r.enabled, "Coupée tant que Kevin n'a pas fourni stations et musiques (radio.md).");
-            Assert.IsNotEmpty(r.stations);
+            Assert.IsTrue(r.enabled, "Radio activée avec des pistes vides (Kevin, 21/11).");
+            Assert.IsTrue(r.skipSilentProgrammes, "Pistes vides : seulement les annonces et les flashs, en texte.");
+            Assert.That(r.duckVolume, Is.InRange(0.05f, 0.9f), "Quand un passager parle, le volume baisse (pas de silence total).");
             Assert.That(r.volume, Is.InRange(0f, 1f));
             Assert.Greater(r.defaultProgramSeconds, 0f);
+            Assert.That(r.stations.Length, Is.InRange(3, 4), "3 ou 4 stations proposées.");
             Assert.AreEqual(r.stations.Length, r.stations.Select(s => s.id).Distinct().Count());
             foreach (var s in r.stations)
             {
-                StringAssert.Contains("à fournir par Kevin", s.name, "Noms des stations : question pour Kevin.");
-                Assert.GreaterOrEqual(s.frequencyMHz, 0f);
+                Assert.AreEqual("proposé", s.statut, s.id);
+                Assert.That(s.frequencyMHz, Is.InRange(87.5f, 108f), $"{s.id} : fréquence FM crédible");
+                foreach (var real in RealRadioNames) StringAssert.DoesNotContain(real, s.name.ToLowerInvariant(), $"{s.id} : vrai nom de station");
                 Assert.IsNotEmpty(s.programmes, s.id);
                 Assert.AreEqual(s.programmes.Length, s.programmes.Select(p => p.id).Distinct().Count(), s.id);
+                Assert.IsTrue(s.programmes.Any(p => p.text.Length > 0), $"{s.id} : au moins une annonce en texte");
                 foreach (var p in s.programmes)
                 {
-                    Assert.AreEqual("", p.clip, $"{s.id}/{p.id} : aucun son fourni par Claude (emplacement vide).");
-                    StringAssert.Contains("à fournir par Kevin", p.title);
                     CollectionAssert.Contains(new[] { "musique", "emission", "publicite", "flash" }, p.kind, p.id);
                     Assert.GreaterOrEqual(p.seconds, 0f);
+                    if (p.text.Length > 0)
+                    {
+                        Assert.AreEqual("proposée", p.statut, $"{s.id}/{p.id}");
+                        CollectionAssert.Contains(TaxiKmer.Core.Talk.TalkRegisters.All, p.register, $"{s.id}/{p.id}");
+                        Assert.IsTrue(p.traduction == "" || p.traduction == "à traduire", p.id);
+                        Assert.LessOrEqual(p.text.Length, 110, $"{s.id}/{p.id} : lisible en conduisant");
+                    }
+                    if (p.clip.Length > 0)
+                    {
+                        CollectionAssert.Contains(new[] { "CC0", "CC-BY" }, p.licence, $"{s.id}/{p.id} : CC0 ou CC-BY seulement (radio.md)");
+                        Assert.IsNotEmpty(p.credit, $"{s.id}/{p.id} : crédit obligatoire");
+                        Assert.IsNotEmpty(p.source, $"{s.id}/{p.id} : source obligatoire");
+                    }
+                    else Assert.AreEqual("", p.licence, $"{s.id}/{p.id} : pas de licence sans son");
                 }
+            }
+            var all = r.stations.SelectMany(s => s.programmes).Where(p => p.text.Length > 0).ToList();
+            Assert.IsTrue(all.Any(p => p.kind == "emission") && all.Any(p => p.kind == "publicite"), "Animateurs et publicités.");
+            foreach (var reg in TaxiKmer.Core.Talk.TalkRegisters.All)
+                Assert.IsTrue(all.Any(p => p.register == reg && p.traduction == ""), $"Animateur ou publicité en {reg}");
+            foreach (var e in TaxiKmer.Core.Radio.RadioEvents.All)
+                Assert.IsTrue(r.flashes.Any(f => f.@event == e), $"Flash pour « {e} »");
+            foreach (var f in r.flashes)
+            {
+                CollectionAssert.Contains(TaxiKmer.Core.Radio.RadioEvents.All, f.@event, f.id);
+                Assert.AreEqual("proposée", f.statut, f.id);
+                Assert.IsFalse(TaxiKmer.Core.Police.PoliceTexts.IsCrude(f.text), $"{f.id} : ton réaliste");
             }
             // Aucun fichier son ni musique dans le dépôt.
             var assets = Path.Combine(Path.GetDirectoryName(SourceDataDir), "..");
             var audio = Directory.GetFiles(assets, "*.*", SearchOption.AllDirectories)
                 .Where(f => new[] { ".mp3", ".ogg", ".wav", ".aiff", ".flac", ".m4a" }.Contains(Path.GetExtension(f).ToLowerInvariant())).ToList();
-            CollectionAssert.IsEmpty(audio, "Les musiques sont à fournir par Kevin.");
+            CollectionAssert.IsEmpty(audio, "Aucun son ajouté par Claude.");
         }
 
         [Test]
-        public void Road_MatchesDefaults_Off_Sane()
+        public void Road_MatchesDefaults_On_KevinDecisions()
         {
             var r = Load<TaxiKmer.Core.Road.RoadConfig>("road.json");
             Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Road.RoadConfig(), Opts), JsonSerializer.Serialize(r, Opts));
-            Assert.IsFalse(r.enabled, "Coupé tant que Kevin n'a pas fixé fréquence et qui paie (jalon-06.md).");
+            Assert.IsTrue(r.enabled, "Jalon 6 activé le 21/11 (jalon-06.md).");
+            Assert.AreEqual(1f, r.driverShareOfRepairs, "Le chauffeur paie les réparations (Kevin, 21/11).");
+            Assert.AreEqual(12, r.rainChanceByMonth.Length, "Pluie selon les mois (saisons de Yaoundé).");
+            foreach (var x in r.rainChanceByMonth) Assert.That(x, Is.InRange(0f, 1f));
+            Assert.IsTrue(r.playerCanFlee, "Fuite du joueur : option B.");
+            Assert.Less(r.playerFleeReputation, 0, "… avec perte de réputation.");
+            Assert.That(r.playerFleeFoundChance, Is.InRange(0.01f, 1f), "… et risque d'être retrouvé.");
+            Assert.That(r.chaseCatchChance, Is.InRange(0.01f, 1f), "Délit de fuite subi : on peut poursuivre.");
             foreach (var x in new[] { r.potholePunctureChance, r.potholeHitChance, r.rainChancePerDay, r.driverShareOfRepairs, r.rainGrip })
                 Assert.That(x, Is.InRange(0f, 1f));
             Assert.LessOrEqual(r.rainMinMinutes, r.rainMaxMinutes);

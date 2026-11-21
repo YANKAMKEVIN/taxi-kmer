@@ -12,10 +12,73 @@ namespace TaxiKmer.Core.Career
     }
 
     /// <summary>
+    /// Effets de la réputation sur le jeu (décision de Kevin du 2026-11-21 : clients plus ou moins patients, prix
+    /// acceptés, attitude du propriétaire, contrôles de police). Chaque effet est un coefficient autour du score
+    /// <see cref="neutral"/> : facteur = 1 + (score - neutral) × parPoint, borné. Coefficients : valeurs par défaut de
+    /// Claude, à régler avec Kevin.
+    /// </summary>
+    [Serializable]
+    public class ReputationEffectsConfig
+    {
+        /// <summary>Effets branchés (false : la réputation se compte sans rien changer).</summary>
+        public bool enabled = true;
+        /// <summary>Score sans effet (facteurs à 1).</summary>
+        public int neutral = 50;
+        /// <summary>Patience des clients acceptés : +1 % par point au-dessus de neutral (score 100 : ×1,5 ; 0 : ×0,5).</summary>
+        public float patiencePerPoint = 0.01f;
+        public float patienceMin = 0.5f;
+        public float patienceMax = 1.5f;
+        /// <summary>
+        /// Prix acceptés : chance qu'un client négocie le prix (jalon 5), -1,2 % par point au-dessus de neutral
+        /// (score 100 : ×0,4 ; 0 : ×1,6).
+        /// </summary>
+        public float hagglePerPoint = -0.012f;
+        public float haggleMin = 0.4f;
+        public float haggleMax = 1.6f;
+        /// <summary>Attitude du propriétaire : à partir de ce score, il tolère un versement manqué de plus avant de renvoyer…</summary>
+        public int ownerLenientFrom = 80;
+        /// <summary>… et en dessous de celui-ci, un de moins (jamais moins d'un).</summary>
+        public int ownerStrictBelow = 20;
+        /// <summary>Contrôles de police : chance d'être arrêté, -0,6 % par point au-dessus de neutral (score 100 : ×0,7 ; 0 : ×1,3).</summary>
+        public float policeStopPerPoint = -0.006f;
+        public float policeStopMin = 0.7f;
+        public float policeStopMax = 1.3f;
+    }
+
+    /// <summary>Les effets de la réputation, calculés à partir du score (logique pure, testée).</summary>
+    public static class ReputationEffects
+    {
+        private static float Factor(ReputationEffectsConfig e, int score, float perPoint, float min, float max)
+        {
+            if (e == null || !e.enabled) return 1f;
+            var f = 1f + (score - e.neutral) * perPoint;
+            return Math.Max(Math.Min(min, max), Math.Min(Math.Max(min, max), f));
+        }
+
+        /// <summary>Multiplie la patience d'un client accepté.</summary>
+        public static float Patience(ReputationEffectsConfig e, int score) => Factor(e, score, e?.patiencePerPoint ?? 0f, e?.patienceMin ?? 1f, e?.patienceMax ?? 1f);
+
+        /// <summary>Multiplie la chance qu'un client négocie le prix (prix moins bien acceptés quand la réputation est mauvaise).</summary>
+        public static float Haggle(ReputationEffectsConfig e, int score) => Factor(e, score, e?.hagglePerPoint ?? 0f, e?.haggleMin ?? 1f, e?.haggleMax ?? 1f);
+
+        /// <summary>Multiplie la chance d'être arrêté par la police.</summary>
+        public static float PoliceStop(ReputationEffectsConfig e, int score) => Factor(e, score, e?.policeStopPerPoint ?? 0f, e?.policeStopMin ?? 1f, e?.policeStopMax ?? 1f);
+
+        /// <summary>Versements manqués tolérés en plus (+1, 0 ou -1) par le propriétaire.</summary>
+        public static int OwnerTolerance(ReputationEffectsConfig e, int score)
+        {
+            if (e == null || !e.enabled) return 0;
+            if (score >= e.ownerLenientFrom) return 1;
+            if (score < e.ownerStrictBelow) return -1;
+            return 0;
+        }
+    }
+
+    /// <summary>
     /// Réputation du chauffeur (jalon 3, feuille de route : clients satisfaits, conduite ; données :
     /// Assets/Resources/Data/reputation.json). Visible ou cachée : question ouverte de Kevin, réglée par
     /// <see cref="visible"/>. Points gagnés et perdus : valeurs par défaut, à régler avec Kevin. Ses effets sur le jeu
-    /// (clients, propriétaire, police…) ne sont pas décidés : elle se calcule et se sauvegarde, sans rien changer encore.
+    /// (clients, prix, propriétaire, police) : <see cref="ReputationEffects"/> (décision de Kevin du 2026-11-21).
     /// </summary>
     [Serializable]
     public class ReputationConfig
@@ -46,6 +109,8 @@ namespace TaxiKmer.Core.Career
             new ReputationLevel { min = 60, label = "bonne" },
             new ReputationLevel { min = 80, label = "excellente" },
         };
+        /// <summary>Effets sur le jeu (décision de Kevin du 2026-11-21), coefficients par défaut.</summary>
+        public ReputationEffectsConfig effects = new ReputationEffectsConfig();
     }
 
     /// <summary>Score de réputation, borné, avec ce qu'il valait au début de la journée.</summary>
@@ -60,6 +125,12 @@ namespace TaxiKmer.Core.Career
         public int DayStart { get; private set; }
         public int ChangeToday => Score - DayStart;
         public bool Visible => _config.visible;
+
+        /// <summary>Effets du score actuel (décision de Kevin du 2026-11-21).</summary>
+        public float PatienceFactor => ReputationEffects.Patience(_config.effects, Score);
+        public float HaggleFactor => ReputationEffects.Haggle(_config.effects, Score);
+        public float PoliceStopFactor => ReputationEffects.PoliceStop(_config.effects, Score);
+        public int OwnerTolerance => ReputationEffects.OwnerTolerance(_config.effects, Score);
 
         public DriverReputation(ReputationConfig config, int? score = null)
         {

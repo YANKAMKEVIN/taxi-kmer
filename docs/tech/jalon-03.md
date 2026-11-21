@@ -13,7 +13,7 @@
 | 3.3 Journée suivante, épargne et propriétaire | **faite, à essayer dans Unity** (2026-11-15, décisions de Kevin) : l'argent qui reste passe d'un jour à l'autre (épargne) ; horaires du patron (6 h - 20 h, `day.json`), annoncés au début de chaque jour ; versement manqué → le propriétaire menace ; 3 manques sur 7 jours → renvoyé, la carrière s'arrête et le bouton du bilan propose « Nouvelle carrière » ; sinon « Jour suivant » (jour + 1, épargne gardée). `Core/Career/DriverCareer` (8 tests), `owner.json` ; sauvegarde passée en version 2 (épargne, manques, renvoi) avec sa migration testée |
 | 3.4 Calendrier | **fait, à essayer dans Unity** (2026-11-21, session cloud) : `Core/Day/Calendar` (5 tests), `calendar.json` ; le jour 1 est un lundi ; chaque jour de la semaine multiplie la cadence d'arrivée des clients (`Street.SpawnRateScale`) et la densité du trafic et des piétons ; dimanche plus calme (×0,6), jours de marché mercredi et samedi (clients ×1,25, trafic ×1,15), annoncés au début de la journée ; « Jour 3 · mer. » dans le HUD, jour de la semaine dans le titre du bilan. Calendrier validé par Kevin le 2026-11-21 |
 | 3.5 Carburant et station-service | **fait, à essayer dans Unity** (2026-11-21, session cloud) : `Core/Fuel` (réservoir, station, textes ; 11 tests), `fuel.json` ; le réservoir se vide en roulant et passe d'un jour à l'autre ; à l'arrêt à la station-service, le bouton contextuel achète pour 2 000 FCFA de carburant à chaque appui (sans dépasser le plein) ; le bilan compte le carburant **acheté** dans la journée (et non plus brûlé) ; réservoir vide : ~~le taxi ne dépasse plus 8 km/h~~ panne sèche avec choix « pousser » ou « technicien du quartier » (2026-11-21) ; jauge à droite de l'heure (rouge sous 15 %) ; station provisoire (auvent rouge et blanc) ; sauvegarde version 3 (réservoir, carburant acheté) avec sa migration testée ; test PlayMode de la station |
-| 3.6 Réputation | **faite, à essayer dans Unity** (2026-11-21, session cloud) : `Core/Career/Reputation` (7 tests), `reputation.json` ; score de 0 à 100 (50 au départ) qui passe d'un jour à l'autre ; monte à chaque course payée, baisse quand un client accepté abandonne, quand des passagers descendent sans arriver (accident, journée terminée avec eux), quand on renverse un piéton, et en roulant trop vite avec des passagers ; **visible** (décision de Kevin du 2026-11-21 ; réglable par `visible`) : « Réputation 52 » à droite de la jauge de versement et une ligne dans le bilan ; sauvegarde version 4 avec sa migration testée. **Aucun effet sur le jeu** tant que Kevin ne l'a pas décidé |
+| 3.6 Réputation | **faite, à essayer dans Unity** (2026-11-21, session cloud) : `Core/Career/Reputation` (7 tests), `reputation.json` ; score de 0 à 100 (50 au départ) qui passe d'un jour à l'autre ; monte à chaque course payée, baisse quand un client accepté abandonne, quand des passagers descendent sans arriver (accident, journée terminée avec eux), quand on renverse un piéton, et en roulant trop vite avec des passagers ; **visible** (décision de Kevin du 2026-11-21 ; réglable par `visible`) : « Réputation 52 » à droite de la jauge de versement et une ligne dans le bilan ; sauvegarde version 4 avec sa migration testée. **Effets branchés** (tranché par Kevin le 21/11) : voir « Effets de la réputation » |
 
 ## Choix techniques
 
@@ -54,13 +54,41 @@ Sauvegarde automatique toutes les 30 s réelles ; aussi à la mise en arrière-p
   - **Pousser le taxi** : il avance **au pas, 3 km/h** (`pushKmh`) jusqu'à ce qu'on remette du carburant ; 400 m jusqu'à la station = 8 min réelles, plus de 3 h de jeu ;
   - **Appeler un technicien du quartier** : il arrive après **45 min de jeu** (`technicianDelayMinutes`, temps qui passe d'un coup comme à l'hôpital), verse **5 L** (`technicianLitres`) et prend **2 000 FCFA de déplacement** (`technicianFeeFcfa`) plus le carburant au prix du litre, soit **6 200 FCFA** carburant compris, une ligne « Technicien du quartier (carburant compris) » au bilan ; puis on repart.
   - À la station-service, le bouton contextuel propose toujours d'acheter du carburant. Si l'heure de fin passe pendant l'attente du technicien et que le taxi est vide, la journée se termine.
-  - Valeurs par défaut de Claude (à régler avec Kevin) ; ce que deviennent les passagers pendant la panne n'est pas décidé : ils restent à bord. Logique : `FuelTank` (`Stranded`, `Pushing`, `StartPushing`), `TechnicianCall`, `Shift.CallTechnician`, `Street.DryTankChoice / PushTaxi / CallTechnician` (5 tests) ; affichage `StreetView.UpdateDryTank` (**non exécuté dans Unity**). La sauvegarde ne garde pas le choix « pousser » : après une reprise, le choix est reproposé.
+  - **Passagers : ils descendent sans payer** (tranché par Kevin le 21/11) : dès que le réservoir est vide, tous les passagers descendent, leurs courses vont aux « passagers partis sans payer » du bilan et chacun compte comme passager non déposé pour la réputation (-2, valeur existante) ; message « Panne sèche : 2 passagers descendent sans payer » (`fuel.json` : `passengersLeaveWhenDry`, `Street.DryTankLeft` ; 2 tests).
+  - Valeurs par défaut de Claude (à régler avec Kevin) : vitesse en poussant, délai et prix du technicien. Logique : `FuelTank` (`Stranded`, `Pushing`, `StartPushing`), `TechnicianCall`, `Shift.CallTechnician`, `Street.DryTankChoice / PushTaxi / CallTechnician` (5 tests) ; affichage `StreetView.UpdateDryTank` (**non exécuté dans Unity**). La sauvegarde ne garde pas le choix « pousser » : après une reprise, le choix est reproposé.
 
 ## Valeurs par défaut de la réputation (`reputation.json`, à régler avec Kevin)
 
 - **Visible** (`visible: true`) : **validé par Kevin le 2026-11-21** ; `false` la cacherait (elle compterait toujours).
 - Score de 0 à 100, 50 au départ ; paliers : très mauvaise, mauvaise (20), correcte (40), bonne (60), excellente (80).
 - +1 par client payé ; -2 par client accepté qui abandonne ; -2 par passager descendu sans arriver ; -10 piéton blessé léger, -25 blessé grave ; avec des passagers, au-delà de 60 km/h, -1 toutes les 10 s.
+
+## Effets de la réputation (tranché par Kevin le 21/11)
+
+Kevin a retenu les quatre pistes : **clients plus ou moins patients, prix acceptés, attitude du propriétaire, contrôles de police**. Branché avec des coefficients par défaut (`reputation.json` → `effects`, `ReputationEffects`), facteur = 1 + (score - 50) × coefficient, borné :
+
+| Effet | Où | Coefficient par défaut | Score 0 | 50 | 100 |
+|---|---|---|---|---|---|
+| Patience d'un client accepté | `Street.AcceptedPatienceSeconds` | +1 % par point | ×0,5 (15 s) | ×1 (30 s) | ×1,5 (45 s) |
+| Prix acceptés : chance qu'un client négocie (jalon 5) | négociation du jalon 5 (`haggleChance` × facteur) | -1,2 % par point | ×1,6 | ×1 | ×0,4 |
+| Attitude du propriétaire : manques tolérés avant le renvoi | `DriverCareer.CloseDay(summary, effects)` | +1 dès 80, -1 sous 20 | 2 manques | 3 | 4 (dès 80) |
+| Contrôles de police : chance d'être arrêté (jalon 4) | `PoliceSchedule.Update(…, stopFactor)` | -0,6 % par point | ×1,3 | ×1 | ×0,7 |
+
+`effects.enabled: false` coupe tout. Tests : `ReputationTests` (+4 : facteurs bornés, effets coupés, clients plus ou moins patients dans la rue, propriétaire plus ou moins tolérant). **À régler avec Kevin** : tous les coefficients.
+
+## Versement de 7 000 FCFA (tranché par Kevin le 21/11)
+
+`day.json` → `versement: 7000` (et la valeur par défaut de `DayConfig`). Carburant, prix et durée inchangés. Simulation refaite (`tools/test_core.sh Balance`, même chauffeur automatique, 30 journées par durée, 40 km/h, réservoir plein, carburant de `fuel.json` ×8) :
+
+| Durée | Recette moy. (min - max) | Carburant brûlé | Reste après carburant | **Versement de 7 000 atteint, carburant compris** | Recette seule ≥ 7 000 |
+|---|---|---|---|---|---|
+| 30 min | 7 566 (6 400 - 8 900) | 9 748 | -2 181 | 0 / 30 | 22 / 30 |
+| **35 min (day.json)** | 8 636 (6 600 - 10 500) | 11 400 | -2 763 | **0 / 30 (0 %)** | **29 / 30 (97 %)** |
+| 40 min | 10 533 (8 400 - 12 300) | 12 969 | -2 435 | 0 / 30 | 30 / 30 |
+
+Selon la consommation (35 min, 10 journées) : à ×1, le versement est atteint carburant compris dans 3 / 10 journées à 30 km/h, 4 / 10 à 40 km/h et 10 / 10 à 50 km/h ; à ×4 et ×8, dans aucune. Semaine avec le propriétaire (×8, 40 km/h) : versement manqué chaque jour (recette 8 200 à 9 200, carburant acheté 10 000 à 14 000), **renvoyé le 3ᵉ jour**.
+
+**Pour Kevin** : avec 7 000, la recette seule couvre le versement presque toujours (97 % des journées de 35 min), mais **le carburant ×8 coûte toujours plus que la recette** (≈ 540 FCFA par km pour ≈ 400 de recette) : la part des journées où le versement est atteint, recette et carburant compris, reste **0 %**. Le seul levier restant est la consommation (`consumptionScale` : à ×1, ≈ 40 % des journées à 40 km/h) ou les prix ; rien d'autre n'a été changé.
 
 ## Équilibrage, piste B : journée de 35 minutes (décision de Kevin, 2026-11-21)
 
@@ -138,9 +166,9 @@ Pistes à trancher par Kevin (une seule suffit, toutes se règlent dans les donn
 ## Questions pour Kevin (jalon 3)
 
 1. ~~Réputation visible ou cachée ?~~ → **visible**, validé par Kevin (2026-11-21).
-2. **Effets de la réputation** : rien n'est branché. Pistes : clients plus ou moins patients, prix acceptés, attitude du propriétaire, contrôles de police (jalon 4).
-3. ~~Panne sèche~~ → **« On pousse, ou on appelle un technicien du quartier »** (Kevin, 2026-11-21), fait. Reste à régler : vitesse en poussant, délai et prix du technicien (`fuel.json`), et ce que font les passagers pendant la panne (ils restent à bord par défaut).
+2. ~~Effets de la réputation~~ → **tranché par Kevin le 21/11** : clients plus ou moins patients, prix acceptés, attitude du propriétaire, contrôles de police ; branchés avec des coefficients par défaut (« Effets de la réputation »). Reste à régler : les coefficients.
+3. ~~Panne sèche~~ → **« On pousse, ou on appelle un technicien du quartier »** (Kevin, 2026-11-21), fait ; **les passagers descendent sans payer** (tranché par Kevin le 21/11), fait. Reste à régler : vitesse en poussant, délai et prix du technicien (`fuel.json`).
 4. **Station-service** : laquelle, et où, sur la portion Messassi → Étoudi ?
 5. ~~Jours de marché et jour de repos~~ → **calendrier par défaut validé par Kevin** (2026-11-21) : marché le mercredi et le samedi, dimanche plus calme mais travaillé.
-6. ~~Équilibre recettes / carburant / versement : piste A, B ou C~~ → **piste B, journée de 35 min, carburant inchangé** (Kevin, 2026-11-21). **Reste ouvert** : même ainsi, le versement de 10 000 FCFA n'est atteint dans aucune journée simulée (le carburant coûte ≈ 540 FCFA par km pour ≈ 400 FCFA de recette) : que faut-il changer (consommation, versement, prix) ? Voir « Équilibrage, piste B ».
+6. ~~Équilibre recettes / carburant / versement : piste A, B ou C~~ → **piste B, journée de 35 min, carburant inchangé** (Kevin, 2026-11-21) ; **versement d'environ 7 000 FCFA** (tranché par Kevin le 21/11), appliqué. **Reste ouvert** : la recette seule couvre 7 000 dans 97 % des journées, mais recette et carburant compris, 0 % (le carburant ×8 coûte ≈ 540 FCFA par km pour ≈ 400 de recette) : baisser `consumptionScale` ou monter les prix ? Voir « Versement de 7 000 FCFA ».
 7. Niveau de concurrence des taxis (question 4 du jalon 2) : réglable dans `traffic.json`.

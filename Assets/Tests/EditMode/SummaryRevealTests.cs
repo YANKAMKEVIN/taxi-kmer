@@ -57,7 +57,7 @@ namespace TaxiKmer.Core.Tests
         [Test]
         public void Stamp_SaysCoveredOrHowMuchIsMissing()
         {
-            var ledger = new DayLedger(new DayConfig());
+            var ledger = new DayLedger(new DayConfig { versement = 10000 });
             ledger.AddFare(8000);
             Assert.AreEqual("IL MANQUE 2 000 FCFA", SummaryReveal.StampText(DaySummary.From(ledger)));
             ledger.AddFare(2500);

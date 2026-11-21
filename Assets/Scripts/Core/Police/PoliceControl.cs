@@ -15,6 +15,8 @@ namespace TaxiKmer.Core.Police
         FrontOverload,
         /// <summary>Tout est en règle, le policier invente un problème.</summary>
         Invented,
+        /// <summary>Le chauffeur a fui un contrôle plus tôt dans la journée : il est recherché (fuir, option B).</summary>
+        Fled,
     }
 
     /// <summary>Ce que le policier « trouve ».</summary>
@@ -25,7 +27,7 @@ namespace TaxiKmer.Core.Police
         public string Id;
         public string Label;
         /// <summary>Le problème existe vraiment (papier expiré, surcharge) ; false s'il est inventé.</summary>
-        public bool Real => Kind == ControlFindingKind.ExpiredPaper || Kind == ControlFindingKind.Overload || Kind == ControlFindingKind.FrontOverload;
+        public bool Real => Kind == ControlFindingKind.ExpiredPaper || Kind == ControlFindingKind.Overload || Kind == ControlFindingKind.FrontOverload || Kind == ControlFindingKind.Fled;
     }
 
     public enum ControlChoice
@@ -34,6 +36,8 @@ namespace TaxiKmer.Core.Police
         Negotiate,
         Contest,
         Call,
+        /// <summary>Fuir le contrôle (option B, tranché par Kevin le 21/11) : poursuite, fourrière ou recherché.</summary>
+        Flee,
     }
 
     /// <summary>
@@ -56,17 +60,39 @@ namespace TaxiKmer.Core.Police
         /// <summary>Minutes de jeu perdues (contrôle compris).</summary>
         public int LostMinutes { get; private set; }
         public bool Impounded { get; private set; }
+        /// <summary>Le chauffeur est arrêté (garde à vue) : la journée s'arrête.</summary>
+        public bool Arrested { get; private set; }
+        /// <summary>Le chauffeur a fui et s'est échappé : il est recherché jusqu'à la fin de la journée.</summary>
+        public bool BecameWanted { get; private set; }
+        /// <summary>Le chauffeur a un contact à appeler (crochet du jalon 7).</summary>
+        public bool HasContact { get; }
+        /// <summary>Les papiers sont en règle (condition pour gagner en contestant).</summary>
+        public bool PapersInOrder { get; }
         public int ReputationDelta { get; private set; }
         public int Negotiations { get; private set; }
         /// <summary>Issue tirée pour contester ou appeler (vide sinon).</summary>
         public string OutcomeId { get; private set; } = "";
 
-        public PoliceControl(PoliceConfig config, PaperSet papers, int day, int passengers, int frontPassengers, Random random)
+        /// <param name="hasContact">Le chauffeur a un contact (<see cref="PoliceContacts.HasContact"/>).</param>
+        /// <param name="wanted">Il a fui un contrôle plus tôt dans la journée : fourrière, arrestation ou contrôle ordinaire.</param>
+        public PoliceControl(PoliceConfig config, PaperSet papers, int day, int passengers, int frontPassengers, Random random,
+            bool hasContact = false, bool wanted = false)
         {
             _config = config ?? throw new ArgumentNullException(nameof(config));
             _random = random ?? throw new ArgumentNullException(nameof(random));
             if (papers == null) throw new ArgumentNullException(nameof(papers));
+            HasContact = hasContact;
+            PapersInOrder = papers.Expired(day).Count == 0;
             LostMinutes = Math.Max(0, config.checkMinutes);
+            if (wanted)
+            {
+                Finding = new ControlFinding { Kind = ControlFindingKind.Fled, Id = "fuite", Label = "Vous avez fui un contrôle" };
+                Demand = Round(config.demandFled);
+                var o = Pick(config.wantedOutcomes);
+                if (o != null) OutcomeId = o.id;
+                if (o != null && (o.impound || o.arrest)) Apply(o);
+                return;
+            }
             Finding = Find(config, papers, day, passengers, frontPassengers, random);
             Demand = Finding.Kind switch
             {
@@ -126,6 +152,10 @@ namespace TaxiKmer.Core.Police
                 case ControlChoice.Call:
                     Apply(Pick(_config.callOutcomes));
                     return true;
+                case ControlChoice.Flee:
+                    if (!_config.fleeEnabled) return false;
+                    Apply(Pick(_config.fleeOutcomes));
+                    return true;
             }
             return false;
         }
@@ -138,25 +168,55 @@ namespace TaxiKmer.Core.Police
             Paid += Round(Demand * Math.Max(0f, o.payFactor));
             LostMinutes += Math.Max(0, o.lostMinutes);
             Impounded = o.impound;
+            Arrested = o.arrest;
+            BecameWanted = o.wanted;
             ReputationDelta += o.reputation;
+        }
+
+        /// <summary>
+        /// L'issue est-elle possible dans ce contrôle ? « gagne » seulement si le problème est inventé et les papiers en
+        /// règle ; « arrange » seulement avec un contact ; « personne » seulement sans contact.
+        /// </summary>
+        public bool Possible(ChoiceOutcomeData o)
+        {
+            if (o == null || o.weight <= 0f) return false;
+            if (o.requiresInvented && !(Finding.Kind == ControlFindingKind.Invented && PapersInOrder)) return false;
+            if (o.requiresContact && !HasContact) return false;
+            if (o.onlyWithoutContact && HasContact) return false;
+            return true;
+        }
+
+        /// <summary>Chance de chaque issue dans ce contrôle (0 si impossible), pour les tests et l'équilibrage.</summary>
+        public double ChanceOf(ChoiceOutcomeData[] outcomes, string id)
+        {
+            if (outcomes == null) return 0.0;
+            var total = 0.0;
+            var mine = 0.0;
+            foreach (var o in outcomes)
+            {
+                if (!Possible(o)) continue;
+                total += o.weight;
+                if (o.id == id) mine += o.weight;
+            }
+            return total > 0.0 ? mine / total : 0.0;
         }
 
         private ChoiceOutcomeData Pick(ChoiceOutcomeData[] outcomes)
         {
             if (outcomes == null) return null;
             var total = 0.0;
-            foreach (var o in outcomes) total += Math.Max(0f, o.weight);
+            foreach (var o in outcomes) if (Possible(o)) total += o.weight;
             if (total <= 0.0) return null;
             var roll = _random.NextDouble() * total;
+            ChoiceOutcomeData last = null;
             foreach (var o in outcomes)
             {
-                var w = Math.Max(0f, o.weight);
-                if (w <= 0f) continue;
-                if (roll < w) return o;
-                roll -= w;
+                if (!Possible(o)) continue;
+                last = o;
+                if (roll < o.weight) return o;
+                roll -= o.weight;
             }
-            for (var i = outcomes.Length - 1; i >= 0; i--) if (outcomes[i].weight > 0f) return outcomes[i];
-            return null;
+            return last;
         }
 
         private int Round(double amount)
@@ -174,6 +234,7 @@ namespace TaxiKmer.Core.Police
             if (CanNegotiate) list.Add(ControlChoice.Negotiate);
             list.Add(ControlChoice.Contest);
             list.Add(ControlChoice.Call);
+            if (_config.fleeEnabled) list.Add(ControlChoice.Flee);
             return list;
         }
     }

@@ -49,8 +49,21 @@ namespace TaxiKmer.Core.Police
         public int lostMinutes;
         /// <summary>Le taxi part à la fourrière : la journée s'arrête.</summary>
         public bool impound;
-        /// <summary>Effet sur la réputation (0 par défaut : à décider par Kevin).</summary>
+        /// <summary>Effet sur la réputation. 0 pour payer, refuser ou contester (tranché par Kevin le 21/11).</summary>
         public int reputation;
+        /// <summary>
+        /// Contester, option B (tranché par Kevin le 21/11) : issue possible seulement si le problème est inventé et que
+        /// les papiers sont en règle (« gagne »).
+        /// </summary>
+        public bool requiresInvented;
+        /// <summary>Appeler quelqu'un, option B (tranché par Kevin le 21/11) : issue possible seulement avec un contact.</summary>
+        public bool requiresContact;
+        /// <summary>Issue possible seulement sans contact (« personne ne répond »).</summary>
+        public bool onlyWithoutContact;
+        /// <summary>Le chauffeur est arrêté (garde à vue) : la journée s'arrête.</summary>
+        public bool arrest;
+        /// <summary>Fuir : le chauffeur s'échappe, mais il est recherché jusqu'à la fin de la journée (prochain contrôle).</summary>
+        public bool wanted;
     }
 
     /// <summary>
@@ -60,11 +73,34 @@ namespace TaxiKmer.Core.Police
     /// surcharge comme prétexte). Les montants, les chances et l'issue des choix sont des valeurs provisoires ou des
     /// décisions de Kevin : <see cref="enabled"/> reste à false tant qu'il ne les a pas fixés.
     /// </summary>
+    /// <summary>
+    /// Contacts du chauffeur qui peuvent « arranger » un contrôle (appeler quelqu'un, option B, tranché par Kevin le 21/11).
+    /// Crochet du jalon 7 : un événement de vie ajoutera un contact (<see cref="Add"/>) ; tant que le jalon 7 n'existe pas,
+    /// <see cref="PoliceConfig.contactsEnabled"/> est à false et personne ne répond.
+    /// </summary>
+    public sealed class PoliceContacts
+    {
+        private readonly System.Collections.Generic.List<string> _ids = new System.Collections.Generic.List<string>();
+        private readonly bool _enabled;
+
+        public PoliceContacts(PoliceConfig config) => _enabled = config != null && config.contactsEnabled;
+
+        public System.Collections.Generic.IReadOnlyList<string> Ids => _ids;
+        /// <summary>Un contact peut être appelé (crochet actif et au moins un contact).</summary>
+        public bool HasContact => _enabled && _ids.Count > 0;
+
+        /// <summary>Un événement de vie (jalon 7) donne un contact (« un cousin à la brigade »…).</summary>
+        public void Add(string id)
+        {
+            if (!string.IsNullOrEmpty(id) && !_ids.Contains(id)) _ids.Add(id);
+        }
+    }
+
     [Serializable]
     public class PoliceConfig
     {
-        /// <summary>Contrôles actifs dans le jeu (false : rien ne se passe ; à activer par Kevin).</summary>
-        public bool enabled;
+        /// <summary>Contrôles actifs dans le jeu (activés le 21/11 après les décisions de Kevin ; le reste en valeurs par défaut).</summary>
+        public bool enabled = true;
 
         /// <summary>Postes fixes (positions provisoires, à placer par Kevin).</summary>
         public CheckpointData[] checkpoints =
@@ -111,31 +147,66 @@ namespace TaxiKmer.Core.Police
         /// <summary>La somme ne descend pas sous ce montant en négociant.</summary>
         public int negotiateFloor = 500;
 
-        /// <summary>Contester (question 3 du jalon 4 : peut-on gagner ?). « gagne » a un poids 0 tant que Kevin n'a pas décidé.</summary>
+        /// <summary>
+        /// Contester, option B (tranché par Kevin le 21/11) : on gagne parfois, environ 1 fois sur 3, seulement si le
+        /// problème est inventé et les papiers en règle (« gagne », <see cref="ChoiceOutcomeData.requiresInvented"/>) ;
+        /// sinon on perd (paie plus) ou c'est la fourrière. Poids : problème inventé → gagne 1 sur 3 (1 / (1 + 1,5 + 0,5)) ;
+        /// problème réel → perd 3 fois sur 4, fourrière 1 fois sur 4 (valeurs par défaut).
+        /// </summary>
         public ChoiceOutcomeData[] contestOutcomes =
         {
-            new ChoiceOutcomeData { id = "perd", weight = 1f, payFactor = 1.5f, lostMinutes = 60 },
-            new ChoiceOutcomeData { id = "fourriere", weight = 0f, payFactor = 0f, lostMinutes = 0, impound = true },
-            new ChoiceOutcomeData { id = "gagne", weight = 0f, payFactor = 0f, lostMinutes = 30 },
+            new ChoiceOutcomeData { id = "perd", weight = 1.5f, payFactor = 1.5f, lostMinutes = 60 },
+            new ChoiceOutcomeData { id = "fourriere", weight = 0.5f, payFactor = 0f, lostMinutes = 0, impound = true },
+            new ChoiceOutcomeData { id = "gagne", weight = 1f, payFactor = 0f, lostMinutes = 30, requiresInvented = true },
         };
-        /// <summary>Appeler quelqu'un (qui, et ce que ça change : décision de Kevin). L'issue « arrange » a un poids 0.</summary>
+        /// <summary>
+        /// Appeler quelqu'un, option B (tranché par Kevin le 21/11) : ça marche si on a un contact (« arrange ») ; sans
+        /// contact, personne ne répond. Les contacts viennent des événements de vie du jalon 7 (<see cref="PoliceContacts"/>,
+        /// coupé tant que le jalon 7 n'existe pas : <see cref="contactsEnabled"/>).
+        /// </summary>
         public ChoiceOutcomeData[] callOutcomes =
         {
-            new ChoiceOutcomeData { id = "personne", weight = 1f, payFactor = 1f, lostMinutes = 20 },
-            new ChoiceOutcomeData { id = "arrange", weight = 0f, payFactor = 0f, lostMinutes = 20 },
+            new ChoiceOutcomeData { id = "personne", weight = 1f, payFactor = 1f, lostMinutes = 20, onlyWithoutContact = true },
+            new ChoiceOutcomeData { id = "arrange", weight = 1f, payFactor = 0f, lostMinutes = 20, requiresContact = true },
         };
-        /// <summary>Frais de fourrière (FCFA), payés sur la journée.</summary>
+        /// <summary>Crochet du jalon 7 : les contacts comptent pour « appeler quelqu'un » (false tant que le jalon 7 n'existe pas).</summary>
+        public bool contactsEnabled;
+
+        /// <summary>
+        /// Fuir un contrôle, option B (tranché par Kevin le 21/11) : possible, avec une poursuite. Rattrapé → fourrière ;
+        /// échappé → recherché jusqu'à la fin de la journée.
+        /// </summary>
+        public bool fleeEnabled = true;
+        public ChoiceOutcomeData[] fleeOutcomes =
+        {
+            new ChoiceOutcomeData { id = "echappe", weight = 0.6f, payFactor = 0f, lostMinutes = 5, wanted = true },
+            new ChoiceOutcomeData { id = "rattrape", weight = 0.4f, payFactor = 0f, lostMinutes = 15, impound = true },
+        };
+        /// <summary>Recherché : le prochain contrôle en place l'arrête à coup sûr…</summary>
+        public float wantedStopChance = 1f;
+        /// <summary>… et le policier parle de cette somme si ça ne finit pas en fourrière ou en arrestation (FCFA).</summary>
+        public int demandFled = 10000;
+        /// <summary>Au prochain poste, recherché : fourrière, arrestation, ou contrôle ordinaire (« oublie »).</summary>
+        public ChoiceOutcomeData[] wantedOutcomes =
+        {
+            new ChoiceOutcomeData { id = "fourriere", weight = 0.4f, payFactor = 0f, lostMinutes = 0, impound = true },
+            new ChoiceOutcomeData { id = "arrestation", weight = 0.2f, payFactor = 0f, lostMinutes = 0, arrest = true },
+            new ChoiceOutcomeData { id = "oublie", weight = 0.4f, payFactor = 0f, lostMinutes = 0 },
+        };
+
+        /// <summary>Frais de fourrière (FCFA), payés sur la journée. Le propriétaire renvoie à la 2ᵉ fourrière (owner.json).</summary>
         public int impoundFee = 15000;
-        /// <summary>Réputation : payer le policier, refuser (contester ou appeler). 0 tant que Kevin n'a pas décidé.</summary>
+        /// <summary>Réputation : payer le policier. 0 : payer, refuser ou contester ne la changent pas (tranché par Kevin le 21/11).</summary>
         public int reputationPaid;
 
         public PaperData[] papers =
         {
             new PaperData { id = "permis", name = "Permis de conduire", validityDays = 0 },
             new PaperData { id = "carte-grise", name = "Carte grise", validityDays = 0 },
+            // Option A (tranché par Kevin le 21/11) : durées proches du réel, en jours de jeu.
             new PaperData { id = "assurance", name = "Assurance", validityDays = 30, startDaysLeft = 12 },
-            new PaperData { id = "visite-technique", name = "Visite technique", validityDays = 60, startDaysLeft = 25 },
-            new PaperData { id = "licence-taxi", name = "Licence de taxi", validityDays = 90, startDaysLeft = 40 },
+            new PaperData { id = "visite-technique", name = "Visite technique", validityDays = 180, startDaysLeft = 25 },
+            new PaperData { id = "licence-taxi", name = "Licence de taxi", validityDays = 365, startDaysLeft = 40 },
         };
 
         /// <summary>Exemples à remplacer par Kevin (ton du jalon 4 : satirique, dramatique ou les deux).</summary>

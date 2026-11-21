@@ -96,6 +96,27 @@ namespace TaxiKmer.Core.Day
             RideCount++;
         }
 
+        /// <summary>Pourboires du jour (FCFA), compris dans la recette.</summary>
+        public int Tips { get; private set; }
+
+        /// <summary>Pourboire d'un passager content (jalon 5) : s'ajoute à la recette sans compter de course.</summary>
+        public void AddTip(int amount)
+        {
+            if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            Revenue += amount;
+            Tips += amount;
+        }
+
+        /// <summary>Argent reçu d'un autre conducteur pour les réparations (jalon 6) : dans la recette, sans course.</summary>
+        public int Compensations { get; private set; }
+
+        public void AddCompensation(int amount)
+        {
+            if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            Revenue += amount;
+            Compensations += amount;
+        }
+
         public void AddDistance(float meters)
         {
             if (meters < 0f) throw new ArgumentOutOfRangeException(nameof(meters));

@@ -29,6 +29,12 @@ namespace TaxiKmer.Core.Police
 
         public IReadOnlyList<ControlPost> Posts => _posts;
 
+        /// <summary>
+        /// Le chauffeur a fui un contrôle (option B, tranché par Kevin le 21/11) : recherché jusqu'à la fin de la journée,
+        /// le prochain contrôle en place l'arrête avec <see cref="PoliceConfig.wantedStopChance"/>.
+        /// </summary>
+        public bool Wanted { get; set; }
+
         /// <param name="startMinute">Début de la journée (minutes depuis minuit).</param>
         /// <param name="endMinute">Fin de la journée.</param>
         public PoliceSchedule(PoliceConfig config, float routeLength, int startMinute, int endMinute, Random random)
@@ -59,7 +65,11 @@ namespace TaxiKmer.Core.Police
         /// Le taxi est passé de <paramref name="fromAlong"/> à <paramref name="toAlong"/> à cette minute : rend le contrôle
         /// en place qui l'arrête (tiré selon la chance d'arrêt, pas deux fois au même endroit trop vite), sinon null.
         /// </summary>
-        public ControlPost Update(float fromAlong, float toAlong, int minute)
+        /// <param name="stopFactor">
+        /// Multiplie la chance d'arrêt : effet de la réputation (décision de Kevin du 21/11,
+        /// <see cref="TaxiKmer.Core.Career.ReputationEffects.PoliceStop"/>) ; 1 par défaut.
+        /// </param>
+        public ControlPost Update(float fromAlong, float toAlong, int minute, float stopFactor = 1f)
         {
             if (!_config.enabled) return null;
             var lo = Math.Min(fromAlong, toAlong);
@@ -68,13 +78,78 @@ namespace TaxiKmer.Core.Police
             foreach (var p in _posts)
             {
                 if (!p.ActiveAt(minute) || p.Along < lo || p.Along >= hi) continue;
-                if (p.LastStopMinute != int.MinValue && minute - p.LastStopMinute < _config.checkpointCooldownMinutes) continue;
-                var chance = p.Flying ? _config.flyingStopChance : _config.checkpointStopChance;
+                if (!Wanted && p.LastStopMinute != int.MinValue && minute - p.LastStopMinute < _config.checkpointCooldownMinutes) continue;
+                var chance = (p.Flying ? _config.flyingStopChance : _config.checkpointStopChance) * Math.Max(0f, stopFactor);
+                if (Wanted) chance = Math.Max(chance, _config.wantedStopChance);
                 if (_random.NextDouble() >= chance) continue;
                 p.LastStopMinute = minute;
                 return p;
             }
             return null;
+        }
+    }
+}
+
+namespace TaxiKmer.Core.Police
+{
+    /// <summary>
+    /// La police sur une journée (jalon 4, actif depuis le 21/11) : postes et contrôles volants, papiers, contacts, et le
+    /// chauffeur recherché après une fuite. La présentation appelle <see cref="Update"/> à chaque image, montre le
+    /// contrôle rendu, fait choisir le joueur, puis appelle <see cref="Close"/> et applique le contrôle à la journée
+    /// (<see cref="TaxiKmer.Core.Rides.Street.ApplyPoliceControl"/>).
+    /// </summary>
+    public sealed class PoliceDay
+    {
+        private readonly PoliceConfig _config;
+        private readonly Random _random;
+
+        public PoliceSchedule Schedule { get; }
+        public PaperSet Papers { get; }
+        public PoliceContacts Contacts { get; }
+        public int Day { get; }
+        /// <summary>Contrôle en cours (null sinon).</summary>
+        public PoliceControl Current { get; private set; }
+        public ControlPost CurrentPost { get; private set; }
+        /// <summary>Contrôles subis dans la journée.</summary>
+        public int Controls { get; private set; }
+
+        public PoliceDay(PoliceConfig config, PaperSet papers, PoliceContacts contacts, int day, float routeLength, int startMinute, int endMinute, Random random)
+        {
+            _config = config ?? throw new ArgumentNullException(nameof(config));
+            _random = random ?? throw new ArgumentNullException(nameof(random));
+            Papers = papers ?? new PaperSet(config);
+            Contacts = contacts ?? new PoliceContacts(config);
+            Day = day;
+            Schedule = new PoliceSchedule(config, routeLength, startMinute, endMinute, random);
+        }
+
+        public bool Enabled => _config.enabled;
+
+        /// <summary>
+        /// Le taxi a roulé de <paramref name="fromAlong"/> à <paramref name="toAlong"/> : rend le contrôle qui commence
+        /// (null sinon, ou si un contrôle est déjà en cours).
+        /// </summary>
+        public PoliceControl Update(float fromAlong, float toAlong, int minute, int passengers, int frontPassengers, float stopFactor = 1f)
+        {
+            if (!_config.enabled || Current != null) return null;
+            var post = Schedule.Update(fromAlong, toAlong, minute, stopFactor);
+            if (post == null) return null;
+            CurrentPost = post;
+            Current = new PoliceControl(_config, Papers, Day, passengers, frontPassengers, _random, Contacts.HasContact, Schedule.Wanted);
+            if (Schedule.Wanted) Schedule.Wanted = false; // retrouvé : l'affaire se règle à ce contrôle
+            Controls++;
+            return Current;
+        }
+
+        /// <summary>Le contrôle est terminé : fuite réussie → recherché. Rend le contrôle terminé (null s'il n'est pas clos).</summary>
+        public PoliceControl Close()
+        {
+            if (Current == null || !Current.Closed) return null;
+            var done = Current;
+            if (done.BecameWanted) Schedule.Wanted = true;
+            Current = null;
+            CurrentPost = null;
+            return done;
         }
     }
 }

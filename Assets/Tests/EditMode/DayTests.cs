@@ -8,7 +8,7 @@ namespace TaxiKmer.Core.Tests
         [Test]
         public void Clock_RunsFrom6To20In35Minutes()
         {
-            var day = new DayConfig();
+            var day = new DayConfig { versement = 10000 };
             Assert.AreEqual(2100f, day.dayLengthRealSeconds, "Journée de 35 min réelles (décision de Kevin, 2026-11-21 : piste B).");
             var clock = new DayClock(day);
             Assert.AreEqual("06:00", clock.Display);
@@ -27,7 +27,7 @@ namespace TaxiKmer.Core.Tests
         [Test]
         public void Ledger_RemainingAfterVersementAndFuel()
         {
-            var ledger = new DayLedger(new DayConfig());
+            var ledger = new DayLedger(new DayConfig { versement = 10000 });
             for (var i = 0; i < 40; i++) ledger.AddFare(300);
             ledger.AddDistance(50000f); // 50 km → 4 L → 3 360 FCFA
             Assert.AreEqual(12000, ledger.Revenue);
@@ -39,7 +39,7 @@ namespace TaxiKmer.Core.Tests
         [Test]
         public void Ledger_CanBeNegative()
         {
-            var ledger = new DayLedger(new DayConfig());
+            var ledger = new DayLedger(new DayConfig { versement = 10000 });
             ledger.AddFare(500);
             Assert.Less(ledger.Remaining, 0);
         }
@@ -47,7 +47,7 @@ namespace TaxiKmer.Core.Tests
         [Test]
         public void Summary_MatchesLedger_AndAddsUp()
         {
-            var ledger = new DayLedger(new DayConfig());
+            var ledger = new DayLedger(new DayConfig { versement = 10000 });
             ledger.AddFare(500); ledger.AddFare(400); ledger.AddFare(300);
             ledger.AddDistance(37400f); // 37,4 km → 2,992 L → 2 513,28 → 2 513 FCFA
             var s = DaySummary.From(ledger, 2, 900);
@@ -69,7 +69,7 @@ namespace TaxiKmer.Core.Tests
         [Test]
         public void Summary_IsASnapshot()
         {
-            var ledger = new DayLedger(new DayConfig());
+            var ledger = new DayLedger(new DayConfig { versement = 10000 });
             for (var i = 0; i < 30; i++) ledger.AddFare(400);
             var s = DaySummary.From(ledger);
             ledger.AddFare(800);

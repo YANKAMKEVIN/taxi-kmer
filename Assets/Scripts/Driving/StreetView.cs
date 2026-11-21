@@ -57,6 +57,16 @@ namespace TaxiKmer.Driving
         private Text _pushText, _technicianText;
         // Radio du taxi (radio.json ; créée seulement si enabled).
         private RadioView _radio;
+        // Contrôles de police (police.json ; créés seulement si enabled, jalon 4 activé le 21/11).
+        private PoliceView _police;
+        private bool _policeWasActive;
+        // Passagers qui parlent (dialogues.json ; créés seulement si enabled, jalon 5 activé le 21/11).
+        private TalkView _talk;
+        // La route est dure (road.json ; créée seulement si enabled, jalon 6 activé le 21/11).
+        private RoadView _road;
+        // Rédaction de la radio : événements du jeu → flashs d'information (décision de Kevin du 21/11).
+        private readonly Core.Radio.RadioNewsDesk _news = new Core.Radio.RadioNewsDesk();
+        private Stop[] _stopList = new Stop[0];
         private DaySummaryView _summaryView;
         private Tutorial _tutorial;
         private Image _tutorialPanel;
@@ -137,6 +147,7 @@ namespace TaxiKmer.Driving
             _camera = Camera.main;
 
             var stops = Load("Data/stops_messassi_etoudi", new StopsConfig());
+            _stopList = stops.stops ?? new Stop[0];
             var fares = Load("Data/fares", FareConfig.Default());
             _fuel = Load("Data/fuel", new FuelConfig());
             var shift = new Shift(Load("Data/day", new DayConfig()), Load("Data/seating", new SeatingConfig()), _fuel);
@@ -185,6 +196,22 @@ namespace TaxiKmer.Driving
             _technicianButton.gameObject.SetActive(false);
             var radio = Load("Data/radio", new Core.Radio.RadioConfig());
             if (radio.enabled) _radio = new RadioView(controls.Overlay, controls.Font, taxi.gameObject, radio);
+            var police = Load("Data/police", new Core.Police.PoliceConfig());
+            var dayCfg = Load("Data/day", new DayConfig());
+            var dialogues = Load("Data/dialogues", new Core.Talk.DialogueConfig());
+            if (dialogues.enabled)
+            {
+                _talk = new TalkView(controls.Overlay, controls.Font, taxi.gameObject, dialogues, actualSeed + 53);
+                Street.FareDisputes = dialogues.FareRules();
+                Street.DisputeRandom = new System.Random(actualSeed + 59);
+            }
+            var road = Load("Data/road", new Core.Road.RoadConfig());
+            if (road.enabled)
+                _road = new RoadView(controls.Overlay, controls.Font, road, _cum[_cum.Length - 1], Save.Data.career.vehicleDamage,
+                    dayCfg.startHour * 60, dayCfg.endHour * 60, Today.Month, actualSeed + 61);
+            if (police.enabled)
+                _police = new PoliceView(controls.Overlay, controls.Font, police, Save.Career.DayNumber, _cum[_cum.Length - 1],
+                    dayCfg.startHour * 60, dayCfg.endHour * 60, actualSeed + 47);
             _menu = new GameMenu(!TitleDone);
             _menuView = new GameMenuView(transform, controls.Font);
             _settings.Volume = PlayerPrefs.GetFloat(VolumeKey, GameSettings.DefaultVolume);
@@ -227,7 +254,8 @@ namespace TaxiKmer.Driving
 
         private void ApplyTrafficScale()
         {
-            var scale = (_quality != null ? _quality.Current.trafficScale : 1f) * (_calendar != null ? Today.TrafficFactor : 1f);
+            var scale = (_quality != null ? _quality.Current.trafficScale : 1f) * (_calendar != null ? Today.TrafficFactor : 1f)
+                * (_road != null ? _road.Road.Weather.TrafficFactor(Street.Shift.Clock.GameMinutes) : 1f);
             City.Traffic.DensityScale = scale;
             City.Pedestrians.DensityScale = scale;
         }
@@ -260,7 +288,7 @@ namespace TaxiKmer.Driving
             // Le bilan passe devant tout (l'écran titre ne reste pas affiché par-dessus).
             ApplyMenu(_menuView.Update(Street.DayFinished ? MenuScreen.None : _menu.Screen, _settings, shift.Cabin.PassengerCount));
             if (controls.PauseTriggered && !Street.DayFinished && _menu.Pause()) SetTimeStopped(true);
-            controls.Locked = _menu.Frozen || _summaryView != null;
+            controls.Locked = _menu.Frozen || _summaryView != null || (_police != null && _police.Active);
 
             if (!Street.DayFinished && !_menu.Frozen)
             {
@@ -299,9 +327,31 @@ namespace TaxiKmer.Driving
                 Haptics.Play(HapticEvent.Honk);
                 OnHonk(state);
             }
+            if (Street.DryTankLeft > 0) Toast(FuelGauge.PassengersLeftMessage(Street.DryTankLeft), 6f);
+            if (_police != null)
+            {
+                var policeDone = _police.Update(Street, state, !_menu.Frozen && _summaryView == null);
+                if (policeDone.Length > 0) Toast(policeDone, 6f);
+                if (_police.Active && !_policeWasActive) _talk?.Say(Core.Talk.TalkTriggers.Control, TalkView.AnyPassenger(Street));
+                _policeWasActive = _police.Active;
+            }
+            if (_road != null)
+            {
+                var roadSays = _road.Update(Street, state, !_menu.Frozen && _summaryView == null);
+                if (roadSays.Length > 0) Toast(roadSays, 6f);
+                if (_road.RainStarted) _talk?.Say(Core.Talk.TalkTriggers.Rain, TalkView.AnyPassenger(Street));
+                if (_road.IncidentStarted) _talk?.Say(Core.Talk.TalkTriggers.Breakdown, TalkView.AnyPassenger(Street));
+                Street.SpawnRateScale = Today.ClientsFactor * _road.Road.Weather.ClientsFactor(shift.Clock.GameMinutes);
+            }
+            if (_radio != null) UpdateRadioNews();
+            if (_talk != null)
+            {
+                var said = _talk.Update(dt, Street, state, !_menu.Frozen && _summaryView == null);
+                if (said.Length > 0) Toast(said, 5f);
+            }
             UpdateDryTank(state);
-            // La radio se tait en pause et au bilan ; pas encore de bulles de dialogue dans Unity (jalon 5 coupé).
-            _radio?.Update(dt, !Street.DayFinished && !_menu.Frozen && _summaryView == null, false);
+            // La radio se tait en pause et au bilan ; elle baisse quand un passager parle (jalon 5).
+            _radio?.Update(dt, !Street.DayFinished && !_menu.Frozen && _summaryView == null, _talk != null && _talk.Speaking);
             var action = Street.AvailableAction(state);
             if (controls.ActionTriggered && action.Kind != StreetActionKind.None) OnAction(state);
             action = Street.AvailableAction(state);
@@ -430,6 +480,8 @@ namespace TaxiKmer.Driving
         private void OnHonk(TaxiOnRoute state)
         {
             var result = Street.Honk(state, out var client);
+            if ((result == HonkResult.Accepted || result == HonkResult.AcceptedNeedsMove) && Street.PendingHaggle == null)
+                _talk?.Say(Core.Talk.TalkTriggers.Price, client.Client.Id);
             switch (result)
             {
                 case HonkResult.Accepted:
@@ -493,7 +545,8 @@ namespace TaxiKmer.Driving
                         _sounds.PlayCoins();
                         Haptics.Play(HapticEvent.Payment);
                     }
-                    foreach (var c in outcome.Dropped) SpawnLeavingPerson(c);
+                    foreach (var c in outcome.Dropped) { SpawnLeavingPerson(c); _talk?.Forget(c.Id); }
+                    if (outcome.Refusal == null && outcome.Dropped != null && outcome.Dropped.Count > 0) _talk?.Say(Core.Talk.TalkTriggers.Paid, outcome.Dropped[0].Id);
                     break;
                 case StreetActionKind.Refuel:
                     if (outcome.FuelLitres > 0f)
@@ -510,6 +563,8 @@ namespace TaxiKmer.Driving
                         Haptics.Play(HapticEvent.Board);
                         var moved = outcome.Moved != null ? "Un passager a changé de place. " : "";
                         Toast($"{moved}Monté : {ShortName(outcome.Boarded.DestinationStopId)}, {Money(outcome.Boarded.ProposedFare)}");
+                        if (outcome.Moved != null) _talk?.Say(Core.Talk.TalkTriggers.SeatMove, outcome.Moved.Id);
+                        else _talk?.Say(Core.Talk.TalkTriggers.Boarding, outcome.Boarded.Id);
                     }
                     else if (outcome.Board == BoardResult.DayOver) Toast("La journée est finie");
                     else
@@ -522,11 +577,35 @@ namespace TaxiKmer.Driving
             }
         }
 
+        /// <summary>« vers Emana » : le lieu à clients le plus proche d'une position de l'itinéraire (pour les flashs).</summary>
+        private string PlaceNear(float along)
+        {
+            Stop best = null;
+            foreach (var st in _stopList)
+                if (best == null || Mathf.Abs(st.distanceAlongRouteMeters - along) < Mathf.Abs(best.distanceAlongRouteMeters - along)) best = st;
+            return best != null ? $"vers {ShortName(best.id)}" : "";
+        }
+
+        /// <summary>Flashs d'information : pluie, contrôles volants, heures de pointe, jour de marché (radio.json → flashes).</summary>
+        private void UpdateRadioNews()
+        {
+            if (Street.DayFinished) return;
+            var minute = Street.Shift.Clock.GameMinutes;
+            var controls = new List<(string, string)>();
+            if (_police != null)
+                foreach (var p in _police.Police.Schedule.Posts)
+                    if (p.Flying && p.ActiveAt(minute)) controls.Add((p.Id, PlaceNear(p.Along)));
+            var raining = _road != null && _road.Raining;
+            var jam = _stopList.Length > 0 ? PlaceNear(_stopList[_stopList.Length - 1].distanceAlongRouteMeters) : "";
+            foreach (var item in _news.Update(minute, raining, Today.Market, _calendar.MarketName, controls, jam))
+                _radio.Radio.PushEvent(item.Event, item.Place);
+        }
+
         /// <summary>Réservoir : vitesse limitée quand il est vide, messages de réserve et de panne sèche (une fois chacun).</summary>
         private void UpdateFuel(FuelTank tank)
         {
             if (tank == null) return;
-            taxi.SpeedCapKmh = tank.SpeedCapKmh;
+            taxi.SpeedCapKmh = Mathf.Min(tank.SpeedCapKmh, _road != null ? _road.Road.SpeedCapKmh : float.PositiveInfinity);
             if (Street.DayFinished) return;
             if (!tank.IsLow) _lowFuelShown = _emptyFuelShown = false;
             if (tank.IsLow && !_lowFuelShown) { _lowFuelShown = true; Toast(FuelGauge.LowMessage, 5f); }
@@ -534,6 +613,7 @@ namespace TaxiKmer.Driving
             {
                 _emptyFuelShown = true;
                 Toast(FuelGauge.EmptyMessage, 7f);
+                _talk?.Say(Core.Talk.TalkTriggers.Breakdown, TalkView.AnyPassenger(Street));
                 Haptics.Play(HapticEvent.Refused);
             }
         }
@@ -608,6 +688,7 @@ namespace TaxiKmer.Driving
             _messages.Clear();
             foreach (var p in _pops) Destroy(p.text.gameObject);
             _pops.Clear();
+            if (_road != null) Save.Data.career.vehicleDamage = _road.Road.Car.Damage; // les dégâts passent d'un jour à l'autre
             var closure = Save.CloseDay();
             _summaryView = gameObject.AddComponent<DaySummaryView>();
             var reputation = Street.Reputation != null && Street.Reputation.Visible
