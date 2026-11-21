@@ -1,6 +1,6 @@
 # État du projet — Taxi Kmer
 
-**Phase** : jalon 4 ouvert (logique pure, 2026-11-21) ; jalon 1 terminé côté code (validation sur téléphone en attente) ; jalon 2 « La ville vit » ouvert le 2026-11-14 (`docs/tech/jalon-02.md`) ; jalon 3, partie technique (sauvegarde) ouverte le 2026-11-15 à la demande de Kevin (`docs/tech/jalon-03.md`).
+**Phase** : jalons 4 et 5 ouverts (logique pure, 2026-11-21) ; jalon 1 terminé côté code (validation sur téléphone en attente) ; jalon 2 « La ville vit » ouvert le 2026-11-14 (`docs/tech/jalon-02.md`) ; jalon 3, partie technique (sauvegarde) ouverte le 2026-11-15 à la demande de Kevin (`docs/tech/jalon-03.md`).
 
 **Décidé** (Kevin, 2026-11-11) : nom « Taxi Kmer » ; dépôt séparé de Pokemake ; trois types de course (partagée, dépôt, via une appli fictive) ; monde libre ; style réaliste ; Unity 6.3 LTS (6000.3.28f1, URP) avec réglages bas / moyen / haut ; Street View et internet = référence seulement, textures libres puis photos sur place fournies par Kevin.
 
@@ -17,6 +17,8 @@
 **Consolidation (2026-11-21, session cloud, branche `claude/avance`)** : la jauge de versement du HUD et le tampon du bilan déduisent le carburant acheté et les frais imprévus, comme le propriétaire (avant : « Versement couvert » à l'écran puis « Il manque » au bilan) ; test de cohérence de toutes les données (`DataInvariantsTests` : clés connues du code, .meta, bornes, carburant compatible avec la route) ; correction d'un plantage au klaxon quand un client ne rentre qu'en faisant changer quelqu'un de place (`TaxiCabin.FindMoveToFit`, trouvé par la simulation d'équilibrage) ; **simulation de journées types** (`jalon-03.md`, « Équilibrage ») : la recette d'une journée de 10 min plafonne vers 2 000 à 3 500 FCFA, le versement de 10 000 est hors d'atteinte et le carburant ×8 coûte plus que la recette → renvoi le 3ᵉ jour ; pistes A / B / C à trancher par Kevin ; 254 tests dotnet.
 
 **Jalon 4 « Le contrôle », logique pure** (2026-11-21, session cloud, `docs/tech/jalon-04.md`) : papiers à dates d'expiration, postes fixes et contrôles volants, problème trouvé ou inventé, payer / négocier / contester / appeler, temps, argent, fourrière, réputation (`Core/Police`, `police.json`) ; **coupé** (`enabled: false`) et sans affichage Unity tant que Kevin n'a pas répondu aux 9 questions du jalon ; 267 tests dotnet.
+
+**Jalon 5 « Les passagers parlent », mécanisme** (2026-11-21, `docs/tech/jalon-05.md`) : dialogues dans les données, une bulle à la fois lisible en conduisant, anti-répétition, réponses rapides qui expirent, plaintes sur le détour (`Core/Talk`, `dialogues.json`) ; 3 lignes d'**exemple à remplacer**, **coupé** (`enabled: false`) en attendant les répliques de Kevin ; radio et sons non faits (assets) ; 277 tests dotnet.
 
 **Fusion avec les 15 améliorations UI/UX de `main`** (2026-11-21) : pause, frise, jauges, messages empilés, bilan animé, pictogrammes, sons et vibrations gardés avec le jalon 2 et la sauvegarde ; bilan animé à lignes variables (dépenses, épargne, propriétaire, garde à vue), « Jour N » à droite de l'horloge, bouton Qualité (commande 8) entre le plan des places et les flèches ; 210 tests dotnet et 19 Python verts, code Unity compilé hors Unity. **Pas encore lancé dans Unity.**
 

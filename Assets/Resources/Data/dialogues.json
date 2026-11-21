@@ -1,0 +1,23 @@
+{
+    "_note": "Dialogues des passagers (jalon 5, docs/tech/jalon-05.md). Mécanisme prêt, coupé (enabled = false) : les répliques sont le contenu de Kevin (question 3 du jalon 5) ; les trois lignes ci-dessous sont des EXEMPLES À REMPLACER. trigger : montee, discussion, place, detour, paiement, negociation, refus-paiement. character : id d'un personnage type (vide = n'importe quel passager). Lecture en conduisant : minShowSeconds, charsPerSecond, maxChars ; minGapSeconds = silence entre deux bulles ; noRepeatWithin = une réplique ne revient pas avant N autres ; replySeconds = durée des réponses rapides ; detourMeters = plainte quand le taxi s'éloigne d'autant de la destination ; haggleChance / refusesToPayChance = 0 tant que Kevin n'a pas décidé des conséquences.",
+    "enabled": false,
+    "minShowSeconds": 2.5,
+    "charsPerSecond": 14,
+    "maxChars": 90,
+    "minGapSeconds": 6,
+    "noRepeatWithin": 12,
+    "replySeconds": 4,
+    "chatEverySeconds": 45,
+    "detourMeters": 150,
+    "haggleChance": 0,
+    "refusesToPayChance": 0,
+    "characters": [],
+    "lines": [
+        { "id": "exemple-montee", "trigger": "montee", "character": "", "text": "Bonjour chauffeur ! (exemple à remplacer)", "replies": [] },
+        { "id": "exemple-detour", "trigger": "detour", "character": "", "text": "Chauffeur, ce n'est pas la route ! (exemple à remplacer)", "replies": [
+            { "id": "rassurer", "text": "On arrive (exemple)", "reputation": 0 },
+            { "id": "ignorer", "text": "… (exemple)", "reputation": 0 }
+        ] },
+        { "id": "exemple-place", "trigger": "place", "character": "", "text": "Je dois encore bouger ? (exemple à remplacer)", "replies": [] }
+    ]
+}

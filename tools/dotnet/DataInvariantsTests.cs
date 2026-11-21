@@ -57,6 +57,7 @@ namespace TaxiKmer.Core.DotnetTests
             ["traffic.json"] = typeof(CityConfig),
             ["world_messassi_etoudi.json"] = typeof(TaxiKmer.Core.World.WorldData),
             ["police.json"] = typeof(TaxiKmer.Core.Police.PoliceConfig),
+            ["dialogues.json"] = typeof(TaxiKmer.Core.Talk.DialogueConfig),
         };
 
         [Test]
@@ -240,6 +241,26 @@ namespace TaxiKmer.Core.DotnetTests
             foreach (var o in p.contestOutcomes.Concat(p.callOutcomes)) Assert.GreaterOrEqual(o.weight, 0f, o.id);
             Assert.Greater(p.contestOutcomes.Sum(o => o.weight), 0f);
             Assert.Greater(p.callOutcomes.Sum(o => o.weight), 0f);
+        }
+
+        [Test]
+        public void Dialogues_Readable_KnownTriggers_ExamplesMarked_Off()
+        {
+            var d = Load<TaxiKmer.Core.Talk.DialogueConfig>("dialogues.json");
+            Assert.IsFalse(d.enabled, "Coupé tant que Kevin n'a pas écrit ou validé les répliques (jalon-05.md).");
+            Assert.AreEqual(0f, d.haggleChance, "Conséquences de la négociation : décision de Kevin.");
+            Assert.AreEqual(0f, d.refusesToPayChance, "Conséquences du refus de payer : décision de Kevin.");
+            Assert.AreEqual(d.lines.Length, d.lines.Select(l => l.id).Distinct().Count());
+            var characters = new HashSet<string>(d.characters.Select(c => c.id));
+            foreach (var l in d.lines)
+            {
+                CollectionAssert.Contains(TaxiKmer.Core.Talk.TalkTriggers.All, l.trigger, l.id);
+                Assert.LessOrEqual(l.text.Length, d.maxChars, $"{l.id} : trop long pour être lu en conduisant");
+                Assert.IsTrue(string.IsNullOrEmpty(l.character) || characters.Contains(l.character), $"{l.id} : personnage inconnu");
+                StringAssert.Contains("exemple", l.text, "Seules des lignes d'exemple tant que Kevin n'a pas écrit les siennes.");
+            }
+            Assert.Greater(d.minShowSeconds, 0f);
+            Assert.Greater(d.charsPerSecond, 0f);
         }
 
         [Test]
