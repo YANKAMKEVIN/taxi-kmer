@@ -12,7 +12,10 @@ namespace TaxiKmer.Core.Police
         public int validityDays;
         /// <summary>Jours de validité qui restent au début d'une carrière (0 : toute la durée).</summary>
         public int startDaysLeft;
-        /// <summary>Coût du renouvellement (FCFA). Question 2 du jalon 4 : à fixer par Kevin.</summary>
+        /// <summary>
+        /// Coût du renouvellement (FCFA), payé sur l'épargne au renouvellement automatique (<see cref="PaperRenewal"/>).
+        /// 0 pour tous les papiers (jalon-04.md) : montants encore à fixer par Kevin.
+        /// </summary>
         public int renewalCost;
     }
 
@@ -198,6 +201,12 @@ namespace TaxiKmer.Core.Police
         public int impoundFee = 15000;
         /// <summary>Réputation : payer le policier. 0 : payer, refuser ou contester ne la changent pas (tranché par Kevin le 21/11).</summary>
         public int reputationPaid;
+
+        /// <summary>
+        /// Les papiers se renouvellent tout seuls à l'échéance, payés sur l'épargne (tranché par Kevin le 21/11) ; épargne
+        /// insuffisante : le papier reste expiré et un message l'annonce (valeur par défaut de Claude).
+        /// </summary>
+        public bool autoRenewPapers = true;
 
         public PaperData[] papers =
         {

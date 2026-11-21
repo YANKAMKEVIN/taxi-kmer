@@ -59,6 +59,9 @@ namespace TaxiKmer.Driving
         private RadioView _radio;
         // Contrôles de police (police.json ; créés seulement si enabled, jalon 4 activé le 21/11).
         private PoliceView _police;
+        /// <summary>Messages du renouvellement des papiers au début de la journée (décision de Kevin du 21/11).</summary>
+        private readonly List<string> _paperNews = new List<string>();
+        private float _paperNewsAt = -1f;
         private bool _policeWasActive;
         // Passagers qui parlent (dialogues.json ; créés seulement si enabled, jalon 5 activé le 21/11).
         private TalkView _talk;
@@ -211,7 +214,7 @@ namespace TaxiKmer.Driving
                 _road = new RoadView(controls.Overlay, controls.Font, road, _cum[_cum.Length - 1], Save.Data.career.vehicleDamage,
                     dayCfg.startHour * 60, dayCfg.endHour * 60, Today.Month, actualSeed + 61);
             if (police.enabled)
-                _police = new PoliceView(controls.Overlay, controls.Font, police, Save.Career.DayNumber, _cum[_cum.Length - 1],
+                _police = new PoliceView(controls.Overlay, controls.Font, police, Save.StartDayPapers(police, _paperNews), Save.Career.DayNumber, _cum[_cum.Length - 1],
                     dayCfg.startHour * 60, dayCfg.endHour * 60, actualSeed + 47);
             _menu = new GameMenu(!TitleDone);
             _menuView = new GameMenuView(transform, controls.Font);
@@ -317,11 +320,18 @@ namespace TaxiKmer.Driving
                     Toast($"{career}Jour {Save.Career.DayNumber}, {Today.Name} : le patron te veut sur la route de {start.startHour} h à {start.endHour} h", 6f);
                     var news = _calendar.Announcement(Today);
                     if (news.Length > 0) Toast(news, 6f);
+                    // Papiers renouvelés, ou restés expirés faute d'épargne : après les annonces du jour (pile de 2 messages).
+                    if (_paperNews.Count > 0) _paperNewsAt = Time.time + 6f;
                 }
                 City.Populate(Hour, PlayerState());
             }
             City.Update(dt, Hour, PlayerState());
             foreach (var lost in Street.Lost) OnClientLost(lost);
+            if (_paperNewsAt >= 0f && Time.time >= _paperNewsAt)
+            {
+                _paperNewsAt = -1f;
+                foreach (var paper in _paperNews) Toast(paper, 7f);
+            }
 
             if (controls.HornTriggered)
             {

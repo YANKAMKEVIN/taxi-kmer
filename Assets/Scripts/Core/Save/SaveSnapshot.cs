@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using TaxiKmer.Core.Career;
 using TaxiKmer.Core.Day;
+using TaxiKmer.Core.Police;
 using TaxiKmer.Core.Rides;
 
 namespace TaxiKmer.Core.Save
@@ -102,6 +103,49 @@ namespace TaxiKmer.Core.Save
             if (config == null) throw new ArgumentNullException(nameof(config));
             var saved = data?.career?.reputation ?? -1;
             return new DriverReputation(config, saved >= 0 ? saved : (int?)null);
+        }
+
+        /// <summary>
+        /// Les papiers de la carrière : ceux du début de carrière (police.json), puis les dates sauvegardées (version 6).
+        /// Un papier inconnu des données est ignoré.
+        /// </summary>
+        public static PaperSet LoadPapers(SaveData data, PoliceConfig police)
+        {
+            if (police == null) throw new ArgumentNullException(nameof(police));
+            var papers = new PaperSet(police);
+            foreach (var p in data?.career?.papers ?? Array.Empty<PaperDayData>())
+                if (p != null && !string.IsNullOrEmpty(p.id)) papers.Restore(p.id, p.lastValidDay);
+            return papers;
+        }
+
+        /// <summary>Garde les dates des papiers qui expirent (après un renouvellement).</summary>
+        public static void RecordPapers(SaveData data, PaperSet papers)
+        {
+            if (data == null) throw new ArgumentNullException(nameof(data));
+            if (papers == null) throw new ArgumentNullException(nameof(papers));
+            var list = new List<PaperDayData>();
+            foreach (var p in papers.Papers)
+                if (p.validityDays > 0) list.Add(new PaperDayData { id = p.id, lastValidDay = papers.LastValidDay(p.id) });
+            data.career.papers = list.ToArray();
+        }
+
+        /// <summary>
+        /// Début de journée (décision de Kevin du 21/11) : les papiers arrivés à échéance se renouvellent, payés sur
+        /// l'épargne de <paramref name="career"/> ; dates et épargne gardées dans <paramref name="data"/>. Rend ce qui a
+        /// été fait (vide si rien n'était à échéance ou si le renouvellement automatique est coupé).
+        /// </summary>
+        public static List<PaperRenewalResult> RenewPapersAtDayStart(SaveData data, PaperSet papers, DriverCareer career, PoliceConfig police)
+        {
+            if (data == null) throw new ArgumentNullException(nameof(data));
+            if (police == null) throw new ArgumentNullException(nameof(police));
+            if (!police.autoRenewPapers) return new List<PaperRenewalResult>();
+            var results = PaperRenewal.AtDayStart(papers, career);
+            if (results.Count > 0)
+            {
+                RecordPapers(data, papers);
+                data.career.savings = career.Savings;
+            }
+            return results;
         }
 
         /// <summary>La carrière sauvegardée (jour, épargne, manques, renvoi).</summary>

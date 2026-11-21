@@ -86,7 +86,13 @@ Kevin a retenu les quatre pistes : **clients plus ou moins patients, prix accept
 Étude relancée sur les données du jeu (`tools/test_core.sh "Name=Decision_Report"`, joueur moyen, carrières de 14 jours) :
 **versement atteint dans 65 % des journées sans trafic** (200 carrières), **54 % avec le trafic** (15 carrières) ; renvoyé
 en 14 jours dans 10 % / 40 % des carrières ; épargne après 7 jours 18 440 / 8 030 FCFA en moyenne. Ce sont exactement les
-chiffres de l'étude (mêmes graines). Avant le renouvellement des papiers (ci-dessous) ; après : voir `equilibrage.md`.
+chiffres de l'étude (mêmes graines).
+
+**Papiers renouvelés automatiquement** (tranché par Kevin le 21/11 au soir, détail dans `jalon-04.md`) : à l'échéance,
+au début de la journée, payés sur l'épargne de la carrière (`DriverCareer.PayFromSavings`, avant la clôture de la journée ;
+montants à 0 pour l'instant) ; épargne insuffisante : le papier reste expiré, un message l'annonce (valeur par défaut). Dates
+des papiers dans la sauvegarde, **version 6**. Étude relancée : **versement atteint dans 70 % des journées sans trafic,
+61 % avec** (65 % / 54 % quand les papiers ne se renouvelaient pas) ; renvoyé en 14 jours dans 10 % / 33 % des carrières.
 
 ## Versement de 7 000 FCFA (tranché par Kevin le 21/11)
 
@@ -186,5 +192,5 @@ Pistes à trancher par Kevin (une seule suffit, toutes se règlent dans les donn
 3. ~~Panne sèche~~ → **« On pousse, ou on appelle un technicien du quartier »** (Kevin, 2026-11-21), fait ; **les passagers descendent sans payer** (tranché par Kevin le 21/11), fait. Reste à régler : vitesse en poussant, délai et prix du technicien (`fuel.json`).
 4. **Station-service** : laquelle, et où, sur la portion Messassi → Étoudi ?
 5. ~~Jours de marché et jour de repos~~ → **calendrier par défaut validé par Kevin** (2026-11-21) : marché le mercredi et le samedi, dimanche plus calme mais travaillé.
-6. ~~Équilibre recettes / carburant / versement : piste A, B ou C~~ → **piste B, journée de 35 min** (Kevin, 2026-11-21) ; puis, après l'étude, **carburant ×1, prix ×2 (600 à 1 600 FCFA), versement 6 000** (tranché par Kevin le 21/11), appliqué : versement atteint dans 54 à 65 % des journées (« Équilibrage appliqué »). Historique : versement de 7 000 ; la recette seule couvre 7 000 dans 97 % des journées, mais recette et carburant compris, 0 % (le carburant ×8 coûte ≈ 540 FCFA par km pour ≈ 400 de recette) : baisser `consumptionScale` ou monter les prix ? Voir « Versement de 7 000 FCFA ». **Étude par simulation (21/11)** : `equilibrage.md` (proposé : carburant ×1, prix ×2, versement 6 000 ; ou alléger les contrôles pour garder les vrais prix).
+6. ~~Équilibre recettes / carburant / versement : piste A, B ou C~~ → **piste B, journée de 35 min** (Kevin, 2026-11-21) ; puis, après l'étude, **carburant ×1, prix ×2 (600 à 1 600 FCFA), versement 6 000** (tranché par Kevin le 21/11), appliqué : versement atteint dans 54 à 65 % des journées, 61 à 70 % depuis le renouvellement automatique des papiers (« Équilibrage appliqué »). Historique : versement de 7 000 ; la recette seule couvre 7 000 dans 97 % des journées, mais recette et carburant compris, 0 % (le carburant ×8 coûte ≈ 540 FCFA par km pour ≈ 400 de recette) : baisser `consumptionScale` ou monter les prix ? Voir « Versement de 7 000 FCFA ». **Étude par simulation (21/11)** : `equilibrage.md` (proposé : carburant ×1, prix ×2, versement 6 000 ; ou alléger les contrôles pour garder les vrais prix).
 7. Niveau de concurrence des taxis (question 4 du jalon 2) : réglable dans `traffic.json`.

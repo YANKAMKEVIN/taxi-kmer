@@ -18,6 +18,30 @@ changée : les réglages sont appliqués à des copies des données, en mémoire
 | avec trafic, 15 carrières | **6 000** | **54 %** | -2 143 | 12 760 | 1 429 | 7 474 | 27 % | 40 % | 8 030 / 11 550 |
 | avec trafic, 15 carrières | 7 000 | 49 % | -3 143 | 12 760 | 1 429 | 7 474 | 33 % | 53 % | 4 130 / 6 050 |
 
+### Après le renouvellement automatique des papiers (décision de Kevin du 21/11 au soir)
+
+Les papiers se renouvellent à l'échéance, payés sur l'épargne (montants à 0, `jalon-04.md` ; épargne insuffisante,
+valeur par défaut de Claude à confirmer : le papier reste expiré et un message l'annonce au début de la journée) : l'assurance n'est plus
+expirée à partir du 13ᵉ jour, donc plus aucun contrôle ne trouve de papier expiré (5 000 FCFA demandés). Étude relancée
+(mêmes graines, `Decision_Report`) :
+
+| Cas (papiers renouvelés) | Versement | Versement atteint | Reste moyen / jour | Recette | Carburant acheté | Frais imprévus | Renvoyé en 7 j | Renvoyé en 14 j | Épargne à 7 j (moy. / méd.) |
+|---|---|---|---|---|---|---|---|---|---|
+| sans trafic, 200 carrières | 5 000 | 73 % | 2 781 | 15 346 | 1 429 | 6 136 | 3 % | 6 % | 23 780 / 25 900 |
+| sans trafic, 200 carrières | **6 000** | **70 %** | 1 781 | 15 346 | 1 429 | 6 136 | 6 % | 10 % | 18 440 / 19 750 |
+| sans trafic, 200 carrières | 7 000 | 68 % | 781 | 15 346 | 1 429 | 6 136 | 9 % | 14 % | 13 693 / 14 550 |
+| avec trafic, 15 carrières | 5 000 | 65 % | -127 | 12 811 | 1 429 | 6 510 | 7 % | 13 % | 13 487 / 17 400 |
+| avec trafic, 15 carrières | **6 000** | **61 %** | -1 127 | 12 811 | 1 429 | 6 510 | 27 % | 33 % | 8 030 / 11 550 |
+| avec trafic, 15 carrières | 7 000 | 55 % | -2 127 | 12 811 | 1 429 | 6 510 | 33 % | 40 % | 4 130 / 6 050 |
+
+Journée type (`DayContents_Report`, réglage des données, papiers renouvelés) : 2,05 contrôles par journée sans trafic
+(2,36 avec), **0 avec un papier expiré** ; payé à la police **2 984** FCFA par journée sans trafic (3 640 avant), 2 464
+avec (3 330) ; frais imprévus 6 392 / 5 848 FCFA (7 048 / 6 714 avant). Les 7 premiers jours ne changent pas (l'assurance
+était encore valable) : l'écart vient des jours 13 et 14, et grandirait sur une carrière plus longue (sans renouvellement,
+chaque contrôle après le 12ᵉ jour demandait 5 000 FCFA). Le versement de 6 000 est maintenant atteint dans **61 à 70 %**
+des journées, dans la cible (60-75 %). Limite de l'étude : elle suppose l'épargne suffisante pour renouveler (exact tant
+que les coûts sont à 0).
+
 Depuis cette décision, `fares.json` vaut ×2 des prix de Yaoundé : dans l'outil, le multiplicateur de prix est relatif à
 `fares.json`, donc « prix ×2 » des tableaux ci-dessous (calculés sur les anciens prix, 300 à 800) correspond à « ×1 »
 aujourd'hui. `Decision_Report` et `DayContents_Report` prennent directement les réglages des données.
@@ -260,10 +284,11 @@ accrochages) ; calcul parallèle mais déterministe (test `SameSeed_SameCareer`)
 réputation des réponses), feux et ralentissements (inclus dans la vitesse moyenne), conduite gênée par le trafic (le
 trafic évite le taxi, pas l'inverse), contacts de police (jalon 7, coupé), foyer et charges (jalon 8).
 
-## Points relevés pour Kevin (rien n'est corrigé)
+## Points relevés pour Kevin (pendant l'étude)
 
-- **Les papiers ne se renouvellent jamais dans le jeu** : `PoliceView` crée chaque jour un `PaperSet` neuf à partir du
-  jour 1, et aucun écran n'appelle `PaperSet.Renew`. L'assurance (`startDaysLeft` 12) est donc expirée **à partir du
+- ~~**Les papiers ne se renouvellent jamais dans le jeu**~~ → **corrigé le 21/11 au soir** (décision de Kevin :
+  renouvellement automatique à l'échéance, payé sur l'épargne ; voir plus haut et `jalon-04.md`). Constat d'origine :
+  `PoliceView` crée chaque jour un `PaperSet` neuf à partir du jour 1, et aucun écran n'appelle `PaperSet.Renew`. L'assurance (`startDaysLeft` 12) est donc expirée **à partir du
   13ᵉ jour, pour toujours** : chaque contrôle demande alors 5 000 FCFA (`demandExpiredPaper`). La simulation reproduit le
   jeu tel qu'il est (les jours 13 et 14 de l'horizon en sont plus chers).
 - Le joueur qui remplit son taxi (5 places, 2 devant) est en surcharge au sens de `police.json` (4 passagers, 1 devant) :

@@ -10,7 +10,7 @@ namespace TaxiKmer.Core.Save
     public static class SaveMigrations
     {
         /// <summary>Version écrite par ce jeu. À augmenter à chaque changement du contenu, avec son étape ci-dessous.</summary>
-        public const int CurrentVersion = 5;
+        public const int CurrentVersion = 6;
 
         public static void Upgrade(SaveData data, int fromVersion)
         {
@@ -55,6 +55,12 @@ namespace TaxiKmer.Core.Save
                     // Version 5 : fourrières comptées (le propriétaire renvoie à la 2ᵉ) et dégâts du taxi (jalon 6). Avant : aucun.
                     if (data.career != null) { data.career.impounds = 0; data.career.vehicleDamage = 0f; }
                     break;
+                case 5:
+                    // Version 6 : dates des papiers (renouvellement automatique, décision de Kevin du 21/11). Avant, ils
+                    // ne se renouvelaient jamais et partaient du jour 1 : on garde ce départ ; ce qui est arrivé à
+                    // échéance se renouvelle au début de la prochaine journée.
+                    if (data.career != null) data.career.papers = Array.Empty<PaperDayData>();
+                    break;
             }
         }
 
@@ -63,6 +69,7 @@ namespace TaxiKmer.Core.Save
         {
             if (data.career == null) data.career = new CareerData();
             if (data.career.history == null) data.career.history = Array.Empty<DayRecordData>();
+            if (data.career.papers == null) data.career.papers = Array.Empty<PaperDayData>();
             if (data.career.missedVersementDays == null) data.career.missedVersementDays = Array.Empty<int>();
             if (data.career.dayNumber < 1) data.career.dayNumber = 1;
             if (data.day == null) { data.day = new DayProgressData(); data.hasDayInProgress = false; }

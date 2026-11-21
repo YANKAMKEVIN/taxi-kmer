@@ -283,6 +283,8 @@ namespace TaxiKmer.Core.DotnetTests
             Assert.IsTrue(p.fleeEnabled && p.fleeOutcomes.Any(o => o.wanted) && p.fleeOutcomes.Any(o => o.impound), "Fuir : poursuite, fourrière ou recherché.");
             Assert.IsTrue(p.wantedOutcomes.Any(o => o.impound) && p.wantedOutcomes.Any(o => o.arrest), "Recherché : fourrière ou arrestation au prochain poste.");
             Assert.AreEqual(2, Load<OwnerConfig>("owner.json").impoundsBeforeFired, "Fourrière : renvoyé à la 2ᵉ fois.");
+            Assert.IsTrue(p.autoRenewPapers, "Papiers renouvelés automatiquement à l'échéance, payés sur l'épargne (Kevin, 21/11).");
+            foreach (var x in p.papers) Assert.GreaterOrEqual(x.renewalCost, 0, x.id);
             var stops = Load<StopsConfig>("stops_messassi_etoudi.json");
             var end = stops.stops[stops.stops.Length - 1].distanceAlongRouteMeters;
             foreach (var c in p.checkpoints) Assert.That(c.distanceAlongRouteMeters, Is.InRange(0f, end), c.id);

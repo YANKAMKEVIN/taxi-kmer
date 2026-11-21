@@ -101,6 +101,23 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void Papers_RenewedAtDeadline_NeverExpiredAtControls()
+        {
+            // Décision de Kevin (21/11) : renouvellement automatique. Sans lui, l'assurance expire le 13ᵉ jour pour toujours.
+            var data = GameData.Load();
+            Assume.That(data.Police.enabled && data.Police.autoRenewPapers);
+            var days = BalanceStudy.PlayCareer(data, Current(data), new AveragePlayer(), 16, 7);
+            Assert.AreEqual(0, days.Sum(d => d.ExpiredPaperControls), "Papiers renouvelés : jamais expirés au contrôle.");
+            Assert.AreEqual(1, days[12].PapersRenewed, "Assurance renouvelée au début du 13ᵉ jour.");
+            Assert.AreEqual(0, days.Sum(d => d.RenewalCost), "Montants de jalon-04.md : 0 FCFA.");
+
+            data.Police.autoRenewPapers = false;
+            var before = BalanceStudy.PlayCareer(data, Current(data), new AveragePlayer(), 16, 7);
+            Assert.AreEqual(0, before.Take(12).Sum(d => d.ExpiredPaperControls), "Avant le 13ᵉ jour, l'assurance est valable.");
+            Assert.Greater(before.Skip(12).Sum(d => d.ExpiredPaperControls), 0, "Sans renouvellement : assurance expirée aux contrôles dès le 13ᵉ jour.");
+        }
+
+        [Test]
         public void WithVersement_ChangesOnlyTheVersement()
         {
             var data = GameData.Load();
@@ -213,7 +230,8 @@ namespace TaxiKmer.Core.DotnetTests
         /// <summary>
         /// Réglage du jeu tel qu'il est dans les données (décision de Kevin du 21/11 : carburant ×1, prix ×2 soit
         /// 600 à 1 600 FCFA, versement 6 000) : 200 carrières de 14 jours sans trafic et 15 avec le trafic, versements
-        /// 5 000 / 6 000 / 7 000 pour situer. Rapport : equilibrage/decision.md.
+        /// 5 000 / 6 000 / 7 000 pour situer ; avec le renouvellement automatique des papiers (décision du 21/11) et sans
+        /// (le jeu d'avant). Rapport : equilibrage/decision.md.
         /// </summary>
         [Test, Explicit("Long : lancer à la demande"), Category("Equilibrage")]
         public void Decision_Report()
@@ -224,10 +242,13 @@ namespace TaxiKmer.Core.DotnetTests
             sb.AppendLine();
             sb.AppendLine(BalanceStudy.TableHeader.Replace("{H}", Horizon.ToString()).Replace("| Conso |", "| Cas | Conso |").Replace("\n|---|", "\n|---|---|"));
             foreach (var (name, withCity, careers) in new[] { ("sans trafic, 200 carrières", false, 200), ("avec trafic, 15 carrières", true, 15) })
+            foreach (var renew in new[] { true, false })
             {
                 var data = GameData.Load(withWorld: withCity);
+                data.Police.autoRenewPapers &= renew; // false : papiers jamais renouvelés (le jeu avant la décision du 21/11)
+                var label = name + (data.Police.autoRenewPapers ? ", papiers renouvelés" : ", papiers jamais renouvelés");
                 foreach (var r in BalanceStudy.RunCareers(data, current.ConsumptionScale, 1f, Versements, careers, Horizon, new AveragePlayer { WithCity = withCity }))
-                    sb.AppendLine("| " + name + " " + BalanceStudy.Row(r));
+                    sb.AppendLine("| " + label + " " + BalanceStudy.Row(r));
             }
             Write("decision.md", sb.ToString());
             TestContext.WriteLine(sb.ToString());
@@ -239,8 +260,8 @@ namespace TaxiKmer.Core.DotnetTests
         {
             var data = GameData.Load(withWorld: true);
             var sb = new StringBuilder();
-            sb.AppendLine("| Joueur | Journées | Courses | Recette | km | Contrôles | Payé à la police | Crevaisons | Pannes | Accrochages | Négociations | Refus de payer | Clients pris par d'autres | Frais imprévus |");
-            sb.AppendLine("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
+            sb.AppendLine("| Joueur | Journées | Courses | Recette | km | Contrôles | dont papier expiré | Payé à la police | Crevaisons | Pannes | Accrochages | Négociations | Refus de payer | Clients pris par d'autres | Frais imprévus |");
+            sb.AppendLine("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
             var breakdown = new StringBuilder();
             foreach (var (name, p, careers) in new[] { ("sans trafic", new AveragePlayer(), 40), ("avec trafic", new AveragePlayer { WithCity = true }, 4) })
             {
@@ -254,7 +275,7 @@ namespace TaxiKmer.Core.DotnetTests
                         byLabel[e.Label] = (byLabel.TryGetValue(e.Label, out var t) ? t : 0) + e.Amount;
                 breakdown.AppendLine($"Frais imprévus par journée ({name}) : " + string.Join(" ; ", byLabel.Select(kv => $"{kv.Key} {BalanceStudy.Money(kv.Value / n)}")) + ".");
                 sb.AppendLine($"| {name} | {n} | {BalanceStudy.Num(days.Average(d => d.Summary.RideCount))} | {BalanceStudy.Money(days.Average(d => d.Summary.Revenue))} | {BalanceStudy.Num(days.Average(d => d.Summary.Kilometres))} | " +
-                    $"{BalanceStudy.Num(days.Average(d => d.Controls), "0.##")} | {BalanceStudy.Money(days.Average(d => d.PolicePaid))} | {BalanceStudy.Num(days.Average(d => d.Punctures), "0.##")} | {BalanceStudy.Num(days.Average(d => d.Breakdowns), "0.##")} | " +
+                    $"{BalanceStudy.Num(days.Average(d => d.Controls), "0.##")} | {BalanceStudy.Num(days.Average(d => d.ExpiredPaperControls), "0.##")} | {BalanceStudy.Money(days.Average(d => d.PolicePaid))} | {BalanceStudy.Num(days.Average(d => d.Punctures), "0.##")} | {BalanceStudy.Num(days.Average(d => d.Breakdowns), "0.##")} | " +
                     $"{BalanceStudy.Num(days.Average(d => d.Crashes), "0.##")} | {BalanceStudy.Num(days.Average(d => d.Haggles), "0.##")} | {BalanceStudy.Num(days.Average(d => d.Refusals), "0.##")} | {BalanceStudy.Num(days.Average(d => d.ClientsLostToOthers), "0.#")} | {BalanceStudy.Money(days.Average(d => d.Summary.ExpensesTotal))} |");
             }
             sb.AppendLine().Append(breakdown);

@@ -47,6 +47,19 @@ namespace TaxiKmer.Core.Police
             return control.Paid > 0 ? $"{DaySummary.Money(control.Paid)} laissés au contrôle. Bonne route." : "Bonne route.";
         }
 
+        /// <summary>
+        /// Message du début de journée pour un papier arrivé à échéance : « Assurance renouvelée (12 000 FCFA pris sur
+        /// l'épargne). » ou, faute d'épargne, « Assurance expirée : pas assez d'épargne pour la renouveler (12 000 FCFA).
+        /// Gare aux contrôles. »
+        /// </summary>
+        public static string Renewal(PaperRenewalResult r)
+        {
+            var name = r.Paper?.name ?? "";
+            if (r.Renewed)
+                return r.Cost > 0 ? $"{name} renouvelée ({DaySummary.Money(r.Cost)} pris sur l'épargne)." : $"{name} renouvelée.";
+            return $"{name} expirée : pas assez d'épargne pour la renouveler ({DaySummary.Money(r.Cost)}). Gare aux contrôles.";
+        }
+
         /// <summary>Le texte contient-il un mot cru (<see cref="CrudeWords"/>) ?</summary>
         public static bool IsCrude(string text)
         {

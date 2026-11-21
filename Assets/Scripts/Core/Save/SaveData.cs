@@ -44,6 +44,11 @@ namespace TaxiKmer.Core.Save
         public int impounds;
         /// <summary>Dégâts du taxi à la fin de la dernière journée (0 à 100, version 5, jalon 6) : ils passent d'un jour à l'autre.</summary>
         public float vehicleDamage;
+        /// <summary>
+        /// Dernier jour de validité des papiers qui expirent (version 6) : ils se renouvellent automatiquement (décision
+        /// de Kevin du 21/11). Vide : papiers du début de carrière (police.json → startDaysLeft).
+        /// </summary>
+        public PaperDayData[] papers = Array.Empty<PaperDayData>();
         public DayRecordData[] history = Array.Empty<DayRecordData>();
     }
 
@@ -100,6 +105,14 @@ namespace TaxiKmer.Core.Save
         /// <summary>Version 4 : réputation au début de la journée et maintenant (-1 = inconnue).</summary>
         public int reputationDayStart = -1;
         public int reputation = -1;
+    }
+
+    /// <summary>Un papier et son dernier jour de validité (version 6).</summary>
+    [Serializable]
+    public class PaperDayData
+    {
+        public string id = "";
+        public int lastValidDay;
     }
 
     [Serializable]

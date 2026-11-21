@@ -72,6 +72,8 @@ namespace TaxiKmer.Core.DotnetTests
         public int Reputation = -1;
         public float TankLitres = -1f;
         public float Damage;
+        /// <summary>Papiers de la carrière (null : ceux du début de carrière), renouvelés au début de chaque journée.</summary>
+        public PaperSet Papers;
     }
 
     /// <summary>Une journée jouée, avec les compteurs utiles à l'étude.</summary>
@@ -88,6 +90,11 @@ namespace TaxiKmer.Core.DotnetTests
         public int Refusals;
         public int ClientsLostToOthers;
         public int Reputation;
+        /// <summary>Papiers renouvelés au début de la journée et leur coût (payé sur l'épargne, avant la journée).</summary>
+        public int PapersRenewed;
+        public int RenewalCost;
+        /// <summary>Contrôles où un papier expiré a été trouvé.</summary>
+        public int ExpiredPaperControls;
     }
 
     /// <summary>Les données du jeu, lues une fois (chaque journée en fait des copies avant de les régler).</summary>
@@ -169,7 +176,18 @@ namespace TaxiKmer.Core.DotnetTests
             int start = day.startHour * 60, end = day.endHour * 60;
             var road = new RoadDay(data.Road, routeLength, 20261121, carry.Damage, start, end, today.Month, new Random(seed + 61));
             var crash = new TrafficCrash(data.Road, new Random(seed + 62));
-            var police = new PoliceDay(data.Police, new PaperSet(data.Police), new PoliceContacts(data.Police), carry.DayNumber, routeLength, start, end, new Random(seed + 47));
+            // Papiers : renouvelés à l'échéance au début de la journée, payés sur l'épargne (décision de Kevin du 21/11).
+            // L'étude suppose l'épargne suffisante (exact tant que les coûts sont à 0, jalon-04.md) ; le coût est retiré
+            // de l'épargne par RunCareers, avant la clôture de la journée.
+            if (carry.Papers == null) carry.Papers = new PaperSet(data.Police);
+            var result = new StudyDay();
+            if (data.Police.autoRenewPapers)
+            {
+                var renewed = PaperRenewal.Renew(carry.Papers, carry.DayNumber, int.MaxValue);
+                result.PapersRenewed = renewed.Count;
+                result.RenewalCost = PaperRenewal.TotalPaid(renewed);
+            }
+            var police = new PoliceDay(data.Police, carry.Papers, new PoliceContacts(data.Police), carry.DayNumber, routeLength, start, end, new Random(seed + 47));
             var luck = new Random(seed + 71); // accrochages (physique d'Unity remplacée par un tirage)
 
             CityLife city = null;
@@ -180,7 +198,6 @@ namespace TaxiKmer.Core.DotnetTests
                 routePath = new TrafficPath(data.World.route.xz);
             }
 
-            var result = new StudyDay();
             const float dt = 0.25f;
             float along = 0f, wait = 0f, seconds = 0f;
             var dir = 1;
@@ -253,8 +270,12 @@ namespace TaxiKmer.Core.DotnetTests
 
                 // Ce qui arrive sur ce bout de route : contrôle, nids-de-poule, panne, accrochage.
                 var cabin = shift.Cabin;
-                if (police.Update(from, along, minute, cabin.PassengerCount, cabin.Front.Passengers.Count, street.Reputation.PoliceStopFactor) != null)
+                var stopped = police.Update(from, along, minute, cabin.PassengerCount, cabin.Front.Passengers.Count, street.Reputation.PoliceStopFactor);
+                if (stopped != null)
+                {
                     result.Controls++;
+                    if (stopped.Finding.Kind == ControlFindingKind.ExpiredPaper) result.ExpiredPaperControls++;
+                }
                 var e = road.Drive(from, along, speed);
                 if (e.Punctured) result.Punctures++;
                 if (e.BrokeDown) result.Breakdowns++;
@@ -392,6 +413,7 @@ namespace TaxiKmer.Core.DotnetTests
                         }
                         if (firedDay == int.MaxValue)
                         {
+                            career.PayFromSavings(days[k][d].RenewalCost); // papiers renouvelés au début de la journée
                             var c = career.CloseDay(s, data.Reputation.effects);
                             if (d < 7) saved7 = c.SavingsAfter;
                             if (c.Mood == OwnerMood.Fired) firedDay = d + 1;
