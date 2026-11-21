@@ -70,7 +70,10 @@ namespace TaxiKmer.Core.Traffic
         /// <summary>Vitesse de changement de voie (m/s de côté).</summary>
         public float lateralSpeed = 2f;
 
-        /// <summary>Chance qu'un taxi concurrent s'arrête pour un client qui attend dans son sens.</summary>
+        /// <summary>
+        /// Chance qu'un taxi concurrent (ou un mototaxi) s'arrête pour un client qui attend dans son sens : c'est le
+        /// réglage du niveau de concurrence (question 4 du jalon 2, à trancher par Kevin ; 0 = aucune, 1 = tous).
+        /// </summary>
         public float competitorPickupChance = 0.5f;
         /// <summary>Durée de la montée d'un client dans un taxi concurrent (s).</summary>
         public float competitorStopSeconds = 6f;

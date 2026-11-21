@@ -182,6 +182,22 @@ namespace TaxiKmer.Core.Tests
         }
 
         [Test]
+        public void CompetitionLevel_IsSetByTheData_ZeroMeansNoCompetitor()
+        {
+            // Question 4 du jalon 2 (niveau de concurrence) : réglée par competitorPickupChance (traffic.json).
+            var cfg = Quiet();
+            cfg.competitorPickupChance = 0f;
+            var sim = new TrafficSim(cfg, North(), South(), 5);
+            var player = PlayerAt(800f, x: 40f);
+            var taxi = sim.TrySpawn(0, 900f, VehicleKind.Taxi);
+            taxi.Passengers = 0;
+            var clients = new List<ClientSpot> { new ClientSpot { Key = "c", PathIndex = 0, Along = 960f } };
+            for (var step = 0; step < 400; step++) sim.Update(0.1f, 12f, player, clients);
+            Assert.IsEmpty(sim.TakenClients.Where(t => (string)t.Key == "c"));
+            Assert.AreEqual(0, taxi.Passengers, "Aucun taxi ne s'arrête : pas de concurrence.");
+        }
+
+        [Test]
         public void CompetitorTaxi_Resumes_WhenClientLeaves()
         {
             var cfg = Quiet();
