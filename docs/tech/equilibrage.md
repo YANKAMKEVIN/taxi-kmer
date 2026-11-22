@@ -6,7 +6,12 @@ changée : les réglages sont appliqués à des copies des données, en mémoire
 ## Décision de Kevin (21/11 au soir) : réglage recommandé appliqué
 
 **Carburant ×1, prix ×2 (600 à 1 600 FCFA), versement de 6 000 FCFA**, appliqués dans `fuel.json`, `fares.json` et
-`day.json` (et les valeurs par défaut du code). Étude relancée sur les données du jeu (`tools/test_core.sh
+`day.json` (et les valeurs par défaut du code).
+
+**Nota (QA du 22/11)** : sur la carte actuelle, le trajet le plus long fait 6,1 km (dispensaire → Étoudi) ; les
+courses vont donc de **600 à 1 000 FCFA** (tranches ≤ 2, ≤ 4 et ≤ 7 km). Les tranches 1 200 (≤ 10 km) et 1 600
+(au-delà) ne servent pas encore : elles serviront après l'extension vers Bastos. L'étude ci-dessous joue la vraie
+carte, ses chiffres sont donc justes. Étude relancée sur les données du jeu (`tools/test_core.sh
 "Name=Decision_Report"`, mêmes graines) : le chiffre attendu est confirmé.
 
 | Cas (avant le renouvellement des papiers) | Versement | Versement atteint | Reste moyen / jour | Recette | Carburant acheté | Frais imprévus | Renvoyé en 7 j | Renvoyé en 14 j | Épargne à 7 j (moy. / méd.) |
