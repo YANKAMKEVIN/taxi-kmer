@@ -15,11 +15,12 @@ namespace TaxiKmer.Core.Tests
             return c;
         }
 
-        private static (PoliceConfig, PaperSet, Career.DriverCareer) Renewal(int day, int savings, int insuranceCost, int technicalCost = 0)
+        private static (PoliceConfig, PaperSet, Career.DriverCareer) Renewal(int day, int savings, int insuranceCost, int technicalCost = 0, int licenceCost = 0)
         {
             var config = new PoliceConfig();
             config.papers[2].renewalCost = insuranceCost;   // assurance (montants d'essai)
             config.papers[3].renewalCost = technicalCost;   // visite technique
+            config.papers[4].renewalCost = licenceCost;     // licence
             var career = Career.DriverCareer.Restore(new Career.OwnerConfig(), day, savings, null, false);
             return (config, new PaperSet(config), career);
         }
@@ -85,7 +86,7 @@ namespace TaxiKmer.Core.Tests
         [Test]
         public void AutoRenewal_Free_AlwaysRenewed_EvenInDebt()
         {
-            // Montants de jalon-04.md : 0 FCFA pour tous les papiers ; une épargne négative n'empêche rien.
+            // Papiers gratuits (montants d'essai à 0) : une épargne négative n'empêche rien.
             var (_, papers, career) = Renewal(13, -4000, 0);
             var done = PaperRenewal.AtDayStart(papers, career);
             Assert.IsTrue(done[0].Renewed);

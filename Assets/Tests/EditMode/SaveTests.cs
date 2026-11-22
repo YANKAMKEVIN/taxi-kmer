@@ -220,12 +220,12 @@ namespace TaxiKmer.Core.Tests
             var police = new Police.PoliceConfig();
             var papers = SaveSnapshot.LoadPapers(r.Data, police);
             Assert.AreEqual(12, papers.LastValidDay("assurance"), "Sans date : papiers du début de carrière (jour 1), comme avant.");
-            // Au début du jour 20, l'assurance expirée depuis le jour 13 se renouvelle (gratuite : jalon-04.md).
+            // Au début du jour 20, l'assurance expirée depuis le jour 13 se renouvelle (500 FCFA, montant par défaut).
             var career = SaveSnapshot.LoadCareer(r.Data, new Career.OwnerConfig());
             var done = SaveSnapshot.RenewPapersAtDayStart(r.Data, papers, career, police);
             Assert.AreEqual(1, done.Count);
             Assert.AreEqual(20 + 30 - 1, papers.LastValidDay("assurance"));
-            Assert.AreEqual(3000, r.Data.career.savings);
+            Assert.AreEqual(3000 - 500, r.Data.career.savings);
         }
 
         [Test]

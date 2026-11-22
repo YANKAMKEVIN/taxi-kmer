@@ -285,6 +285,9 @@ namespace TaxiKmer.Core.DotnetTests
             Assert.AreEqual(2, Load<OwnerConfig>("owner.json").impoundsBeforeFired, "Fourrière : renvoyé à la 2ᵉ fois.");
             Assert.IsTrue(p.autoRenewPapers, "Papiers renouvelés automatiquement à l'échéance, payés sur l'épargne (Kevin, 21/11).");
             foreach (var x in p.papers) Assert.GreaterOrEqual(x.renewalCost, 0, x.id);
+            // Montants bas (Kevin, 22/11 : « rester vers 60 à 70 % ») : chaque papier qui expire coûte quelque chose, peu.
+            foreach (var x in p.papers.Where(x => x.validityDays > 0))
+                Assert.That(x.renewalCost, Is.InRange(1, 5000), $"{x.id} : montant bas (equilibrage.md, Papers_Report).");
             var stops = Load<StopsConfig>("stops_messassi_etoudi.json");
             var end = stops.stops[stops.stops.Length - 1].distanceAlongRouteMeters;
             foreach (var c in p.checkpoints) Assert.That(c.distanceAlongRouteMeters, Is.InRange(0f, end), c.id);
