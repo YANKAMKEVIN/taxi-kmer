@@ -33,6 +33,7 @@ namespace TaxiKmer.Driving
         private readonly Text _yesText, _noText;
         private readonly AudioSource _voice;
         private Bubble _voiced;
+        private readonly Dictionary<string, AudioClip> _provisional = new Dictionary<string, AudioClip>();
         private HaggleOffer _haggleShown;
         private PaymentRefusal _refusalShown;
 
@@ -60,7 +61,20 @@ namespace TaxiKmer.Driving
         }
 
         /// <summary>Une situation se produit (montée, paiement, panne, contrôle, pluie…) : un passager parle peut-être.</summary>
-        public void Say(string trigger, string passengerId = "") => Director.Trigger(trigger, passengerId ?? "");
+        /// <param name="values">Valeurs que la réplique peut citer (destination, prix, offre : <see cref="TalkValues"/>).</param>
+        public void Say(string trigger, string passengerId = "", IDictionary<string, string> values = null) => Director.Trigger(trigger, passengerId ?? "", "", values);
+
+        /// <summary>Valeurs d'une course pour les répliques : destination (nom court) et prix, plus la contre-offre si elle existe.</summary>
+        public static Dictionary<string, string> RideValues(Street street, string destinationStopId, int fare, int offer = 0)
+        {
+            var values = new Dictionary<string, string>();
+            var stop = street.FindStop(destinationStopId);
+            if (stop != null || !string.IsNullOrEmpty(destinationStopId))
+                values[TalkValues.Destination] = TaxiKmer.Core.Ux.StopNames.Short(stop?.name ?? destinationStopId);
+            if (fare > 0) values[TalkValues.Price] = TalkValues.Amount(fare);
+            if (offer > 0) values[TalkValues.Offer] = TalkValues.Amount(offer);
+            return values;
+        }
 
         /// <summary>Un passager à bord, n'importe lequel (pour panne, contrôle, pluie).</summary>
         public static string AnyPassenger(Street street)
@@ -86,7 +100,7 @@ namespace TaxiKmer.Driving
                 foreach (var p in cabin.Passengers)
                 {
                     var stop = street.FindStop(p.DestinationStopId);
-                    if (stop != null && _detour.Update(p.Id, stop.distanceAlongRouteMeters, state.Along)) Say(TalkTriggers.Detour, p.Id);
+                    if (stop != null && _detour.Update(p.Id, stop.distanceAlongRouteMeters, state.Along)) Say(TalkTriggers.Detour, p.Id, RideValues(street, p.DestinationStopId, p.ProposedFare));
                 }
                 message = UpdateDisputes(street);
             }
@@ -116,7 +130,7 @@ namespace TaxiKmer.Driving
 
             if (r != null)
             {
-                if (_refusalShown != r) { _refusalShown = r; Say(TalkTriggers.RefusesToPay, r.Client.Id); }
+                if (_refusalShown != r) { _refusalShown = r; Say(TalkTriggers.RefusesToPay, r.Client.Id, RideValues(street, r.Client.DestinationStopId, r.Fare)); }
                 _disputeText.text = $"Le passager refuse de payer {DaySummary.Money(r.Fare)}.";
                 _yesText.text = "Laisser partir";
                 _noText.text = "Appeler la police";
@@ -129,7 +143,7 @@ namespace TaxiKmer.Driving
                 return "";
             }
 
-            if (_haggleShown != h) { _haggleShown = h; Say(TalkTriggers.Haggle, h.Client.Client.Id); }
+            if (_haggleShown != h) { _haggleShown = h; Say(TalkTriggers.Haggle, h.Client.Client.Id, RideValues(street, h.Client.Client.DestinationStopId, h.Asked, h.Offer)); }
             _disputeText.text = $"Le client propose {DaySummary.Money(h.Offer)} au lieu de {DaySummary.Money(h.Asked)}.";
             _yesText.text = "Accepter";
             _noText.text = "Refuser";
@@ -149,7 +163,7 @@ namespace TaxiKmer.Driving
             r.anchorMin = r.anchorMax = r.pivot = new Vector2(0.5f, 0f);
             r.anchoredPosition = new Vector2(0f, h * 0.2f);
             r.sizeDelta = new Vector2(w, h * 0.2f);
-            _text.text = b.Line.text;
+            _text.text = b.Text;
             _text.fontSize = Mathf.RoundToInt(h * 0.032f);
             UiKit.PlaceTopCenter(_text.rectTransform, h * 0.015f, w * 0.94f, h * 0.08f);
             var open = b.RepliesOpen(_config.replySeconds);
@@ -174,7 +188,24 @@ namespace TaxiKmer.Driving
             var b = Director.Current;
             if (b == _voiced) return;
             _voiced = b;
-            if (b?.Voice == null || string.IsNullOrEmpty(b.Voice.clip)) return;
+            if (b?.Voice == null) return;
+            if (string.IsNullOrEmpty(b.Voice.clip))
+            {
+                // Son « à fournir » : voix synthétique provisoire (SoundSynth.Voice), en attendant l'enregistrement.
+                if (!_provisional.TryGetValue(b.Voice.id, out var synth))
+                {
+                    var data = TaxiKmer.Core.Ux.SoundSynth.Voice(b.Voice.id);
+                    synth = null;
+                    if (data != null)
+                    {
+                        synth = AudioClip.Create("Voix provisoire " + b.Voice.id, data.Length, 1, TaxiKmer.Core.Ux.SoundSynth.Rate, false);
+                        synth.SetData(data, 0);
+                    }
+                    _provisional[b.Voice.id] = synth;
+                }
+                if (synth != null) _voice.PlayOneShot(synth);
+                return;
+            }
             var clip = Resources.Load<AudioClip>(b.Voice.clip);
             if (clip == null) { Debug.LogWarning($"[TaxiKmer] Voix : son Resources/{b.Voice.clip} introuvable (à fournir)."); return; }
             _voice.PlayOneShot(clip);

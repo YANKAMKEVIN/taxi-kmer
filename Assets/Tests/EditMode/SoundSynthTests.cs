@@ -16,7 +16,8 @@ namespace TaxiKmer.Core.Tests
         [Test]
         public void AllSounds_AudibleAndNeverClip()
         {
-            foreach (var d in new[] { SoundSynth.EngineLoop(), SoundSynth.BrakeSqueal(), SoundSynth.DoorSlam(), SoundSynth.Coins() })
+            foreach (var d in new[] { SoundSynth.EngineLoop(), SoundSynth.BrakeSqueal(), SoundSynth.DoorSlam(), SoundSynth.Coins(),
+                SoundSynth.DistantHorn(), SoundSynth.StreetMurmur(), SoundSynth.MarketChatter(), SoundSynth.ClientCall() })
             {
                 Assert.Greater(d.Length, 0);
                 Assert.Greater(Peak(d), 0.05f, "Audible.");
@@ -37,7 +38,7 @@ namespace TaxiKmer.Core.Tests
         [Test]
         public void OneShots_FadeOut()
         {
-            foreach (var d in new[] { SoundSynth.BrakeSqueal(), SoundSynth.DoorSlam(), SoundSynth.Coins() })
+            foreach (var d in new[] { SoundSynth.BrakeSqueal(), SoundSynth.DoorSlam(), SoundSynth.Coins(), SoundSynth.DistantHorn(), SoundSynth.ClientCall() })
             {
                 var tail = 0f;
                 for (var i = d.Length - 200; i < d.Length; i++) tail = Math.Max(tail, Math.Abs(d[i]));
@@ -62,6 +63,35 @@ namespace TaxiKmer.Core.Tests
             Assert.IsTrue(SoundSynth.HardBraking(50f, 1f));
             Assert.IsFalse(SoundSynth.HardBraking(10f, 1f), "Trop lent pour crisser.");
             Assert.IsFalse(SoundSynth.HardBraking(50f, 0.3f), "Freinage doux.");
+        }
+        [Test]
+        public void AmbienceLoops_LoopWithoutAClick_AndAreReproducible()
+        {
+            foreach (var d in new[] { SoundSynth.StreetMurmur(), SoundSynth.MarketChatter() })
+            {
+                var typicalStep = 0f;
+                for (var i = 1; i < d.Length; i++) typicalStep = Math.Max(typicalStep, Math.Abs(d[i] - d[i - 1]));
+                Assert.LessOrEqual(Math.Abs(d[0] - d[d.Length - 1]), typicalStep, "Raccord fin → début aussi doux que le reste.");
+            }
+            Assert.AreEqual(SoundSynth.Rate * 3, SoundSynth.StreetMurmur().Length);
+            CollectionAssert.AreEqual(SoundSynth.MarketChatter(), SoundSynth.MarketChatter());
+        }
+        [Test]
+        public void VoiceSounds_ProvisionalForEachIdOfKevinsList_UnknownIsNull()
+        {
+            foreach (var id in new[] { "hmm", "eh", "tchip", "aie", "rire" })
+            {
+                var d = SoundSynth.Voice(id);
+                Assert.IsNotNull(d, id);
+                Assert.Greater(Peak(d), 0.05f, id + " : audible");
+                Assert.LessOrEqual(Peak(d), 1f, id + " : pas de saturation");
+                Assert.Less(d.Length, SoundSynth.Rate, id + " : un petit son, moins d'une seconde");
+                var tail = 0f;
+                for (var i = d.Length - 100; i < d.Length; i++) tail = Math.Max(tail, Math.Abs(d[i]));
+                Assert.Less(tail, Peak(d) * 0.35f, id + " : s'éteint avant la fin");
+            }
+            Assert.IsNull(SoundSynth.Voice("inconnu"));
+            Assert.IsNull(SoundSynth.Voice(null));
         }
     }
 }

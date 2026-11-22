@@ -253,5 +253,66 @@ namespace TaxiKmer.Core.Tests
             Assert.IsTrue(d.Trigger(TalkTriggers.Chat, ""), "Discussion sans passager désigné : tous les registres.");
             Assert.AreEqual("", d.Current.Register);
         }
+        [Test]
+        public void Values_FilledInText_LineSkippedWhenAValueIsMissing()
+        {
+            // 22/11 : lieux et sommes passent par {destination}, {prix}, {offre} pour ne jamais contredire le jeu.
+            Assert.AreEqual(new List<string> { "prix", "destination" }, DialogueText.Placeholders("{prix} pour {destination} ?"));
+            Assert.AreEqual("600 francs", TalkValues.Amount(600));
+            Assert.AreEqual("1 200 francs", TalkValues.Amount(1200));
+            var values = new Dictionary<string, string> { [TalkValues.Destination] = "Emana", [TalkValues.Price] = TalkValues.Amount(800) };
+            Assert.AreEqual("800 francs pour Emana ?", DialogueText.Fill("{prix} pour {destination} ?", values));
+            Assert.IsFalse(DialogueText.CanFill("Je te donne {offre}.", values));
+            Assert.IsTrue(DialogueText.CanFill("Sans valeur.", null));
+            CollectionAssert.Contains(DialogueText.ValuesFor(TalkTriggers.Haggle), TalkValues.Offer);
+            CollectionAssert.IsEmpty(DialogueText.ValuesFor(TalkTriggers.Rain));
+
+            var config = new DialogueConfig
+            {
+                enabled = true,
+                lines = new[]
+                {
+                    new LineData { id = "offre", trigger = TalkTriggers.Haggle, text = "Je te donne {offre}." },
+                    new LineData { id = "prix", trigger = TalkTriggers.Price, text = "{prix} pour {destination} ? Bon." },
+                },
+            };
+            var d = new DialogueDirector(config, new Random(1));
+            Wait(d, 10f);
+            Assert.IsFalse(d.Trigger(TalkTriggers.Haggle, "c1", "", values), "Sans contre-offre, la réplique n'est pas dite.");
+            Assert.IsNull(d.Current);
+            Assert.IsTrue(d.Trigger(TalkTriggers.Price, "c1", "", values));
+            Assert.AreEqual("800 francs pour Emana ? Bon.", d.Current.Text);
+            Assert.AreEqual(Math.Max(2.5f, d.Current.Text.Length / 14f), d.Current.ShowSeconds, 1e-4f, "Temps de lecture sur le texte rempli.");
+        }
+        [Test]
+        public void FollowUp_DestinationAfterBoarding_DroppedWhenLateOrPassengerGone()
+        {
+            // 22/11 : la situation « destination » n'était jamais déclenchée ; elle suit maintenant la montée.
+            var config = Config(3, TalkTriggers.Boarding, TalkTriggers.Destination);
+            var d = new DialogueDirector(config, new Random(2));
+            d.SetPassengers(new[] { "c1" });
+            Wait(d, 10f);
+            Assert.IsTrue(d.Trigger(TalkTriggers.Boarding, "c1"));
+            d.Follow(TalkTriggers.Destination, "c1");
+            Assert.AreEqual(1, d.PendingFollowUps);
+            for (var t = 0f; t < 15f && (d.Current == null || d.Current.Line.trigger != TalkTriggers.Destination); t += 0.1f) d.Update(0.1f, 1);
+            Assert.AreEqual(TalkTriggers.Destination, d.Current?.Line.trigger, "La destination suit la montée, après le silence.");
+            Assert.AreEqual(0, d.PendingFollowUps);
+
+            // Trop tard : abandonnée.
+            Wait(d, 20f);
+            d.Follow(TalkTriggers.Destination, "c1", null, 1f);
+            Assert.IsTrue(d.Trigger(TalkTriggers.Boarding, "c1"));
+            Wait(d, 30f);
+            Assert.AreEqual(0, d.PendingFollowUps);
+
+            // Passager descendu : abandonnée.
+            Wait(d, 20f);
+            Assert.IsTrue(d.Trigger(TalkTriggers.Boarding, "c1"));
+            d.Follow(TalkTriggers.Destination, "c1");
+            d.SetPassengers(new string[0]);
+            d.Update(0.1f, 0);
+            Assert.AreEqual(0, d.PendingFollowUps);
+        }
     }
 }

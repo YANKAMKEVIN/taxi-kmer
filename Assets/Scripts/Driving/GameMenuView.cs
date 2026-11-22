@@ -57,12 +57,13 @@ namespace TaxiKmer.Driving
             _toggle = UiKit.NewButton(_root, font, "", Grey, out _toggleText);
         }
 
-        public MenuChoice Update(MenuScreen screen, GameSettings settings, int passengersOnBoard)
+        /// <param name="pauseNote">Ligne sous le titre de la pause (état des papiers, jalon 4) ; vide : rien.</param>
+        public MenuChoice Update(MenuScreen screen, GameSettings settings, int passengersOnBoard, string pauseNote = "")
         {
             var open = screen != MenuScreen.None;
             _root.gameObject.SetActive(open);
             if (!open) return MenuChoice.None;
-            Layout(screen, settings, passengersOnBoard);
+            Layout(screen, settings, passengersOnBoard, pauseNote);
 
             var back = UnityEngine.Input.GetKeyDown(KeyCode.Escape);
             switch (screen)
@@ -86,7 +87,7 @@ namespace TaxiKmer.Driving
             return MenuChoice.None;
         }
 
-        private void Layout(MenuScreen screen, GameSettings settings, int passengersOnBoard)
+        private void Layout(MenuScreen screen, GameSettings settings, int passengersOnBoard, string pauseNote)
         {
             float h = Screen.height;
             var bw = Mathf.Min(h * 0.9f, Screen.width * 0.8f);
@@ -100,7 +101,7 @@ namespace TaxiKmer.Driving
             UiKit.PlaceTopCenter(_subtitle.rectTransform, h * 0.26f, Screen.width, h * 0.06f);
             _info.fontSize = Mathf.RoundToInt(h * 0.032f);
 
-            _subtitle.gameObject.SetActive(screen != MenuScreen.Pause);
+            _subtitle.gameObject.SetActive(screen != MenuScreen.Pause || !string.IsNullOrEmpty(pauseNote));
             _secondary.gameObject.SetActive(screen != MenuScreen.Settings);
             _tertiary.gameObject.SetActive(screen == MenuScreen.Pause);
             _minus.gameObject.SetActive(screen == MenuScreen.Settings);
@@ -121,6 +122,8 @@ namespace TaxiKmer.Driving
                     break;
                 case MenuScreen.Pause:
                     _title.text = "Pause";
+                    _subtitle.text = pauseNote ?? "";
+                    _subtitle.fontSize = Mathf.RoundToInt(h * 0.032f);
                     _primaryText.text = "Reprendre";
                     _secondaryText.text = "Réglages";
                     _tertiaryText.text = GameMenu.EndDayLabel(passengersOnBoard);

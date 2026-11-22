@@ -63,6 +63,7 @@ namespace TaxiKmer.Core.DotnetTests
             ["ride_types.json"] = typeof(RideTypesConfig),
             ["taxi_market.json"] = typeof(TaxiMarketConfig),
             ["radio.json"] = typeof(TaxiKmer.Core.Radio.RadioConfig),
+            ["ambience.json"] = typeof(TaxiKmer.Core.Ux.AmbienceConfig),
         };
 
         [Test]
@@ -315,7 +316,9 @@ namespace TaxiKmer.Core.DotnetTests
             Assert.That(d.refusalPolicePayChance, Is.InRange(0f, 1f));
             Assert.LessOrEqual(d.haggleDiscountMin, d.haggleDiscountMax);
             Assert.AreEqual(d.lines.Length, d.lines.Select(l => l.id).Distinct().Count());
-            Assert.That(d.lines.Length, Is.InRange(35, 60), "Une quarantaine de répliques de qualité.");
+            Assert.That(d.lines.Length, Is.InRange(160, 200), "Trois lots proposés (43 le 21/11, 42 puis 85 le 22/11 : ≈ 170 décidé par Kevin).");
+            foreach (var t in TaxiKmer.Core.Talk.TalkTriggers.All)
+                Assert.GreaterOrEqual(d.lines.Count(l => l.trigger == t), 9, $"« {t} » : au moins 9 répliques (3e lot, 22/11)");
             var characters = new HashSet<string>(d.characters.Select(c => c.id));
             CollectionAssert.IsSupersetOf(characters, new[] { "commercante", "ecolier", "etudiant", "fonctionnaire", "maman-bebe", "professeur" },
                 "Personnages de Kevin.");
@@ -359,6 +362,53 @@ namespace TaxiKmer.Core.DotnetTests
                 Assert.GreaterOrEqual(d.lines.Count(l => l.register == reg && l.traduction == ""), 3, $"Au moins 3 répliques sûres en {reg}");
             Assert.Greater(d.minShowSeconds, 0f);
             Assert.Greater(d.charsPerSecond, 0f);
+        }
+
+        [Test]
+        public void Dialogues_NeverContradictTheGame_PlacesAndAmountsAreValues()
+        {
+            // 22/11 : « Trois cents pour Emana ? » alors que la course coûte 600 à 1 600 (prix ×2, Kevin) et va peut-être à
+            // Étoudi. Lieux et sommes passent par {destination}, {prix}, {offre}, fournis par la situation.
+            var d = Load<TaxiKmer.Core.Talk.DialogueConfig>("dialogues.json");
+            var stops = Load<StopsConfig>("stops_messassi_etoudi.json");
+            var longestPlace = stops.stops.Select(st => TaxiKmer.Core.Ux.StopNames.Short(st.name)).OrderByDescending(n => n.Length).First();
+            var longest = new Dictionary<string, string>
+            {
+                [TaxiKmer.Core.Talk.TalkValues.Destination] = longestPlace,
+                [TaxiKmer.Core.Talk.TalkValues.Price] = TaxiKmer.Core.Talk.TalkValues.Amount(9999),
+                [TaxiKmer.Core.Talk.TalkValues.Offer] = TaxiKmer.Core.Talk.TalkValues.Amount(9999),
+            };
+            var numberWords = new[] { "cent", "mille", "hundred", "thousand", "fcfa", "francs" };
+            var places = stops.stops.Select(st => TaxiKmer.Core.Ux.StopNames.Short(st.name)).Where(n => n.Length >= 4).Distinct().ToArray();
+            foreach (var l in d.lines)
+            {
+                var allowed = TaxiKmer.Core.Talk.DialogueText.ValuesFor(l.trigger);
+                foreach (var name in TaxiKmer.Core.Talk.DialogueText.Placeholders(l.text))
+                    CollectionAssert.Contains(allowed, name, $"{l.id} : « {{{name}}} » n'est pas fourni pour « {l.trigger} »");
+                var bare = l.text;
+                foreach (var name in TaxiKmer.Core.Talk.TalkValues.All) bare = bare.Replace("{" + name + "}", "");
+                Assert.IsFalse(bare.Any(char.IsDigit), $"{l.id} : somme ou nombre écrit en dur");
+                var words = bare.ToLowerInvariant().Split(new[] { ' ', ',', '.', '!', '?', '…', '\'', ':', ';' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var w in numberWords) Assert.IsFalse(words.Any(x => x == w || x == w + "s"), $"{l.id} : « {w} » écrit en dur, utiliser {{prix}} / {{offre}}");
+                foreach (var place in places) StringAssert.DoesNotContain(place, bare, $"{l.id} : lieu écrit en dur, utiliser {{destination}}");
+                Assert.LessOrEqual(TaxiKmer.Core.Talk.DialogueText.Fill(l.text, longest).Length, d.maxChars, $"{l.id} : trop long une fois rempli");
+            }
+        }
+
+        [Test]
+        public void Ambience_MatchesDefaults_MarketStopsExist()
+        {
+            var a = Load<TaxiKmer.Core.Ux.AmbienceConfig>("ambience.json");
+            var stops = Load<StopsConfig>("stops_messassi_etoudi.json");
+            Assert.IsTrue(a.enabled);
+            foreach (var m in a.marketStops) Assert.IsTrue(stops.stops.Any(st => st.id == m), $"Lieu à marché inconnu : {m}");
+            foreach (var v in new[] { a.murmurVolume, a.marketVolume, a.marketDayVolume, a.duckVolume }) Assert.That(v, Is.InRange(0f, 1f));
+            Assert.GreaterOrEqual(a.marketDayVolume, a.marketVolume, "Plus de monde les jours de marché.");
+            Assert.That(a.maxHornsPerMinute, Is.InRange(1f, 30f), "Klaxons : de l'ambiance, pas un vacarme.");
+            var d = new TaxiKmer.Core.Ux.AmbienceConfig();
+            Assert.AreEqual(d.hornsPerMinutePerVehicle, a.hornsPerMinutePerVehicle, "Valeurs par défaut du code alignées sur les données.");
+            Assert.AreEqual(d.clientCallMeters, a.clientCallMeters);
+            Assert.AreEqual(d.marketRadiusMeters, a.marketRadiusMeters);
         }
 
         /// <summary>Vrais noms de stations et de marques à ne jamais reprendre (stations fictives, décision de Kevin du 21/11).</summary>

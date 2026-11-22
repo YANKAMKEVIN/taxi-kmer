@@ -30,15 +30,25 @@ namespace TaxiKmer.Core.DotnetTests
                 {
                     var id = $"p{n++ / 3}";
                     d.SetPassengers(new[] { id, $"p{n}" });
-                    if (d.Trigger(triggers[rng.Next(triggers.Length)], id))
+                    // Valeurs fournies par le jeu (22/11) : destination et prix de la course.
+                    var values = new System.Collections.Generic.Dictionary<string, string>
+                    {
+                        [TalkValues.Destination] = "Emana",
+                        [TalkValues.Price] = TalkValues.Amount(800),
+                    };
+                    if (d.Trigger(triggers[rng.Next(triggers.Length)], id, "", values))
                     {
                         var line = d.Current.Line;
+                        StringAssert.DoesNotContain("{", d.Current.Text, $"{line.id} : valeur non remplie");
                         Assert.IsTrue(string.IsNullOrEmpty(line.character) || line.character == d.CharacterOf(id), $"{line.id} dite par {d.CharacterOf(id)}");
                     }
                 }
             }
             TestContext.WriteLine($"{d.Said} bulles, {d.Repeats} répétées");
             Assert.Greater(d.Said, 40);
+            // 3e lot (22/11, ≈ 170 répliques, décision de Kevin) : 135 bulles dont 62 déjà dites dans la journée (46 %),
+            // contre 109 dont 71 (65 %) avec 85 répliques. Moins d'une bulle sur deux répétée.
+            Assert.Less(d.Repeats * 2, d.Said, "Plus d'une bulle sur deux répétée dans la journée");
         }
     }
 }

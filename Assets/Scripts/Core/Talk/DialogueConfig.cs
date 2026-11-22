@@ -80,7 +80,7 @@ namespace TaxiKmer.Core.Talk
         public string id = "";
         /// <summary>Ce qu'on entend (« hmm », « eh ! »), pour celui qui enregistrera le son.</summary>
         public string label = "";
-        /// <summary>Chemin du son sous Resources (sans extension) ; vide : à fournir, rien ne joue.</summary>
+        /// <summary>Chemin du son sous Resources (sans extension) ; vide : à fournir, une voix synthétique provisoire joue (SoundSynth.Voice).</summary>
         public string clip = "";
         public string statut = "à fournir";
     }

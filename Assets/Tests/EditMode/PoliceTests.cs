@@ -557,5 +557,37 @@ namespace TaxiKmer.Core.Tests
                 Assert.IsFalse(PoliceTexts.IsCrude(text), text);
             Assert.IsTrue(PoliceTexts.IsCrude("Un pot-de-vin"));
         }
+        [Test]
+        public void Markers_FixedAlwaysShown_FlyingOnlyWhileInPlace()
+        {
+            // Tâche 4.5 : postes dans le monde. Fixe : toujours là ; volant : seulement pendant qu'il est en place.
+            var config = Enabled();
+            var schedule = new PoliceSchedule(config, 6000f, 6 * 60, 20 * 60, new Random(3));
+            ControlPost fixedPost = null, flying = null;
+            foreach (var p in schedule.Posts) { if (p.Flying) flying ??= p; else fixedPost ??= p; }
+            Assert.IsNotNull(fixedPost);
+            Assert.IsNotNull(flying);
+            Assert.IsTrue(PoliceMarkers.Visible(fixedPost, 0));
+            Assert.IsTrue(PoliceMarkers.Visible(fixedPost, 23 * 60));
+            Assert.IsFalse(PoliceMarkers.Visible(flying, flying.FromMinute - 1));
+            Assert.IsTrue(PoliceMarkers.Visible(flying, flying.FromMinute));
+            Assert.IsFalse(PoliceMarkers.Visible(flying, flying.ToMinute));
+            Assert.IsFalse(PoliceMarkers.Visible(null, 0));
+            Assert.AreEqual("Contrôle", PoliceMarkers.Label(fixedPost));
+            Assert.AreEqual("Contrôle volant", PoliceMarkers.Label(flying));
+            Assert.IsTrue(PoliceMarkers.Holding(fixedPost, fixedPost));
+            Assert.IsFalse(PoliceMarkers.Holding(fixedPost, flying));
+            Assert.IsFalse(PoliceMarkers.Holding(fixedPost, null));
+            Assert.IsTrue(PoliceMarkers.LabelShown(fixedPost, fixedPost.Along - 200f));
+            Assert.IsFalse(PoliceMarkers.LabelShown(fixedPost, fixedPost.Along + 300f));
+        }
+        [Test]
+        public void Papers_Summary_ForPauseScreen_ExpiredFirst_SkipsNeverExpiring()
+        {
+            var papers = new PaperSet(new PoliceConfig());
+            Assert.AreEqual("Assurance : 12 jours · Visite technique : 25 jours · Licence de taxi : 40 jours", papers.Summary(1));
+            Assert.AreEqual("Assurance : expirée · Visite technique : 13 jours · Licence de taxi : 28 jours", papers.Summary(13));
+            Assert.AreEqual("", new PaperSet(new PoliceConfig { papers = new[] { new PaperData { id = "permis", name = "Permis de conduire" } } }).Summary(1));
+        }
     }
 }

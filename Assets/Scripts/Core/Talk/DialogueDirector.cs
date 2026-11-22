@@ -7,6 +7,8 @@ namespace TaxiKmer.Core.Talk
     public sealed class Bubble
     {
         public LineData Line { get; internal set; }
+        /// <summary>Texte à afficher : la réplique avec ses valeurs remplies (<see cref="DialogueText"/>).</summary>
+        public string Text { get; internal set; } = "";
         /// <summary>Registre du passager qui parle (vide : discussion sans passager désigné).</summary>
         public string Register { get; internal set; } = "";
         /// <summary>Personnage type de celui qui parle (vide : passager quelconque).</summary>
@@ -47,11 +49,38 @@ namespace TaxiKmer.Core.Talk
         private readonly Dictionary<string, string> _assigned = new Dictionary<string, string>();
         private readonly Dictionary<string, string> _characters = new Dictionary<string, string>();
         private readonly List<string> _passengers = new List<string>();
+        private bool _passengersKnown;
+        private readonly List<FollowUp> _followUps = new List<FollowUp>();
+
+        /// <summary>Situation qui attend que la bulle en cours parte (par ex. la destination juste après la montée).</summary>
+        private sealed class FollowUp
+        {
+            public string Trigger;
+            public string SpeakerId;
+            public IDictionary<string, string> Values;
+            public float SecondsLeft;
+        }
+
+        /// <summary>Situations en attente (voir <see cref="Follow"/>).</summary>
+        public int PendingFollowUps => _followUps.Count;
+
+        /// <summary>
+        /// Une situation qui suit une autre (jalon 5) : le passager qui vient de monter précise sa destination dès que la
+        /// bulle en cours est partie et que le silence entre deux bulles est passé. Abandonnée après
+        /// <paramref name="withinSeconds"/> secondes (on ne dit pas sa destination au milieu du trajet), ou si le passager
+        /// n'est plus à bord (<see cref="SetPassengers"/>).
+        /// </summary>
+        public void Follow(string trigger, string speakerId, IDictionary<string, string> values = null, float withinSeconds = 20f)
+        {
+            if (!_config.enabled || string.IsNullOrEmpty(trigger)) return;
+            _followUps.Add(new FollowUp { Trigger = trigger, SpeakerId = speakerId ?? "", Values = values, SecondsLeft = withinSeconds });
+        }
 
         /// <summary>Passagers à bord (ids), pour choisir qui rompt un long silence. Mis à jour par la présentation.</summary>
         public void SetPassengers(IEnumerable<string> ids)
         {
             _passengers.Clear();
+            _passengersKnown = true;
             if (ids != null) _passengers.AddRange(ids);
         }
 
@@ -111,6 +140,21 @@ namespace TaxiKmer.Core.Talk
             }
             else _silence += dt;
 
+            // Situations qui suivent (destination après la montée) : avant les discussions et le long silence.
+            for (var i = _followUps.Count - 1; i >= 0; i--)
+            {
+                var f = _followUps[i];
+                f.SecondsLeft -= dt;
+                var gone2 = f.SecondsLeft <= 0f || (!string.IsNullOrEmpty(f.SpeakerId) && _passengersKnown && !_passengers.Contains(f.SpeakerId));
+                if (gone2) _followUps.RemoveAt(i);
+            }
+            if (Current == null && _followUps.Count > 0 && _silence >= _config.minGapSeconds)
+            {
+                var f = _followUps[0];
+                _followUps.RemoveAt(0);
+                Trigger(f.Trigger, f.SpeakerId, "", f.Values);
+            }
+
             if (passengers >= 2 && _config.chatEverySeconds > 0f)
             {
                 _chatClock += dt;
@@ -131,17 +175,22 @@ namespace TaxiKmer.Core.Talk
         /// Une situation se produit : un passager parle si personne ne parle, si le silence a assez duré et s'il reste
         /// une réplique de cette situation qui n'a pas été dite récemment. Rend true si une bulle s'affiche.
         /// </summary>
-        public bool Trigger(string trigger, string speakerId, string character = "")
+        /// <param name="values">
+        /// Valeurs du moment que les répliques peuvent citer (<see cref="TalkValues"/> : destination, prix, offre) ;
+        /// une réplique qui cite une valeur absente n'est pas choisie.
+        /// </param>
+        public bool Trigger(string trigger, string speakerId, string character = "", IDictionary<string, string> values = null)
         {
             if (!_config.enabled || Current != null || _silence < _config.minGapSeconds) return false;
             var designated = !string.IsNullOrEmpty(speakerId);
             if (designated && string.IsNullOrEmpty(character)) character = CharacterOf(speakerId);
             var register = string.IsNullOrEmpty(speakerId) ? "" : RegisterOf(speakerId, character);
-            var line = Pick(trigger, character, register, designated);
+            var line = Pick(trigger, character, register, designated, values);
             if (line == null && !string.IsNullOrEmpty(register) && !string.IsNullOrEmpty(_config.fallbackRegister) && register != _config.fallbackRegister)
-                line = Pick(trigger, character, _config.fallbackRegister, designated);
+                line = Pick(trigger, character, _config.fallbackRegister, designated, values);
             if (line == null) return false;
-            Current = new Bubble { Line = line, Register = register, SpeakerId = speakerId ?? "", Character = character ?? "", ShowSeconds = ShowSecondsFor(_config, line.text), Voice = _config.VoiceFor(line, character) };
+            var text = DialogueText.Fill(line.text, values);
+            Current = new Bubble { Line = line, Text = text, Register = register, SpeakerId = speakerId ?? "", Character = character ?? "", ShowSeconds = ShowSecondsFor(_config, text), Voice = _config.VoiceFor(line, character) };
             Said++;
             if (!_saidToday.Add(line.id)) Repeats++;
             _recent.Add(line.id);
@@ -166,6 +215,7 @@ namespace TaxiKmer.Core.Talk
         public void NewDay()
         {
             _saidToday.Clear();
+            _followUps.Clear();
             Said = 0;
             Repeats = 0;
         }
@@ -234,12 +284,13 @@ namespace TaxiKmer.Core.Talk
         /// Un passager précis parle : sans personnage type, il ne dit pas les répliques réservées à un personnage
         /// (la maman ne parle pas de son bébé par la bouche d'un autre).
         /// </param>
-        private LineData Pick(string trigger, string character, string register, bool designated = false)
+        private LineData Pick(string trigger, string character, string register, bool designated = false, IDictionary<string, string> values = null)
         {
             var candidates = new List<LineData>();
             foreach (var l in _config.lines ?? Array.Empty<LineData>())
             {
                 if (l.trigger != trigger || string.IsNullOrEmpty(l.text) || _recent.Contains(l.id)) continue;
+                if (!DialogueText.CanFill(l.text, values)) continue;
                 if (!string.IsNullOrEmpty(register) && !string.IsNullOrEmpty(l.register) && l.register != register) continue;
                 if (!string.IsNullOrEmpty(l.character) && !string.IsNullOrEmpty(character) && l.character != character) continue;
                 if (!string.IsNullOrEmpty(l.character) && string.IsNullOrEmpty(character) && designated) continue;

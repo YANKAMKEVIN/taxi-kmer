@@ -1,0 +1,16 @@
+{
+    "_note": "Ambiance sonore de la rue (jalon 5, docs/tech/jalon-05.md, tâche 5.7) : rumeur de la ville partout, rumeur du marché près des lieux à marché (plus forte les jours de marché, calendar.json), klaxons des voitures proches (plus nombreux dans les embouteillages), appel d'un client quand le taxi passe devant lui ; volume baissé quand un passager parle, comme la radio. Sons PROVISOIRES synthétisés par le code (SoundSynth), en attendant de vrais enregistrements. Toutes les valeurs sont des défauts de Claude, à régler à l'écoute par Kevin. Distances en mètres, volumes de 0 à 1, klaxons par minute.",
+    "enabled": true,
+    "murmurVolume": 0.12,
+    "marketStops": ["marche-messassi"],
+    "marketRadiusMeters": 250,
+    "marketVolume": 0.35,
+    "marketDayVolume": 0.7,
+    "hornRadiusMeters": 80,
+    "hornsPerMinutePerVehicle": 0.4,
+    "jamHornFactor": 3,
+    "jamKmh": 8,
+    "maxHornsPerMinute": 10,
+    "clientCallMeters": 60,
+    "duckVolume": 0.5
+}

@@ -23,9 +23,10 @@
 | 4.2 Postes fixes et contrôles volants | **faite** (`PoliceSchedule`) : postes des données, contrôles volants tirés au hasard (position, heure, durée) ; le taxi qui passe devant un contrôle en place est arrêté selon une chance ; un poste n'arrête pas deux fois en moins de 2 h de jeu |
 | 4.3 Scène de contrôle | **faite** (`PoliceControl`) : problème réel d'abord (papier expiré, surcharge, deux devant), sinon prétexte inventé selon une chance, sinon « en règle » et on repart (le contrôle prend quand même 10 min) ; somme demandée ; payer, négocier (baisse ou le policier se braque, 2 tentatives, plancher), contester et appeler (issues tirées dans les données) ; temps, argent, fourrière, réputation |
 | 4.4 Conséquences sur la journée | **faite** (`Street.ApplyPoliceControl`) : somme payée → dépense « Contrôle de police » du bilan, temps perdu sur l'horloge, réputation ; fourrière → frais « Fourrière », passagers descendus sans payer, journée arrêtée (`DaySummary.Impounded`) |
-| 4.5 Affichage dans Unity | **écrit, non exécuté** (21/11) : `Driving/PoliceView.cs`, créé par `StreetView` si `enabled` ; `PoliceDay` cherche un contrôle sur le trajet du taxi (chance multipliée par l'effet de la réputation), panneau au centre (nom du poste, phrase du policier, un bouton par choix, touches 1 à 5), conduite bloquée pendant le contrôle, effet appliqué à la journée et phrase de fin en message. Reste : poste en primitives dans le monde |
+| 4.5 Affichage dans Unity | **écrit, non exécuté** (21/11) : `Driving/PoliceView.cs`, créé par `StreetView` si `enabled` ; `PoliceDay` cherche un contrôle sur le trajet du taxi (chance multipliée par l'effet de la réputation), panneau au centre (nom du poste, phrase du policier, un bouton par choix, touches 1 à 5), conduite bloquée pendant le contrôle, effet appliqué à la journée et phrase de fin en message. Postes dans le monde **écrits, non exécutés** (22/11, `Core/Police/PoliceMarkers.cs`, `StreetView.MakePolicePost`) : poste fixe = abri bleu, barrière rouge et blanche, plots ; contrôle volant = pick-up de police et plots, visible seulement pendant qu'il est en place ; policier au bord de la chaussée qui s'avance quand il arrête le taxi ; texte « Contrôle » / « Contrôle volant » au-dessus à 250 m ou moins (primitives provisoires, valeurs par défaut de Claude) |
 | 4.6 Papiers dans la sauvegarde et renouvellement | **faite** (décision de Kevin du 21/11 au soir) : renouvellement automatique à l'échéance, payé sur l'épargne (`Core/Police/PaperRenewal.cs`, `autoRenewPapers`) ; dates des papiers dans la sauvegarde (version 6, `CareerData.papers`, migration testée) ; message au début de la journée (`PoliceTexts.Renewal`, `StreetView`, non exécuté dans Unity) ; montants bas fixés le 22/11 (assurance 500, visite technique 1 000, licence 2 000 FCFA, ci-dessous) |
 
+| 4.8 Papiers visibles par le joueur | **écrite, non exécutée** (22/11) : l'écran de pause montre les papiers qui expirent (« Assurance : 9 jours · Visite technique : 160 jours · Licence de taxi : 300 jours », expiré en premier ; `PaperSet.Summary`, `GameMenuView`) |
 | 4.7 Décisions de Kevin du 21/11 | **faite** : papiers option A, contester option B, fuir option B (`ControlChoice.Flee`, recherché, `PoliceDay`), appeler option B avec le crochet des contacts (`PoliceContacts`, coupé), fourrière renvoyée à la 2ᵉ fois (`OwnerConfig.impoundsBeforeFired`, `DriverCareer.Impounds`, sauvegarde version 5), réputation inchangée ; voir « Décisions de Kevin du 21/11 » |
 
 Tests : `Assets/Tests/EditMode/PoliceTests.cs` (13 tests, dont le ton des textes ; dont la journée de test à 10 contrôles variés) ; données vérifiées par `DataInvariantsTests.Police_MatchesDefaults_StaysOffUntilKevinDecides`.
@@ -60,7 +61,7 @@ Tests : `Assets/Tests/EditMode/PoliceTests.cs` (13 tests, dont le ton des textes
     le plus haut des jeux non nuls (51 % pour tous les autres, 67 % avec des papiers gratuits). Le montant compte peu (de
     500 à 5 000 FCFA pour l'assurance, 1 à 2 points) : la baisse vient des chauffeurs à l'épargne nulle ou négative, qui ne
     peuvent rien payer et roulent ensuite avec un papier expiré (5 000 FCFA demandés à chaque contrôle) ; avec la
-    concurrence, 36 % des journées sur 45 jours (question 10).
+    concurrence, 36 % des journées sur 45 jours (question 10, tranchée le 22/11 : option A, on garde tel quel).
   - **Épargne insuffisante (validé par Kevin)** : le papier **reste expiré**, rien n'est
     pris, et un message l'annonce au début de la journée (« Assurance expirée : pas assez d'épargne pour la renouveler
     (500 FCFA). Gare aux contrôles. ») ; nouvel essai chaque matin. Un papier gratuit se renouvelle même avec une
@@ -105,7 +106,7 @@ Tests : `Assets/Tests/EditMode/PoliceTests.cs` (13 tests, dont le ton des textes
 
 ## Questions pour Kevin (jalon 4)
 
-Questions 1 à 5, 7 et 8 tranchées ; **6 (sommes, fréquence) et 9 (positions des postes) restent ouvertes**, en valeurs par défaut.
+Questions 1 à 5, 7, 8 et 10 tranchées ; **6 (sommes, fréquence) et 9 (positions des postes) restent ouvertes**, en valeurs par défaut.
 
 
 1. ~~Ton : satirique, dramatique, ou les deux ?~~ → **Tranché par Kevin (2026-11-21) : ton réaliste. On suggère la corruption sans la montrer crûment.** Voir « Ton » ci-dessus.
@@ -117,7 +118,7 @@ Questions 1 à 5, 7 et 8 tranchées ; **6 (sommes, fréquence) et 9 (positions d
 7. ~~Fourrière~~ → **tranché par Kevin le 21/11 : renvoyé seulement à la 2ᵉ fois.** Ancienne question : **Fourrière** : la journée s'arrête et coûte 15 000 FCFA (provisoire) ; le propriétaire renvoie-t-il le chauffeur, comme pour une saisie ? (non par défaut).
 8. ~~Réputation~~ → **tranché par Kevin le 21/11 : payer, refuser ou contester ne la changent pas.** Ancienne question : **Réputation** : payer, refuser ou contester changent-ils la réputation ? Dans quel sens (0 par défaut) ?
 9. **Positions des postes fixes** sur la portion (comme les feux et la station).
-10. **Papier impayé faute d'épargne, avec la concurrence** (relevé par l'étude du 22/11, `equilibrage.md`) : avec les
+10. ~~Papier impayé faute d'épargne, avec la concurrence~~ → **tranché par Kevin le 22/11 : option A, on garde tel quel** (chauffeur sans épargne = papier expiré, somme demandée au contrôle ; rien à coder, la spirale fait partie du jeu). Ancienne question (relevé par l'étude du 22/11, `equilibrage.md`) : avec les
     montants bas, le versement reste dans la cible sans concurrence (69-70 %), mais avec la concurrence il tombe à 53 % sur
     45 jours (67 % avec des papiers gratuits), quel que soit le montant : le chauffeur à l'épargne nulle ou négative ne peut
     rien payer et roule avec un papier expiré (5 000 FCFA à chaque contrôle). La règle validée reste en place. Pistes :
