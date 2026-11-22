@@ -284,5 +284,35 @@ namespace TaxiKmer.Core.Tests
             Assert.AreEqual("800 francs pour Emana ? Bon.", d.Current.Text);
             Assert.AreEqual(Math.Max(2.5f, d.Current.Text.Length / 14f), d.Current.ShowSeconds, 1e-4f, "Temps de lecture sur le texte rempli.");
         }
+        [Test]
+        public void FollowUp_DestinationAfterBoarding_DroppedWhenLateOrPassengerGone()
+        {
+            // 22/11 : la situation « destination » n'était jamais déclenchée ; elle suit maintenant la montée.
+            var config = Config(3, TalkTriggers.Boarding, TalkTriggers.Destination);
+            var d = new DialogueDirector(config, new Random(2));
+            d.SetPassengers(new[] { "c1" });
+            Wait(d, 10f);
+            Assert.IsTrue(d.Trigger(TalkTriggers.Boarding, "c1"));
+            d.Follow(TalkTriggers.Destination, "c1");
+            Assert.AreEqual(1, d.PendingFollowUps);
+            for (var t = 0f; t < 15f && (d.Current == null || d.Current.Line.trigger != TalkTriggers.Destination); t += 0.1f) d.Update(0.1f, 1);
+            Assert.AreEqual(TalkTriggers.Destination, d.Current?.Line.trigger, "La destination suit la montée, après le silence.");
+            Assert.AreEqual(0, d.PendingFollowUps);
+
+            // Trop tard : abandonnée.
+            Wait(d, 20f);
+            d.Follow(TalkTriggers.Destination, "c1", null, 1f);
+            Assert.IsTrue(d.Trigger(TalkTriggers.Boarding, "c1"));
+            Wait(d, 30f);
+            Assert.AreEqual(0, d.PendingFollowUps);
+
+            // Passager descendu : abandonnée.
+            Wait(d, 20f);
+            Assert.IsTrue(d.Trigger(TalkTriggers.Boarding, "c1"));
+            d.Follow(TalkTriggers.Destination, "c1");
+            d.SetPassengers(new string[0]);
+            d.Update(0.1f, 0);
+            Assert.AreEqual(0, d.PendingFollowUps);
+        }
     }
 }

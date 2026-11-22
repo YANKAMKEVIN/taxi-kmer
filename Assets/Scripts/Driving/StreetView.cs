@@ -597,7 +597,12 @@ namespace TaxiKmer.Driving
                         var moved = outcome.Moved != null ? "Un passager a changé de place. " : "";
                         Toast($"{moved}Monté : {ShortName(outcome.Boarded.DestinationStopId)}, {Money(outcome.Boarded.ProposedFare)}");
                         if (outcome.Moved != null) _talk?.Say(Core.Talk.TalkTriggers.SeatMove, outcome.Moved.Id);
-                        else _talk?.Say(Core.Talk.TalkTriggers.Boarding, outcome.Boarded.Id, TalkView.RideValues(Street, outcome.Boarded.DestinationStopId, outcome.Boarded.ProposedFare));
+                        else
+                        {
+                            var values = TalkView.RideValues(Street, outcome.Boarded.DestinationStopId, outcome.Boarded.ProposedFare);
+                            _talk?.Say(Core.Talk.TalkTriggers.Boarding, outcome.Boarded.Id, values);
+                            _talk?.Director.Follow(Core.Talk.TalkTriggers.Destination, outcome.Boarded.Id, values); // il précise où il descend
+                        }
                     }
                     else if (outcome.Board == BoardResult.DayOver) Toast("La journée est finie");
                     else

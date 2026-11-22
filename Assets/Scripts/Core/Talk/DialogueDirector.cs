@@ -49,11 +49,38 @@ namespace TaxiKmer.Core.Talk
         private readonly Dictionary<string, string> _assigned = new Dictionary<string, string>();
         private readonly Dictionary<string, string> _characters = new Dictionary<string, string>();
         private readonly List<string> _passengers = new List<string>();
+        private bool _passengersKnown;
+        private readonly List<FollowUp> _followUps = new List<FollowUp>();
+
+        /// <summary>Situation qui attend que la bulle en cours parte (par ex. la destination juste après la montée).</summary>
+        private sealed class FollowUp
+        {
+            public string Trigger;
+            public string SpeakerId;
+            public IDictionary<string, string> Values;
+            public float SecondsLeft;
+        }
+
+        /// <summary>Situations en attente (voir <see cref="Follow"/>).</summary>
+        public int PendingFollowUps => _followUps.Count;
+
+        /// <summary>
+        /// Une situation qui suit une autre (jalon 5) : le passager qui vient de monter précise sa destination dès que la
+        /// bulle en cours est partie et que le silence entre deux bulles est passé. Abandonnée après
+        /// <paramref name="withinSeconds"/> secondes (on ne dit pas sa destination au milieu du trajet), ou si le passager
+        /// n'est plus à bord (<see cref="SetPassengers"/>).
+        /// </summary>
+        public void Follow(string trigger, string speakerId, IDictionary<string, string> values = null, float withinSeconds = 20f)
+        {
+            if (!_config.enabled || string.IsNullOrEmpty(trigger)) return;
+            _followUps.Add(new FollowUp { Trigger = trigger, SpeakerId = speakerId ?? "", Values = values, SecondsLeft = withinSeconds });
+        }
 
         /// <summary>Passagers à bord (ids), pour choisir qui rompt un long silence. Mis à jour par la présentation.</summary>
         public void SetPassengers(IEnumerable<string> ids)
         {
             _passengers.Clear();
+            _passengersKnown = true;
             if (ids != null) _passengers.AddRange(ids);
         }
 
@@ -112,6 +139,21 @@ namespace TaxiKmer.Core.Talk
                 }
             }
             else _silence += dt;
+
+            // Situations qui suivent (destination après la montée) : avant les discussions et le long silence.
+            for (var i = _followUps.Count - 1; i >= 0; i--)
+            {
+                var f = _followUps[i];
+                f.SecondsLeft -= dt;
+                var gone2 = f.SecondsLeft <= 0f || (!string.IsNullOrEmpty(f.SpeakerId) && _passengersKnown && !_passengers.Contains(f.SpeakerId));
+                if (gone2) _followUps.RemoveAt(i);
+            }
+            if (Current == null && _followUps.Count > 0 && _silence >= _config.minGapSeconds)
+            {
+                var f = _followUps[0];
+                _followUps.RemoveAt(0);
+                Trigger(f.Trigger, f.SpeakerId, "", f.Values);
+            }
 
             if (passengers >= 2 && _config.chatEverySeconds > 0f)
             {
@@ -173,6 +215,7 @@ namespace TaxiKmer.Core.Talk
         public void NewDay()
         {
             _saidToday.Clear();
+            _followUps.Clear();
             Said = 0;
             Repeats = 0;
         }
