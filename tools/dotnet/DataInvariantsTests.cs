@@ -63,6 +63,7 @@ namespace TaxiKmer.Core.DotnetTests
             ["ride_types.json"] = typeof(RideTypesConfig),
             ["taxi_market.json"] = typeof(TaxiMarketConfig),
             ["radio.json"] = typeof(TaxiKmer.Core.Radio.RadioConfig),
+            ["ambience.json"] = typeof(TaxiKmer.Core.Ux.AmbienceConfig),
         };
 
         [Test]
@@ -392,6 +393,22 @@ namespace TaxiKmer.Core.DotnetTests
                 foreach (var place in places) StringAssert.DoesNotContain(place, bare, $"{l.id} : lieu écrit en dur, utiliser {{destination}}");
                 Assert.LessOrEqual(TaxiKmer.Core.Talk.DialogueText.Fill(l.text, longest).Length, d.maxChars, $"{l.id} : trop long une fois rempli");
             }
+        }
+
+        [Test]
+        public void Ambience_MatchesDefaults_MarketStopsExist()
+        {
+            var a = Load<TaxiKmer.Core.Ux.AmbienceConfig>("ambience.json");
+            var stops = Load<StopsConfig>("stops_messassi_etoudi.json");
+            Assert.IsTrue(a.enabled);
+            foreach (var m in a.marketStops) Assert.IsTrue(stops.stops.Any(st => st.id == m), $"Lieu à marché inconnu : {m}");
+            foreach (var v in new[] { a.murmurVolume, a.marketVolume, a.marketDayVolume, a.duckVolume }) Assert.That(v, Is.InRange(0f, 1f));
+            Assert.GreaterOrEqual(a.marketDayVolume, a.marketVolume, "Plus de monde les jours de marché.");
+            Assert.That(a.maxHornsPerMinute, Is.InRange(1f, 30f), "Klaxons : de l'ambiance, pas un vacarme.");
+            var d = new TaxiKmer.Core.Ux.AmbienceConfig();
+            Assert.AreEqual(d.hornsPerMinutePerVehicle, a.hornsPerMinutePerVehicle, "Valeurs par défaut du code alignées sur les données.");
+            Assert.AreEqual(d.clientCallMeters, a.clientCallMeters);
+            Assert.AreEqual(d.marketRadiusMeters, a.marketRadiusMeters);
         }
 
         /// <summary>Vrais noms de stations et de marques à ne jamais reprendre (stations fictives, décision de Kevin du 21/11).</summary>

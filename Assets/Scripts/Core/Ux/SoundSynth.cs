@@ -84,6 +84,103 @@ namespace TaxiKmer.Core.Ux
             return data;
         }
 
+        /// <summary>
+        /// Klaxon d'une autre voiture, au loin (0,45 s ; ambiance du jalon 5) : deux tons rauques (≈ 400 et 500 Hz), un peu
+        /// étouffés par la distance. La hauteur varie par AudioSource.pitch pour ne pas entendre toujours la même voiture.
+        /// </summary>
+        public static float[] DistantHorn()
+        {
+            var n = (int)(Rate * 0.45f);
+            var data = new float[n];
+            var lp = 0.0;
+            for (var i = 0; i < n; i++)
+            {
+                var t = i / (float)Rate;
+                var env = Math.Min(1.0, t / 0.02) * Math.Min(1.0, (0.45 - t) / 0.08);
+                var raw = Math.Tanh(2.5 * (Math.Sin(2 * Math.PI * 405 * t) + Math.Sin(2 * Math.PI * 508 * t)));
+                lp += 0.25 * (raw - lp); // étouffé par la distance
+                data[i] = (float)(0.3 * env * lp);
+            }
+            return data;
+        }
+
+        /// <summary>
+        /// Rumeur de la ville bouclable (3 s) : bruit grave filtré qui ondule lentement (moteurs lointains, vent). Raccord
+        /// en fondu enchaîné : la fin rejoint le début sans clic.
+        /// </summary>
+        public static float[] StreetMurmur() => Loop(3f, 17, (t, noise, state) =>
+        {
+            state[0] += 0.02 * (noise - state[0]);
+            var swell = 0.75 + 0.25 * Math.Sin(2 * Math.PI * t / 3.0);
+            return 1.8 * state[0] * swell;
+        });
+
+        /// <summary>
+        /// Rumeur du marché bouclable (4 s) : bruit dans la bande de la voix, haché en syllabes par plusieurs « voix » qui
+        /// ne parlent pas au même rythme, avec quelques appels plus hauts. Raccord sans clic.
+        /// </summary>
+        public static float[] MarketChatter() => Loop(4f, 29, (t, noise, state) =>
+        {
+            state[0] += 0.35 * (noise - state[0]);   // passe-bas
+            state[1] += 0.04 * (state[0] - state[1]); // retire le grave : bande de la voix
+            var band = state[0] - state[1];
+            double syll = 0;
+            var rates = new[] { 3.1, 4.3, 5.2, 3.7 };
+            for (var k = 0; k < rates.Length; k++) syll += Math.Max(0, Math.Sin(2 * Math.PI * rates[k] * t + k * 1.9));
+            var call = Math.Max(0, Math.Sin(2 * Math.PI * 0.5 * t)) * 0.3 * Math.Sin(2 * Math.PI * (300 + 40 * Math.Sin(2 * Math.PI * 2 * t)) * t);
+            return 0.9 * band * (0.3 + syll / rates.Length) + 0.25 * call * syll / rates.Length;
+        });
+
+        /// <summary>
+        /// Appel d'un client au bord de la route (0,5 s, provisoire) : une voix synthétique « éé ! » qui monte puis descend
+        /// (deux formants sur une fondamentale de 220 Hz), en attendant de vrais enregistrements (« Emana, 600 ! »).
+        /// </summary>
+        public static float[] ClientCall()
+        {
+            var n = (int)(Rate * 0.5f);
+            var data = new float[n];
+            var phase = 0.0;
+            for (var i = 0; i < n; i++)
+            {
+                var t = i / (float)Rate;
+                var f0 = 220 + 70 * Math.Sin(Math.PI * t / 0.5);
+                phase += 2 * Math.PI * f0 / Rate;
+                double s = 0;
+                for (var k = 1; k <= 12; k++)
+                {
+                    var f = f0 * k;
+                    var formant = Math.Exp(-Math.Pow((f - 550) / 180, 2)) + 0.7 * Math.Exp(-Math.Pow((f - 1900) / 300, 2));
+                    s += formant * Math.Sin(k * phase);
+                }
+                var env = Math.Min(1.0, t / 0.03) * Math.Min(1.0, (0.5 - t) / 0.12);
+                data[i] = (float)(0.35 * env * Math.Tanh(s));
+            }
+            return data;
+        }
+
+        /// <summary>Son bouclable : <paramref name="sample"/>(t, bruit, état) sur la durée, plus un fondu enchaîné de 0,25 s fin → début.</summary>
+        private static float[] Loop(float seconds, uint seed, Func<double, double, double[], double> sample)
+        {
+            var n = (int)(Rate * seconds);
+            var fade = Rate / 4;
+            var raw = new double[n + fade];
+            var rng = new Lcg(seed);
+            var state = new double[4];
+            for (var i = 0; i < raw.Length; i++) raw[i] = sample(i / (double)Rate, rng.Next(), state);
+            var data = new float[n];
+            for (var i = 0; i < n; i++)
+            {
+                var v = raw[i];
+                if (i < fade)
+                {
+                    var k = i / (double)fade;
+                    v = raw[i] * k + raw[n + i] * (1 - k); // le début reprend là où la fin s'arrête
+                }
+                data[i] = (float)Math.Max(-1, Math.Min(1, v));
+            }
+            return data;
+        }
+
         /// <summary>Hauteur du moteur (AudioSource.pitch) selon la vitesse : 0,8 au ralenti, 2 à la vitesse maximale.</summary>
         public static float EnginePitch(float speedKmh, float maxKmh)
         {
