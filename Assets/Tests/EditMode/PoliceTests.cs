@@ -557,5 +557,29 @@ namespace TaxiKmer.Core.Tests
                 Assert.IsFalse(PoliceTexts.IsCrude(text), text);
             Assert.IsTrue(PoliceTexts.IsCrude("Un pot-de-vin"));
         }
+        [Test]
+        public void Markers_FixedAlwaysShown_FlyingOnlyWhileInPlace()
+        {
+            // Tâche 4.5 : postes dans le monde. Fixe : toujours là ; volant : seulement pendant qu'il est en place.
+            var config = Enabled();
+            var schedule = new PoliceSchedule(config, 6000f, 6 * 60, 20 * 60, new Random(3));
+            ControlPost fixedPost = null, flying = null;
+            foreach (var p in schedule.Posts) { if (p.Flying) flying ??= p; else fixedPost ??= p; }
+            Assert.IsNotNull(fixedPost);
+            Assert.IsNotNull(flying);
+            Assert.IsTrue(PoliceMarkers.Visible(fixedPost, 0));
+            Assert.IsTrue(PoliceMarkers.Visible(fixedPost, 23 * 60));
+            Assert.IsFalse(PoliceMarkers.Visible(flying, flying.FromMinute - 1));
+            Assert.IsTrue(PoliceMarkers.Visible(flying, flying.FromMinute));
+            Assert.IsFalse(PoliceMarkers.Visible(flying, flying.ToMinute));
+            Assert.IsFalse(PoliceMarkers.Visible(null, 0));
+            Assert.AreEqual("Contrôle", PoliceMarkers.Label(fixedPost));
+            Assert.AreEqual("Contrôle volant", PoliceMarkers.Label(flying));
+            Assert.IsTrue(PoliceMarkers.Holding(fixedPost, fixedPost));
+            Assert.IsFalse(PoliceMarkers.Holding(fixedPost, flying));
+            Assert.IsFalse(PoliceMarkers.Holding(fixedPost, null));
+            Assert.IsTrue(PoliceMarkers.LabelShown(fixedPost, fixedPost.Along - 200f));
+            Assert.IsFalse(PoliceMarkers.LabelShown(fixedPost, fixedPost.Along + 300f));
+        }
     }
 }

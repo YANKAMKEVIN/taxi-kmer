@@ -63,6 +63,8 @@ namespace TaxiKmer.Driving
         private readonly List<string> _paperNews = new List<string>();
         private float _paperNewsAt = -1f;
         private bool _policeWasActive;
+        // Postes de contrôle dessinés dans le monde (tâche 4.5, primitives provisoires) : racine et policier de chaque poste.
+        private readonly List<(Core.Police.ControlPost post, GameObject root, Transform officer)> _postViews = new List<(Core.Police.ControlPost, GameObject, Transform)>();
         // Passagers qui parlent (dialogues.json ; créés seulement si enabled, jalon 5 activé le 21/11).
         private TalkView _talk;
         // La route est dure (road.json ; créée seulement si enabled, jalon 6 activé le 21/11).
@@ -216,6 +218,7 @@ namespace TaxiKmer.Driving
             if (police.enabled)
                 _police = new PoliceView(controls.Overlay, controls.Font, police, Save.StartDayPapers(police, _paperNews), Save.Career.DayNumber, _cum[_cum.Length - 1],
                     dayCfg.startHour * 60, dayCfg.endHour * 60, actualSeed + 47);
+            if (_police != null) foreach (var post in _police.Police.Schedule.Posts) _postViews.Add(MakePolicePost(post));
             _menu = new GameMenu(!TitleDone);
             _menuView = new GameMenuView(transform, controls.Font);
             _settings.Volume = PlayerPrefs.GetFloat(VolumeKey, GameSettings.DefaultVolume);
@@ -391,7 +394,7 @@ namespace TaxiKmer.Driving
             UpdateTutorial(dt, state);
 
             SyncPeople();
-            SyncStopMarkers();
+            SyncStopMarkers(state.Along);
             UpdateHud();
             _strip.Update(Street, state.Along, !Street.DayFinished);
             _cabinView.Update(Street.Shift.Cabin, !Street.DayFinished);
@@ -708,6 +711,72 @@ namespace TaxiKmer.Driving
             Part(root.transform, PrimitiveType.Cube, new Vector3(-5.5f, 6.2f, -2.5f), new Vector3(1.6f, 1.2f, 0.2f), red);
         }
 
+        /// <summary>
+        /// Poste de contrôle (tâche 4.5, primitives provisoires) à droite de la route dans le sens vers Étoudi : fixe =
+        /// abri bleu, barrière rouge et blanche, plots ; volant = plots et pick-up de police. Un policier attend au bord
+        /// de la chaussée (il s'avance quand il arrête le taxi). Règle d'affichage : <see cref="Core.Police.PoliceMarkers"/>.
+        /// </summary>
+        private (Core.Police.ControlPost, GameObject, Transform) MakePolicePost(Core.Police.ControlPost post)
+        {
+            WorldGeometry.SampleAlong(_xz, _cum, post.Along, out var x, out var z, out var dx, out var dz);
+            var right = new Vector3(dz, 0f, -dx);
+            var root = new GameObject(Core.Police.PoliceMarkers.Label(post) + " " + post.Id);
+            root.transform.SetParent(transform, false);
+            // Repère local : +x vers l'extérieur de la route, -x vers la chaussée, +z dans le sens de la marche.
+            root.transform.SetPositionAndRotation(new Vector3(x, 0f, z) + right * (sideOffset + 2.5f),
+                Quaternion.LookRotation(new Vector3(dx, 0f, dz), Vector3.up));
+            var blue = new Color(0.1f, 0.2f, 0.45f);
+            var white = new Color(0.92f, 0.92f, 0.9f);
+            var red = new Color(0.8f, 0.12f, 0.1f);
+            var orange = new Color(1f, 0.45f, 0.05f);
+            if (!post.Flying)
+            {
+                Part(root.transform, PrimitiveType.Cube, new Vector3(2.5f, 1.3f, 0f), new Vector3(2.4f, 2.6f, 2.4f), blue);
+                Part(root.transform, PrimitiveType.Cube, new Vector3(2.5f, 2.75f, 0f), new Vector3(2.8f, 0.3f, 2.8f), white);
+                Part(root.transform, PrimitiveType.Cube, new Vector3(0.6f, 0.6f, 3f), new Vector3(0.3f, 1.2f, 0.3f), white);
+                for (var i = 0; i < 4; i++) // barrière rabattue le long du bord, bandes rouges et blanches
+                    Part(root.transform, PrimitiveType.Cube, new Vector3(0.6f, 1.1f, 3.6f + i * 0.9f), new Vector3(0.15f, 0.15f, 0.9f), i % 2 == 0 ? red : white);
+            }
+            else
+            {
+                Part(root.transform, PrimitiveType.Cube, new Vector3(2.2f, 0.8f, 0f), new Vector3(1.9f, 1f, 4.4f), blue);
+                Part(root.transform, PrimitiveType.Cube, new Vector3(2.2f, 1.6f, 0.8f), new Vector3(1.8f, 0.7f, 1.8f), blue);
+                Part(root.transform, PrimitiveType.Cube, new Vector3(2.2f, 2.05f, 0.8f), new Vector3(0.9f, 0.15f, 0.3f), red);
+            }
+            foreach (var cz in new[] { -6f, -3f, 3f }) // plots
+                Part(root.transform, PrimitiveType.Cylinder, new Vector3(-0.8f, 0.35f, cz), new Vector3(0.35f, 0.35f, 0.35f), orange);
+            var officer = new GameObject("Policier").transform;
+            officer.SetParent(root.transform, false);
+            officer.localPosition = new Vector3(0f, 0f, -1f);
+            Part(officer, PrimitiveType.Capsule, new Vector3(0f, 0.85f, 0f), new Vector3(0.55f, 0.85f, 0.45f), new Color(0.25f, 0.3f, 0.2f));
+            Part(officer, PrimitiveType.Sphere, new Vector3(0f, 1.82f, 0f), Vector3.one * 0.26f, new Color(0.35f, 0.22f, 0.14f));
+            Part(officer, PrimitiveType.Cylinder, new Vector3(0f, 2f, 0f), new Vector3(0.32f, 0.05f, 0.32f), blue); // képi
+            root.SetActive(false);
+            return (post, root, officer);
+        }
+
+        /// <summary>
+        /// Postes de contrôle à chaque image : visibles selon <see cref="Core.Police.PoliceMarkers.Visible"/>, policier
+        /// sur la chaussée pendant qu'il arrête le taxi, texte « Contrôle » au-dessus quand le taxi approche. Rend
+        /// l'index du prochain texte de repère libre.
+        /// </summary>
+        private int SyncPolicePosts(int labelIndex, float along)
+        {
+            if (_police == null) return labelIndex;
+            var minute = Street.Shift.Clock.GameMinutes;
+            var current = _police.Active ? _police.Police.CurrentPost : null;
+            foreach (var (post, root, officer) in _postViews)
+            {
+                var visible = Core.Police.PoliceMarkers.Visible(post, minute);
+                root.SetActive(visible);
+                if (!visible) continue;
+                officer.localPosition = new Vector3(Core.Police.PoliceMarkers.Holding(post, current) ? -3f : 0f, 0f, -1f);
+                if (!Street.DayFinished && Core.Police.PoliceMarkers.LabelShown(post, along))
+                    ShowMarkerLabel(labelIndex++, root.transform.position + Vector3.up * 3.6f, Core.Police.PoliceMarkers.Label(post));
+            }
+            return labelIndex;
+        }
+
         private void ShowSummary()
         {
             if (_summaryView != null) return;
@@ -848,7 +917,7 @@ namespace TaxiKmer.Driving
             return go;
         }
 
-        private void SyncStopMarkers()
+        private void SyncStopMarkers(float taxiAlong)
         {
             var shown = 0;
             foreach (var kv in _stopMarkers)
@@ -859,6 +928,7 @@ namespace TaxiKmer.Driving
                 ShowMarkerLabel(shown++, kv.Value.transform.position + Vector3.up * 6.8f,
                     WorldMarkers.DestinationLabel(Street.FindStop(kv.Key)?.name ?? kv.Key, count));
             }
+            shown = SyncPolicePosts(shown, taxiAlong);
             for (var i = shown; i < _markerLabels.Count; i++) _markerLabels[i].gameObject.SetActive(false);
         }
 
