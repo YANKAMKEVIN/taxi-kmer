@@ -304,7 +304,8 @@ namespace TaxiKmer.Core.Rides
         {
             _lost.Clear();
             if (DayFinished) return;
-            if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
+            // Un refus de payer attend la réponse du joueur : la journée ne se clôt qu'après (QA du 22/11).
+            if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0 && PendingRefusal == null) Finish();
             if (!_shift.Clock.IsOver)
             {
                 for (var i = 0; i < _stops.stops.Length; i++)
@@ -535,7 +536,7 @@ namespace TaxiKmer.Core.Rides
         {
             call = default;
             if (DayFinished || !_shift.CallTechnician(out call)) return false;
-            if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
+            if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0 && PendingRefusal == null) Finish();
             return true;
         }
 
@@ -551,6 +552,13 @@ namespace TaxiKmer.Core.Rides
 
         private void Finish(bool arrested = false, bool seized = false, bool impounded = false)
         {
+            // Journée close (pause, fourrière, garde à vue) avant la réponse à un refus de payer : il part sans payer.
+            if (PendingRefusal != null)
+            {
+                _leftUnpaid++;
+                _leftUnpaidFares += PendingRefusal.Fare;
+                PendingRefusal = null;
+            }
             var unpaid = _leftUnpaidFares;
             foreach (var p in _shift.Cabin.Passengers) unpaid += p.ProposedFare;
             Reputation?.PassengersNotDelivered(_shift.Cabin.PassengerCount);
@@ -588,7 +596,7 @@ namespace TaxiKmer.Core.Rides
             _shift.Clock.AdvanceGameMinutes(outcome.LostGameMinutes);
 
             if (outcome.Arrested) Finish(arrested: true, seized: outcome.VehicleSeized);
-            else if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
+            else if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0 && PendingRefusal == null) Finish();
             return outcome;
         }
 
@@ -615,7 +623,7 @@ namespace TaxiKmer.Core.Rides
                 Finish(arrested: control.Arrested, impounded: control.Impounded);
                 return true;
             }
-            if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
+            if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0 && PendingRefusal == null) Finish();
             return true;
         }
 
@@ -657,7 +665,7 @@ namespace TaxiKmer.Core.Rides
                     _shift.Clock.AdvanceGameMinutes(flight.LostMinutes);
                 }
             }
-            if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
+            if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0 && PendingRefusal == null) Finish();
         }
 
         /// <summary>
@@ -669,7 +677,7 @@ namespace TaxiKmer.Core.Rides
             if (DayFinished || collision.PlayerAtFault) return;
             if (collision.Received > 0) _shift.Ledger.AddCompensation(collision.Received);
             _shift.Clock.AdvanceGameMinutes(Math.Max(0, collision.LostMinutes));
-            if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
+            if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0 && PendingRefusal == null) Finish();
         }
 
         /// <summary>Délit de fuite subi : résultat de la poursuite (temps perdu ; rattrapé, il paie les réparations).</summary>
@@ -678,7 +686,7 @@ namespace TaxiKmer.Core.Rides
             if (DayFinished || !chase.Chased) return;
             _shift.Clock.AdvanceGameMinutes(chase.LostMinutes);
             if (chase.Caught && chase.Received > 0) _shift.Ledger.AddCompensation(chase.Received);
-            if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0) Finish();
+            if (_shift.Clock.IsOver && _shift.Cabin.PassengerCount == 0 && PendingRefusal == null) Finish();
         }
 
         public Stop FindStop(string id) => _factory.FindStop(id);
