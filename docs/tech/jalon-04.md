@@ -60,7 +60,7 @@ Tests : `Assets/Tests/EditMode/PoliceTests.cs` (13 tests, dont le ton des textes
     le plus haut des jeux non nuls (51 % pour tous les autres, 67 % avec des papiers gratuits). Le montant compte peu (de
     500 à 5 000 FCFA pour l'assurance, 1 à 2 points) : la baisse vient des chauffeurs à l'épargne nulle ou négative, qui ne
     peuvent rien payer et roulent ensuite avec un papier expiré (5 000 FCFA demandés à chaque contrôle) ; avec la
-    concurrence, 36 % des journées sur 45 jours (question 10).
+    concurrence, 36 % des journées sur 45 jours (question 10, tranchée le 22/11 : option A, on garde tel quel).
   - **Épargne insuffisante (validé par Kevin)** : le papier **reste expiré**, rien n'est
     pris, et un message l'annonce au début de la journée (« Assurance expirée : pas assez d'épargne pour la renouveler
     (500 FCFA). Gare aux contrôles. ») ; nouvel essai chaque matin. Un papier gratuit se renouvelle même avec une
@@ -105,7 +105,7 @@ Tests : `Assets/Tests/EditMode/PoliceTests.cs` (13 tests, dont le ton des textes
 
 ## Questions pour Kevin (jalon 4)
 
-Questions 1 à 5, 7 et 8 tranchées ; **6 (sommes, fréquence) et 9 (positions des postes) restent ouvertes**, en valeurs par défaut.
+Questions 1 à 5, 7, 8 et 10 tranchées ; **6 (sommes, fréquence) et 9 (positions des postes) restent ouvertes**, en valeurs par défaut.
 
 
 1. ~~Ton : satirique, dramatique, ou les deux ?~~ → **Tranché par Kevin (2026-11-21) : ton réaliste. On suggère la corruption sans la montrer crûment.** Voir « Ton » ci-dessus.
@@ -117,7 +117,7 @@ Questions 1 à 5, 7 et 8 tranchées ; **6 (sommes, fréquence) et 9 (positions d
 7. ~~Fourrière~~ → **tranché par Kevin le 21/11 : renvoyé seulement à la 2ᵉ fois.** Ancienne question : **Fourrière** : la journée s'arrête et coûte 15 000 FCFA (provisoire) ; le propriétaire renvoie-t-il le chauffeur, comme pour une saisie ? (non par défaut).
 8. ~~Réputation~~ → **tranché par Kevin le 21/11 : payer, refuser ou contester ne la changent pas.** Ancienne question : **Réputation** : payer, refuser ou contester changent-ils la réputation ? Dans quel sens (0 par défaut) ?
 9. **Positions des postes fixes** sur la portion (comme les feux et la station).
-10. **Papier impayé faute d'épargne, avec la concurrence** (relevé par l'étude du 22/11, `equilibrage.md`) : avec les
+10. ~~Papier impayé faute d'épargne, avec la concurrence~~ → **tranché par Kevin le 22/11 : option A, on garde tel quel** (chauffeur sans épargne = papier expiré, somme demandée au contrôle ; rien à coder, la spirale fait partie du jeu). Ancienne question (relevé par l'étude du 22/11, `equilibrage.md`) : avec les
     montants bas, le versement reste dans la cible sans concurrence (69-70 %), mais avec la concurrence il tombe à 53 % sur
     45 jours (67 % avec des papiers gratuits), quel que soit le montant : le chauffeur à l'épargne nulle ou négative ne peut
     rien payer et roule avec un papier expiré (5 000 FCFA à chaque contrôle). La règle validée reste en place. Pistes :
