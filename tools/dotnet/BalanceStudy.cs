@@ -74,6 +74,11 @@ namespace TaxiKmer.Core.DotnetTests
         public float Damage;
         /// <summary>Papiers de la carrière (null : ceux du début de carrière), renouvelés au début de chaque journée.</summary>
         public PaperSet Papers;
+        /// <summary>
+        /// Épargne au début de la journée, qui paie les papiers arrivés à échéance (null : supposée suffisante). Remplie par
+        /// <see cref="BalanceStudy.RunCareers"/> quand un renouvellement coûte quelque chose.
+        /// </summary>
+        public int? Savings;
     }
 
     /// <summary>Une journée jouée, avec les compteurs utiles à l'étude.</summary>
@@ -93,6 +98,8 @@ namespace TaxiKmer.Core.DotnetTests
         /// <summary>Papiers renouvelés au début de la journée et leur coût (payé sur l'épargne, avant la journée).</summary>
         public int PapersRenewed;
         public int RenewalCost;
+        /// <summary>Papiers expirés que l'épargne n'a pas pu payer au début de la journée (ils restent expirés, nouvel essai le lendemain).</summary>
+        public int PapersNotRenewed;
         /// <summary>Contrôles où un papier expiré a été trouvé.</summary>
         public int ExpiredPaperControls;
     }
@@ -152,6 +159,8 @@ namespace TaxiKmer.Core.DotnetTests
         public FareConfig FaresFor(BalanceSetting s) =>
             BalanceStudy.ScaleFares(System.Text.Json.JsonSerializer.Deserialize<FareConfig>(FaresJson, Opts), s.PriceMultiplier);
         public float RouteLength => Stops.stops[Stops.stops.Length - 1].distanceAlongRouteMeters;
+        /// <summary>Copie superficielle (les configurations sont partagées, sauf celle que l'appelant remplace).</summary>
+        public GameData Copy() => (GameData)MemberwiseClone();
     }
 
     /// <summary>Le joueur moyen joue une journée, branchée comme dans StreetView (mêmes objets, même ordre).</summary>
@@ -177,14 +186,16 @@ namespace TaxiKmer.Core.DotnetTests
             var road = new RoadDay(data.Road, routeLength, 20261121, carry.Damage, start, end, today.Month, new Random(seed + 61));
             var crash = new TrafficCrash(data.Road, new Random(seed + 62));
             // Papiers : renouvelés à l'échéance au début de la journée, payés sur l'épargne (décision de Kevin du 21/11).
-            // L'étude suppose l'épargne suffisante (exact tant que les coûts sont à 0, jalon-04.md) ; le coût est retiré
-            // de l'épargne par RunCareers, avant la clôture de la journée.
+            // Épargne insuffisante (cas validé) : le papier reste expiré pour la journée, nouvel essai le lendemain.
+            // carry.Savings null : épargne supposée suffisante (renouvellements gratuits). Le coût est retiré de l'épargne
+            // par RunCareers, avant la clôture de la journée.
             if (carry.Papers == null) carry.Papers = new PaperSet(data.Police);
             var result = new StudyDay();
             if (data.Police.autoRenewPapers)
             {
-                var renewed = PaperRenewal.Renew(carry.Papers, carry.DayNumber, int.MaxValue);
-                result.PapersRenewed = renewed.Count;
+                var renewed = PaperRenewal.Renew(carry.Papers, carry.DayNumber, carry.Savings ?? int.MaxValue);
+                result.PapersRenewed = renewed.Count(r => r.Renewed);
+                result.PapersNotRenewed = renewed.Count - result.PapersRenewed;
                 result.RenewalCost = PaperRenewal.TotalPaid(renewed);
             }
             var police = new PoliceDay(data.Police, carry.Papers, new PoliceContacts(data.Police), carry.DayNumber, routeLength, start, end, new Random(seed + 47));
@@ -339,6 +350,8 @@ namespace TaxiKmer.Core.DotnetTests
         public double MeanSavings7;
         public int MedianSavings7;
         public int Horizon;
+        /// <summary>Renouvellements payés (FCFA par journée) ; journées commencées avec un papier impayé ; contrôles avec un papier expiré (par journée).</summary>
+        public double MeanRenewalCost, DaysWithUnpaidPaper, ExpiredControlsPerDay;
     }
 
     public static class BalanceStudy
@@ -365,28 +378,66 @@ namespace TaxiKmer.Core.DotnetTests
             return s;
         }
 
+        /// <summary>Vrai quand un papier qui expire coûte quelque chose à renouveler (renouvellement automatique actif).</summary>
+        public static bool RenewalsCostMoney(PoliceConfig police) =>
+            police.autoRenewPapers && police.papers != null && police.papers.Any(p => p.validityDays > 0 && p.renewalCost > 0);
+
+        /// <summary>
+        /// Copie des données avec d'autres coûts de renouvellement (id du papier → FCFA) ; police.json n'est pas modifié.
+        /// </summary>
+        public static GameData WithRenewalCosts(GameData data, IDictionary<string, int> costs)
+        {
+            var police = BalanceBot.Load<PoliceConfig>("police.json");
+            police.autoRenewPapers = data.Police.autoRenewPapers;
+            foreach (var p in police.papers)
+                if (costs.TryGetValue(p.id, out var c)) p.renewalCost = c;
+            var copy = data.Copy();
+            copy.Police = police;
+            return copy;
+        }
+
         /// <summary>
         /// Joue <paramref name="careers"/> carrières de <paramref name="horizon"/> jours pour une consommation et des prix,
         /// et les clôt avec chaque versement. Graines fixes : carrière k, jour d → graine 1 000 × k + d. Parallèle mais
         /// déterministe (chaque carrière a ses graines, résultats rangés par index).
+        /// Renouvellements gratuits : une même partie sert à tous les versements (le versement ne change pas la journée).
+        /// Renouvellements payants : l'épargne du matin décide si les papiers sont renouvelés, et elle dépend du versement ;
+        /// chaque versement rejoue donc ses carrières, avec l'épargne réelle (après un renvoi, le chauffeur garde son
+        /// épargne et continue, pour que toutes les journées de l'horizon comptent comme avant).
         /// </summary>
         public static List<SettingResult> RunCareers(GameData data, float scale, float price, int[] versements, int careers, int horizon,
             AveragePlayer player, int baseSeed = 1)
         {
-            var days = new StudyDay[careers][];
-            Parallel.For(0, careers, k =>
+            StudyDay[][] PlayAll(int versement, bool withSavings)
             {
-                var carry = new CareerCarry();
-                var list = new StudyDay[horizon];
-                var s = new BalanceSetting { ConsumptionScale = scale, PriceMultiplier = price, Versement = versements[0] };
-                for (var d = 0; d < horizon; d++)
-                    list[d] = StudyDayPlayer.Play(data, s, player, carry, baseSeed * 1000003 + 1000 * k + d);
-                days[k] = list;
-            });
+                var days = new StudyDay[careers][];
+                Parallel.For(0, careers, k =>
+                {
+                    var carry = new CareerCarry();
+                    var wallet = new DriverCareer(data.Owner);
+                    var list = new StudyDay[horizon];
+                    var s = new BalanceSetting { ConsumptionScale = scale, PriceMultiplier = price, Versement = versement };
+                    for (var d = 0; d < horizon; d++)
+                    {
+                        if (withSavings) carry.Savings = wallet.Savings;
+                        list[d] = StudyDayPlayer.Play(data, s, player, carry, baseSeed * 1000003 + 1000 * k + d);
+                        if (!withSavings) continue;
+                        wallet.PayFromSavings(list[d].RenewalCost);
+                        wallet.CloseDay(WithVersement(list[d].Summary, versement), data.Reputation.effects);
+                        if (wallet.Fired) wallet = DriverCareer.Restore(data.Owner, wallet.DayNumber, wallet.Savings, null, false);
+                    }
+                    days[k] = list;
+                });
+                return days;
+            }
+
+            var paid = RenewalsCostMoney(data.Police);
+            var shared = paid ? null : PlayAll(versements[0], false);
 
             var results = new List<SettingResult>();
             foreach (var v in versements)
             {
+                var days = paid ? PlayAll(v, true) : shared;
                 var r = new SettingResult
                 {
                     Setting = new BalanceSetting { ConsumptionScale = scale, PriceMultiplier = price, Versement = v },
@@ -395,8 +446,8 @@ namespace TaxiKmer.Core.DotnetTests
                 };
                 var fired = new List<int>();
                 var savings7 = new List<int>();
-                int reached = 0, counted = 0, firedBy7 = 0;
-                double left = 0, rev = 0, fuel = 0, exp = 0;
+                int reached = 0, counted = 0, firedBy7 = 0, unpaid = 0, expired = 0;
+                double left = 0, rev = 0, fuel = 0, exp = 0, renewal = 0;
                 for (var k = 0; k < careers; k++)
                 {
                     var career = new DriverCareer(data.Owner);
@@ -410,6 +461,9 @@ namespace TaxiKmer.Core.DotnetTests
                             if (s.VersementReached) reached++;
                             left += s.TowardVersement - v;
                             rev += s.Revenue; fuel += s.FuelCost; exp += s.ExpensesTotal;
+                            renewal += days[k][d].RenewalCost;
+                            if (days[k][d].PapersNotRenewed > 0) unpaid++;
+                            expired += days[k][d].ExpiredPaperControls;
                         }
                         if (firedDay == int.MaxValue)
                         {
@@ -427,6 +481,9 @@ namespace TaxiKmer.Core.DotnetTests
                 r.ReachedShare = (double)reached / counted;
                 r.MeanLeftover = left / counted;
                 r.MeanRevenue = rev / counted; r.MeanFuel = fuel / counted; r.MeanExpenses = exp / counted;
+                r.MeanRenewalCost = renewal / counted;
+                r.DaysWithUnpaidPaper = (double)unpaid / counted;
+                r.ExpiredControlsPerDay = (double)expired / counted;
                 r.FiredBy7 = (double)firedBy7 / careers;
                 r.FiredByHorizon = fired.Count(f => f != int.MaxValue) / (double)careers;
                 fired.Sort();

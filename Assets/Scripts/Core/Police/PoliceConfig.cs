@@ -14,7 +14,7 @@ namespace TaxiKmer.Core.Police
         public int startDaysLeft;
         /// <summary>
         /// Coût du renouvellement (FCFA), payé sur l'épargne au renouvellement automatique (<see cref="PaperRenewal"/>).
-        /// 0 pour tous les papiers (jalon-04.md) : montants encore à fixer par Kevin.
+        /// Montants de police.json : assurance 500, visite technique 1 000, licence 2 000 (Kevin, 22/11 ; equilibrage.md).
         /// </summary>
         public int renewalCost;
     }
@@ -204,7 +204,7 @@ namespace TaxiKmer.Core.Police
 
         /// <summary>
         /// Les papiers se renouvellent tout seuls à l'échéance, payés sur l'épargne (tranché par Kevin le 21/11) ; épargne
-        /// insuffisante : le papier reste expiré et un message l'annonce (valeur par défaut de Claude).
+        /// insuffisante : le papier reste expiré, un message l'annonce, nouvel essai chaque matin (validé par Kevin).
         /// </summary>
         public bool autoRenewPapers = true;
 
@@ -212,10 +212,11 @@ namespace TaxiKmer.Core.Police
         {
             new PaperData { id = "permis", name = "Permis de conduire", validityDays = 0 },
             new PaperData { id = "carte-grise", name = "Carte grise", validityDays = 0 },
-            // Option A (tranché par Kevin le 21/11) : durées proches du réel, en jours de jeu.
-            new PaperData { id = "assurance", name = "Assurance", validityDays = 30, startDaysLeft = 12 },
-            new PaperData { id = "visite-technique", name = "Visite technique", validityDays = 180, startDaysLeft = 25 },
-            new PaperData { id = "licence-taxi", name = "Licence de taxi", validityDays = 365, startDaysLeft = 40 },
+            // Option A (tranché par Kevin le 21/11) : durées proches du réel, en jours de jeu. Montants bas (Kevin, 22/11 :
+            // « rester vers 60 à 70 % » de journées où le versement est atteint), choisis par l'étude (equilibrage.md).
+            new PaperData { id = "assurance", name = "Assurance", validityDays = 30, startDaysLeft = 12, renewalCost = 500 },
+            new PaperData { id = "visite-technique", name = "Visite technique", validityDays = 180, startDaysLeft = 25, renewalCost = 1000 },
+            new PaperData { id = "licence-taxi", name = "Licence de taxi", validityDays = 365, startDaysLeft = 40, renewalCost = 2000 },
         };
 
         /// <summary>Exemples à remplacer par Kevin (ton du jalon 4 : satirique, dramatique ou les deux).</summary>

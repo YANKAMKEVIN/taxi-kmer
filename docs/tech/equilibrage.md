@@ -39,8 +39,43 @@ Journée type (`DayContents_Report`, réglage des données, papiers renouvelés)
 avec (3 330) ; frais imprévus 6 392 / 5 848 FCFA (7 048 / 6 714 avant). Les 7 premiers jours ne changent pas (l'assurance
 était encore valable) : l'écart vient des jours 13 et 14, et grandirait sur une carrière plus longue (sans renouvellement,
 chaque contrôle après le 12ᵉ jour demandait 5 000 FCFA). Le versement de 6 000 est maintenant atteint dans **61 à 70 %**
-des journées, dans la cible (60-75 %). Limite de l'étude : elle suppose l'épargne suffisante pour renouveler (exact tant
-que les coûts sont à 0).
+des journées, dans la cible (60-75 %). Limite de cette étude-là : elle supposait l'épargne suffisante pour renouveler
+(exact avec des coûts à 0) ; depuis le 22/11, l'outil paie avec l'épargne réelle du matin (ci-dessous).
+
+### Montants des papiers (décision de Kevin du 22/11) : assurance 500, visite technique 1 000, licence 2 000 FCFA
+
+Demande de Kevin : des **montants bas, pour rester vers 60 à 70 %** de journées où le versement est atteint ; sans
+concurrence, entre 60 et 70 % ; avec la concurrence, le plus haut possible. Épargne insuffisante : cas validé (le papier
+reste expiré, un message l'annonce, nouvel essai chaque matin).
+
+L'outil paie maintenant les renouvellements avec **l'épargne réelle du matin** (`CareerCarry.Savings`) : quand un
+renouvellement coûte quelque chose, chaque versement rejoue ses carrières, car l'épargne en dépend (après un renvoi, le
+chauffeur garde son épargne et continue, pour que toutes les journées comptent comme avant). Avec des montants à 0, rien
+ne change (mêmes chiffres qu'au-dessus). Rapport : `tools/test_core.sh "Name=Papers_Report"` (≈ 36 min), six jeux de
+montants, deux horizons : **14 jours** comme les autres tableaux (seule l'assurance arrive à échéance, le 13ᵉ jour) et
+**45 jours** (assurance les 13ᵉ et 43ᵉ jours, visite technique le 26ᵉ, licence le 41ᵉ). Versement de 6 000 (données) :
+
+| Montants (assurance / visite / licence) | Sans trafic, 14 j | Sans trafic, 45 j | Avec trafic, 14 j | Avec trafic, 45 j | Renvoyé à 45 j (sans / avec) | Journées avec un papier impayé, 45 j (sans / avec) |
+|---|---|---|---|---|---|---|
+| 0 / 0 / 0 (avant) | 70 % | 72 % | 61 % | 67 % | 19 % / 53 % | 0 % / 0 % |
+| **500 / 1 000 / 2 000 (retenu)** | **70 %** | **69 %** | **60 %** | **53 %** | 26 % / 60 % | 9 % / 36 % |
+| 1 000 / 2 000 / 4 000 | 70 % | 69 % | 60 % | 51 % | 28 % / 60 % | 9 % / 40 % |
+| 1 500 / 3 000 / 6 000 | 70 % | 69 % | 60 % | 51 % | 29 % / 60 % | 10 % / 40 % |
+| 2 500 / 5 000 / 10 000 | 70 % | 68 % | 60 % | 51 % | 31 % / 60 % | 11 % / 40 % |
+| 5 000 / 10 000 / 20 000 | 70 % | 68 % | 60 % | 51 % | 36 % / 67 % | 14 % / 44 % |
+
+Sans trafic : 200 carrières (versements 5 000 et 7 000 dans le rapport complet : 72 % et 64 % à 45 jours avec les
+montants retenus) ; avec le trafic : 15 carrières (≈ 4 points d'incertitude). Constats :
+
+1. **Sans concurrence, tous les jeux essayés restent entre 60 et 70 %** (68 à 70 %) : la cible est tenue.
+2. **Avec la concurrence, le plus haut est le jeu le plus bas**, 500 / 1 000 / 2 000 : 60 % sur 14 jours, 53 % sur
+   45 jours. C'est celui qui est appliqué (`police.json` → `papers[].renewalCost`, et les valeurs par défaut du code).
+3. **Le montant compte peu ; ce qui compte, c'est l'épargne à zéro.** De 500 à 5 000 FCFA pour l'assurance, le taux ne
+   bouge que de 1 à 2 points. La baisse vient des chauffeurs dont l'épargne est nulle ou négative le jour de l'échéance
+   (versements manqués complétés sur l'épargne) : ils ne peuvent pas payer même 500 FCFA, le papier reste expiré, et chaque
+   contrôle demande alors 5 000 FCFA (`demandExpiredPaper`), ce qui les enfonce. Avec la concurrence, c'est le cas de 36 %
+   des journées sur 45 jours (0,74 contrôle par journée trouve un papier expiré). Aucun montant non nul ne garde 60 % avec
+   la concurrence sur 45 jours : question posée à Kevin (`jalon-04.md`).
 
 Depuis cette décision, `fares.json` vaut ×2 des prix de Yaoundé : dans l'outil, le multiplicateur de prix est relatif à
 `fares.json`, donc « prix ×2 » des tableaux ci-dessous (calculés sur les anciens prix, 300 à 800) correspond à « ×1 »
@@ -249,13 +284,14 @@ manquant étant complété par l'épargne comme dans le jeu.
 ## Méthode
 
 Outil : `tools/dotnet/BalanceStudy.cs` (joueur moyen, carrières, grille) et `tools/dotnet/BalanceStudyTests.cs`
-(6 tests rapides lancés par la CI ; grilles et rapports à la demande) :
+(10 tests rapides lancés par la CI ; grilles et rapports à la demande) :
 
 ```bash
 tools/test_core.sh "FullyQualifiedName~BalanceStudyTests"     # tests de l'outil (≈ 1 s)
 tools/test_core.sh "Name=GridWithoutTraffic_Report"           # grille sans trafic (≈ 10 min sur 4 cœurs libres)
 tools/test_core.sh "Name=Sensitivity_Report"                  # candidats avec trafic + sensibilité au joueur (≈ 30 min)
 tools/test_core.sh "Name=WhatIf_Report|Name=DayContents_Report"   # hors grille, contenu d'une journée type
+tools/test_core.sh "Name=Papers_Report"                       # montants des papiers, épargne réelle, 14 et 45 jours (≈ 36 min)
 tools/test_core.sh "Name=Grid_Report"                         # grille entière avec trafic (plusieurs heures)
 # rapports : tools/dotnet/bin/Debug/net8.0/equilibrage/*.md
 ```

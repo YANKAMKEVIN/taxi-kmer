@@ -109,12 +109,69 @@ namespace TaxiKmer.Core.DotnetTests
             var days = BalanceStudy.PlayCareer(data, Current(data), new AveragePlayer(), 16, 7);
             Assert.AreEqual(0, days.Sum(d => d.ExpiredPaperControls), "Papiers renouvelés : jamais expirés au contrôle.");
             Assert.AreEqual(1, days[12].PapersRenewed, "Assurance renouvelée au début du 13ᵉ jour.");
-            Assert.AreEqual(0, days.Sum(d => d.RenewalCost), "Montants de jalon-04.md : 0 FCFA.");
+            Assert.AreEqual(500, days[12].RenewalCost, "Assurance : 500 FCFA (décision de Kevin du 22/11, equilibrage.md).");
+            Assert.AreEqual(500, days.Sum(d => d.RenewalCost), "Seule l'assurance arrive à échéance en 16 jours.");
 
             data.Police.autoRenewPapers = false;
             var before = BalanceStudy.PlayCareer(data, Current(data), new AveragePlayer(), 16, 7);
             Assert.AreEqual(0, before.Take(12).Sum(d => d.ExpiredPaperControls), "Avant le 13ᵉ jour, l'assurance est valable.");
             Assert.Greater(before.Skip(12).Sum(d => d.ExpiredPaperControls), 0, "Sans renouvellement : assurance expirée aux contrôles dès le 13ᵉ jour.");
+        }
+
+        private static readonly Dictionary<string, int> Expensive = new Dictionary<string, int>
+        {
+            { "assurance", 1000000 }, { "visite-technique", 1000000 }, { "licence-taxi", 1000000 },
+        };
+
+        [Test]
+        public void WithRenewalCosts_ChangesACopy_GameDataUnchanged()
+        {
+            var data = GameData.Load();
+            var before = data.Police.papers.Select(p => p.renewalCost).ToArray();
+            var copy = BalanceStudy.WithRenewalCosts(data, new Dictionary<string, int> { { "assurance", 1234 } });
+            Assert.AreEqual(1234, copy.Police.papers.First(p => p.id == "assurance").renewalCost);
+            Assert.AreEqual(before, data.Police.papers.Select(p => p.renewalCost).ToArray(), "Les données chargées n'ont pas bougé.");
+            Assert.AreEqual(before, BalanceBot.Load<Police.PoliceConfig>("police.json").papers.Select(p => p.renewalCost).ToArray());
+            Assert.AreSame(data.Owner, copy.Owner);
+        }
+
+        [Test]
+        public void Renewal_NotAffordable_PaperStaysExpired_AndIsTriedAgainNextMorning()
+        {
+            // Cas validé par Kevin : épargne insuffisante → le papier reste expiré, nouvel essai chaque matin.
+            var data = BalanceStudy.WithRenewalCosts(GameData.Load(), Expensive);
+            Assume.That(data.Police.enabled && data.Police.autoRenewPapers);
+            var carry = new CareerCarry { Savings = 5000 };
+            var days = new List<StudyDay>();
+            for (var d = 0; d < 16; d++)
+                days.Add(StudyDayPlayer.Play(data, Current(data), new AveragePlayer(), carry, 7 + d));
+            Assert.AreEqual(0, days.Take(12).Sum(d => d.PapersNotRenewed), "Avant le 13ᵉ jour, rien n'arrive à échéance.");
+            Assert.That(days.Skip(12).All(d => d.PapersNotRenewed == 1 && d.RenewalCost == 0), "Assurance impayée : retentée chaque matin, rien payé.");
+            Assert.Greater(days.Skip(12).Sum(d => d.ExpiredPaperControls), 0, "Assurance expirée trouvée aux contrôles.");
+
+            carry.Savings = 2000000; // assez d'épargne : renouvelée le matin suivant
+            var paid = StudyDayPlayer.Play(data, Current(data), new AveragePlayer(), carry, 99);
+            Assert.AreEqual(1, paid.PapersRenewed);
+            Assert.AreEqual(1000000, paid.RenewalCost);
+            Assert.AreEqual(0, paid.PapersNotRenewed);
+        }
+
+        [Test]
+        public void RunCareers_PaidRenewals_UseRealSavings()
+        {
+            var data = GameData.Load();
+            var free = BalanceStudy.WithRenewalCosts(data, new Dictionary<string, int> { { "assurance", 0 }, { "visite-technique", 0 }, { "licence-taxi", 0 } });
+            Assert.IsFalse(BalanceStudy.RenewalsCostMoney(free.Police));
+            var expensive = BalanceStudy.WithRenewalCosts(data, Expensive);
+            Assert.IsTrue(BalanceStudy.RenewalsCostMoney(expensive.Police));
+            var s = Current(data);
+            var a = BalanceStudy.RunCareers(free, s.ConsumptionScale, 1f, new[] { 6000 }, 3, 16, new AveragePlayer())[0];
+            var b = BalanceStudy.RunCareers(expensive, s.ConsumptionScale, 1f, new[] { 6000 }, 3, 16, new AveragePlayer())[0];
+            Assert.AreEqual(0, a.DaysWithUnpaidPaper);
+            Assert.AreEqual(0, a.ExpiredControlsPerDay);
+            Assert.AreEqual(4.0 / 16, b.DaysWithUnpaidPaper, 1e-9, "Jours 13 à 16 : assurance impayable.");
+            Assert.Greater(b.ExpiredControlsPerDay, 0);
+            Assert.AreEqual(0, b.MeanRenewalCost);
         }
 
         [Test]
@@ -253,6 +310,56 @@ namespace TaxiKmer.Core.DotnetTests
             Write("decision.md", sb.ToString());
             TestContext.WriteLine(sb.ToString());
         }
+
+        /// <summary>
+        /// Montants de renouvellement des papiers (décision de Kevin du 21/11 : « montants bas, pour rester vers 60 à 70 % »).
+        /// Réglage des données (conso, prix, versement), plusieurs jeux de montants (assurance / visite technique /
+        /// licence), payés sur l'épargne réelle du matin (épargne insuffisante : papier expiré, nouvel essai le lendemain).
+        /// Horizons 14 jours (comme les autres rapports : seule l'assurance arrive à échéance, le 13ᵉ jour) et 45 jours
+        /// (assurance les 13ᵉ et 43ᵉ jours, visite technique le 26ᵉ, licence le 41ᵉ). Sans trafic : 200 carrières,
+        /// versements 5 000 / 6 000 / 7 000 ; avec le trafic : 15 carrières, versement des données. Rapport : equilibrage/papiers.md.
+        /// </summary>
+        [Test, Explicit("Long : lancer à la demande"), Category("Equilibrage")]
+        public void Papers_Report()
+        {
+            var baseData = GameData.Load();
+            var current = Current(baseData);
+            var sb = new StringBuilder();
+            sb.AppendLine("| Montants (assurance / visite / licence) | Cas | Horizon | Versement | Versement atteint | Renvoyé à l'horizon | Épargne à 7 j (moy. / méd.) | Renouvellements payés / jour | Journées avec un papier impayé | Contrôles avec papier expiré / jour |");
+            sb.AppendLine("|---|---|---|---|---|---|---|---|---|---|");
+            foreach (var (a, v, l) in PaperCandidates)
+            {
+                var costs = new Dictionary<string, int> { { "assurance", a }, { "visite-technique", v }, { "licence-taxi", l } };
+                var label = $"{BalanceStudy.Money(a)} / {BalanceStudy.Money(v)} / {BalanceStudy.Money(l)}";
+                foreach (var (name, withCity, careers, versements) in new[]
+                         {
+                             ("sans trafic", false, 200, Versements),
+                             ("avec trafic", true, 15, new[] { current.Versement }),
+                         })
+                foreach (var horizon in new[] { Horizon, 45 })
+                {
+                    var data = BalanceStudy.WithRenewalCosts(GameData.Load(withWorld: withCity), costs);
+                    foreach (var r in BalanceStudy.RunCareers(data, current.ConsumptionScale, 1f, versements, careers, horizon, new AveragePlayer { WithCity = withCity }))
+                    {
+                        var line = $"| {label} | {name}, {careers} carrières | {horizon} j | {BalanceStudy.Money(r.Setting.Versement)} | {BalanceStudy.Pct(r.ReachedShare)} | {BalanceStudy.Pct(r.FiredByHorizon)} | " +
+                                   $"{BalanceStudy.Money(r.MeanSavings7)} / {BalanceStudy.Money(r.MedianSavings7)} | {BalanceStudy.Money(r.MeanRenewalCost)} | {BalanceStudy.Pct(r.DaysWithUnpaidPaper)} | {BalanceStudy.Num(r.ExpiredControlsPerDay, "0.###")} |";
+                        sb.AppendLine(line);
+                        TestContext.Progress.WriteLine(line);
+                    }
+                }
+            }
+            Write("papiers.md", sb.ToString());
+            TestContext.WriteLine(sb.ToString());
+        }
+
+        /// <summary>
+        /// Jeux de montants essayés par <see cref="Papers_Report"/> (FCFA : assurance, visite technique, licence). Retenu le
+        /// 22/11 et mis dans police.json : 500 / 1 000 / 2 000 (docs/tech/equilibrage.md).
+        /// </summary>
+        public static readonly (int, int, int)[] PaperCandidates =
+        {
+            (0, 0, 0), (500, 1000, 2000), (1000, 2000, 4000), (1500, 3000, 6000), (2500, 5000, 10000), (5000, 10000, 20000),
+        };
 
         /// <summary>Ce qui se passe dans une journée type, réglage des données (conso et prix de fuel.json et fares.json), carrières de 14 jours (pour la méthode) : contrôles, incidents, disputes, concurrence.</summary>
         [Test, Explicit("Long : lancer à la demande"), Category("Equilibrage")]

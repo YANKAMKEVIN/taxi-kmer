@@ -19,8 +19,8 @@ namespace TaxiKmer.Core.Police
     /// <summary>
     /// Renouvellement automatique des papiers (décision de Kevin du 21/11) : au début de chaque journée, chaque papier
     /// arrivé à échéance (expiré ce jour-là) est renouvelé et payé sur l'épargne, au prix de police.json
-    /// (<see cref="PaperData.renewalCost"/>). Si l'épargne ne suffit pas (valeur par défaut de Claude, à confirmer par
-    /// Kevin) : le papier reste expiré, un message l'annonce, et on réessaie au début de la journée suivante. Un papier
+    /// (<see cref="PaperData.renewalCost"/>). Si l'épargne ne suffit pas (validé par Kevin) : le papier
+    /// reste expiré, un message l'annonce, et on réessaie au début de la journée suivante. Un papier
     /// gratuit (coût 0) est toujours renouvelé, même avec une épargne négative.
     /// </summary>
     public static class PaperRenewal
