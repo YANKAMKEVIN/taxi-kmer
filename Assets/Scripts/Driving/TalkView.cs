@@ -33,6 +33,7 @@ namespace TaxiKmer.Driving
         private readonly Text _yesText, _noText;
         private readonly AudioSource _voice;
         private Bubble _voiced;
+        private readonly Dictionary<string, AudioClip> _provisional = new Dictionary<string, AudioClip>();
         private HaggleOffer _haggleShown;
         private PaymentRefusal _refusalShown;
 
@@ -187,7 +188,24 @@ namespace TaxiKmer.Driving
             var b = Director.Current;
             if (b == _voiced) return;
             _voiced = b;
-            if (b?.Voice == null || string.IsNullOrEmpty(b.Voice.clip)) return;
+            if (b?.Voice == null) return;
+            if (string.IsNullOrEmpty(b.Voice.clip))
+            {
+                // Son « à fournir » : voix synthétique provisoire (SoundSynth.Voice), en attendant l'enregistrement.
+                if (!_provisional.TryGetValue(b.Voice.id, out var synth))
+                {
+                    var data = TaxiKmer.Core.Ux.SoundSynth.Voice(b.Voice.id);
+                    synth = null;
+                    if (data != null)
+                    {
+                        synth = AudioClip.Create("Voix provisoire " + b.Voice.id, data.Length, 1, TaxiKmer.Core.Ux.SoundSynth.Rate, false);
+                        synth.SetData(data, 0);
+                    }
+                    _provisional[b.Voice.id] = synth;
+                }
+                if (synth != null) _voice.PlayOneShot(synth);
+                return;
+            }
             var clip = Resources.Load<AudioClip>(b.Voice.clip);
             if (clip == null) { Debug.LogWarning($"[TaxiKmer] Voix : son Resources/{b.Voice.clip} introuvable (à fournir)."); return; }
             _voice.PlayOneShot(clip);

@@ -158,6 +158,72 @@ namespace TaxiKmer.Core.Ux
             return data;
         }
 
+        /// <summary>
+        /// Petit son de voix provisoire d'un passager (jalon 5, texte + petits sons, option B de Kevin) pour un id de
+        /// dialogues.json → voiceSounds : « hmm », « eh », « tchip », « aie », « rire » ; null pour un id inconnu. Joué
+        /// tant que le vrai son reste « à fournir ». Voix synthétique à deux formants : reconnaissable, pas réaliste.
+        /// </summary>
+        public static float[] Voice(string id)
+        {
+            switch (id)
+            {
+                case "hmm": // bouche fermée, qui doute : grave, nasal, qui descend
+                    return Vowel(0.45, t => 150 - 25 * t / 0.45, t => 260, t => 2100, 0.5);
+                case "eh": // surprise, appel : « é » bref qui monte
+                    return Vowel(0.25, t => 230 + 120 * t / 0.25, t => 480, t => 1900, 1);
+                case "aie": // « a » qui glisse vers « ï »
+                    return Vowel(0.4, t => 260 - 40 * t / 0.4, t => 800 - 500 * t / 0.4, t => 1250 + 1050 * t / 0.4, 1);
+                case "rire": // quatre petits « ha »
+                    return Vowel(0.75, t => 210 - 30 * t / 0.75, t => 750, t => 1250, 1, t => Math.Max(0, Math.Sin(2 * Math.PI * 5.5 * t)));
+                case "tchip": // succion entre les dents : souffle aigu qui monte, sans voix
+                {
+                    var n = (int)(Rate * 0.3f);
+                    var data = new float[n];
+                    var rng = new Lcg(41);
+                    double lp = 0, prev = 0;
+                    for (var i = 0; i < n; i++)
+                    {
+                        var t = i / (float)Rate;
+                        lp += 0.5 * (rng.Next() - lp);
+                        var hp = lp - prev; // aigu seulement
+                        prev = lp;
+                        var tone = Math.Sin(2 * Math.PI * (2200 + 2600 * t / 0.3) * t);
+                        var env = Math.Min(1.0, t / 0.03) * Math.Exp(-6 * t) * Math.Min(1.0, (0.3 - t) / 0.05);
+                        data[i] = (float)Math.Max(-1, Math.Min(1, env * (1.4 * hp + 0.12 * tone)));
+                    }
+                    return data;
+                }
+                default:
+                    return null;
+            }
+        }
+
+        /// <summary>Voyelle synthétique : fondamentale f0(t), deux formants F1(t) et F2(t), enveloppe d'attaque et de fin, hachage optionnel.</summary>
+        private static float[] Vowel(double seconds, Func<double, double> f0, Func<double, double> f1, Func<double, double> f2, double brightness,
+            Func<double, double> chop = null)
+        {
+            var n = (int)(Rate * seconds);
+            var data = new float[n];
+            var phase = 0.0;
+            for (var i = 0; i < n; i++)
+            {
+                var t = i / (double)Rate;
+                var f = f0(t);
+                phase += 2 * Math.PI * f / Rate;
+                double s = 0;
+                for (var k = 1; k * f < 4000; k++)
+                {
+                    var h = k * f;
+                    var amp = Math.Exp(-Math.Pow((h - f1(t)) / 160, 2)) + brightness * 0.6 * Math.Exp(-Math.Pow((h - f2(t)) / 260, 2));
+                    s += amp * Math.Sin(k * phase);
+                }
+                var env = Math.Min(1.0, t / 0.025) * Math.Min(1.0, (seconds - t) / Math.Min(0.1, seconds / 3));
+                if (chop != null) env *= chop(t);
+                data[i] = (float)(0.35 * env * Math.Tanh(s));
+            }
+            return data;
+        }
+
         /// <summary>Son bouclable : <paramref name="sample"/>(t, bruit, état) sur la durée, plus un fondu enchaîné de 0,25 s fin → début.</summary>
         private static float[] Loop(float seconds, uint seed, Func<double, double, double[], double> sample)
         {

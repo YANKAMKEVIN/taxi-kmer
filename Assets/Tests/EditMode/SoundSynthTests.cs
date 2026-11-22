@@ -76,5 +76,22 @@ namespace TaxiKmer.Core.Tests
             Assert.AreEqual(SoundSynth.Rate * 3, SoundSynth.StreetMurmur().Length);
             CollectionAssert.AreEqual(SoundSynth.MarketChatter(), SoundSynth.MarketChatter());
         }
+        [Test]
+        public void VoiceSounds_ProvisionalForEachIdOfKevinsList_UnknownIsNull()
+        {
+            foreach (var id in new[] { "hmm", "eh", "tchip", "aie", "rire" })
+            {
+                var d = SoundSynth.Voice(id);
+                Assert.IsNotNull(d, id);
+                Assert.Greater(Peak(d), 0.05f, id + " : audible");
+                Assert.LessOrEqual(Peak(d), 1f, id + " : pas de saturation");
+                Assert.Less(d.Length, SoundSynth.Rate, id + " : un petit son, moins d'une seconde");
+                var tail = 0f;
+                for (var i = d.Length - 100; i < d.Length; i++) tail = Math.Max(tail, Math.Abs(d[i]));
+                Assert.Less(tail, Peak(d) * 0.35f, id + " : s'éteint avant la fin");
+            }
+            Assert.IsNull(SoundSynth.Voice("inconnu"));
+            Assert.IsNull(SoundSynth.Voice(null));
+        }
     }
 }
