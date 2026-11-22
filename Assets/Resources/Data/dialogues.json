@@ -849,6 +849,658 @@
             "voice": "tchip",
             "statut": "proposée",
             "traduction": ""
+        },
+        {
+            "id": "montee-sac",
+            "trigger": "montee",
+            "character": "",
+            "register": "fr",
+            "text": "Bonsoir chauffeur. Je peux mettre mon sac sur mes genoux, il n'y a pas de place.",
+            "replies": [
+                {
+                    "id": "oui",
+                    "text": "Pas de souci.",
+                    "reputation": 1,
+                    "tip": 0
+                },
+                {
+                    "id": "devant",
+                    "text": "Mettez-le à vos pieds.",
+                    "reputation": 0,
+                    "tip": 0
+                }
+            ],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "montee-tara",
+            "trigger": "montee",
+            "character": "",
+            "register": "camfranglais",
+            "text": "Tara, je monte vite, je suis déjà en retard. {destination}, hein !",
+            "replies": [
+                {
+                    "id": "go",
+                    "text": "Monte, on go !",
+                    "reputation": 1,
+                    "tip": 0
+                }
+            ],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "montee-massa",
+            "trigger": "montee",
+            "character": "",
+            "register": "pidgin",
+            "text": "Massa, I di go for {destination}. Make we go.",
+            "replies": [
+                {
+                    "id": "oui",
+                    "text": "Oui, monte.",
+                    "reputation": 0,
+                    "tip": 0
+                }
+            ],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "montee-commercante-panier",
+            "trigger": "montee",
+            "character": "commercante",
+            "register": "fr",
+            "text": "Attends, je pose d'abord le seau d'arachides. Voilà, on peut partir.",
+            "replies": [
+                {
+                    "id": "aider",
+                    "text": "Prenez votre temps, maman.",
+                    "reputation": 1,
+                    "tip": 0
+                }
+            ],
+            "voice": "hmm",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "destination-ecolier",
+            "trigger": "destination",
+            "character": "ecolier",
+            "register": "fr",
+            "text": "Moi je descends à {destination}, tonton. Maman m'attend là-bas.",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "destination-maman",
+            "trigger": "destination",
+            "character": "maman-bebe",
+            "register": "fr",
+            "text": "{destination}, s'il vous plaît. Arrêtez-vous bien, que je descende avec le bébé.",
+            "replies": [
+                {
+                    "id": "oui",
+                    "text": "Je m'arrête bien, madame.",
+                    "reputation": 1,
+                    "tip": 0
+                }
+            ],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "destination-camfranglais",
+            "trigger": "destination",
+            "character": "",
+            "register": "camfranglais",
+            "text": "Je go à {destination}. Tu me largues juste devant, le mbom.",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "prix-etudiant",
+            "trigger": "prix",
+            "character": "etudiant",
+            "register": "camfranglais",
+            "text": "{prix} ? Hum… Bon, on est ensemble, je monte.",
+            "replies": [],
+            "voice": "hmm",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "prix-fonctionnaire",
+            "trigger": "prix",
+            "character": "fonctionnaire",
+            "register": "fr",
+            "text": "{prix} pour {destination}. C'est cher, mais je n'ai pas le choix ce matin.",
+            "replies": [
+                {
+                    "id": "merci",
+                    "text": "Merci, chef.",
+                    "reputation": 0,
+                    "tip": 0
+                }
+            ],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "prix-pidgin",
+            "trigger": "prix",
+            "character": "",
+            "register": "pidgin",
+            "text": "{prix}? Na so. I go pay.",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "negociation-maman",
+            "trigger": "negociation",
+            "character": "maman-bebe",
+            "register": "fr",
+            "text": "Avec le bébé, faites un geste : {offre}, ça ira ?",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "negociation-fonctionnaire",
+            "trigger": "negociation",
+            "character": "fonctionnaire",
+            "register": "fr",
+            "text": "{offre}, c'est ce que je paie tous les jours. Ne commence pas.",
+            "replies": [],
+            "voice": "hmm",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "refus-etudiant",
+            "trigger": "refus-paiement",
+            "character": "etudiant",
+            "register": "camfranglais",
+            "text": "Le mbom, je n'ai plus rien sur moi. Je te paie demain, je te jure.",
+            "replies": [
+                {
+                    "id": "non",
+                    "text": "Non, aujourd'hui.",
+                    "reputation": 0,
+                    "tip": 0
+                },
+                {
+                    "id": "police",
+                    "text": "Je vais appeler la police.",
+                    "reputation": 0,
+                    "tip": 0
+                }
+            ],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "refus-retard",
+            "trigger": "refus-paiement",
+            "character": "",
+            "register": "fr",
+            "text": "Tu m'as mis en retard ! {prix} pour arriver après tout le monde ? Non.",
+            "replies": [
+                {
+                    "id": "calme",
+                    "text": "Calmez-vous, monsieur.",
+                    "reputation": 0,
+                    "tip": 0
+                },
+                {
+                    "id": "police",
+                    "text": "On va voir avec la police.",
+                    "reputation": 0,
+                    "tip": 0
+                }
+            ],
+            "voice": "tchip",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "panne-fonctionnaire",
+            "trigger": "panne",
+            "character": "fonctionnaire",
+            "register": "fr",
+            "text": "Une panne maintenant ? Je vais devoir finir à pied, en costume.",
+            "replies": [
+                {
+                    "id": "pardon",
+                    "text": "Pardon, chef.",
+                    "reputation": 0,
+                    "tip": 0
+                }
+            ],
+            "voice": "tchip",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "panne-pidgin",
+            "trigger": "panne",
+            "character": "",
+            "register": "pidgin",
+            "text": "Wetin happen? Moto don die?",
+            "replies": [
+                {
+                    "id": "panne",
+                    "text": "Petite panne, pardon.",
+                    "reputation": 0,
+                    "tip": 0
+                }
+            ],
+            "voice": "aie",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "controle-maman",
+            "trigger": "controle",
+            "character": "maman-bebe",
+            "register": "fr",
+            "text": "Encore eux… Le bébé va se réveiller avec tout ce temps.",
+            "replies": [],
+            "voice": "hmm",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "controle-mberes",
+            "trigger": "controle",
+            "character": "",
+            "register": "camfranglais",
+            "text": "Les mbérés sont encore là. On va perdre le temps, le mbom.",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "pluie-etudiant",
+            "trigger": "pluie",
+            "character": "etudiant",
+            "register": "fr",
+            "text": "La pluie de Yaoundé, ça ne prévient jamais. Heureusement que je suis dedans.",
+            "replies": [],
+            "voice": "rire",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "pluie-fonctionnaire",
+            "trigger": "pluie",
+            "character": "fonctionnaire",
+            "register": "fr",
+            "text": "Roulez doucement, la route glisse. Je préfère arriver en retard qu'à l'hôpital.",
+            "replies": [
+                {
+                    "id": "oui",
+                    "text": "Je fais attention.",
+                    "reputation": 1,
+                    "tip": 0
+                }
+            ],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "silence-commercante",
+            "trigger": "silence",
+            "character": "commercante",
+            "register": "fr",
+            "text": "Chauffeur, tu ne mets pas un peu de musique ? Le trajet est long.",
+            "replies": [
+                {
+                    "id": "oui",
+                    "text": "Tout de suite, maman.",
+                    "reputation": 1,
+                    "tip": 0
+                },
+                {
+                    "id": "non",
+                    "text": "La radio est en panne.",
+                    "reputation": 0,
+                    "tip": 0
+                }
+            ],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "silence-ecolier",
+            "trigger": "silence",
+            "character": "ecolier",
+            "register": "fr",
+            "text": "Tonton, c'est vrai que tu conduis toute la journée ?",
+            "replies": [
+                {
+                    "id": "oui",
+                    "text": "Du matin au soir, petit.",
+                    "reputation": 1,
+                    "tip": 0
+                }
+            ],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "silence-pidgin",
+            "trigger": "silence",
+            "character": "",
+            "register": "pidgin",
+            "text": "Driver, you don tire? You no di talk.",
+            "replies": [
+                {
+                    "id": "fatigue",
+                    "text": "Un peu fatigué, oui.",
+                    "reputation": 0,
+                    "tip": 0
+                },
+                {
+                    "id": "ca-va",
+                    "text": "Ça va, merci !",
+                    "reputation": 1,
+                    "tip": 0
+                }
+            ],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "paiement-fonctionnaire",
+            "trigger": "paiement",
+            "character": "fonctionnaire",
+            "register": "fr",
+            "text": "Voilà {prix}. Et à l'heure, pour une fois. Merci.",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "paiement-maman",
+            "trigger": "paiement",
+            "character": "maman-bebe",
+            "register": "fr",
+            "text": "Merci, vous avez roulé doucement. Que Dieu vous garde.",
+            "replies": [
+                {
+                    "id": "merci",
+                    "text": "Merci, madame. Bonne journée.",
+                    "reputation": 1,
+                    "tip": 0
+                }
+            ],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "paiement-etudiant",
+            "trigger": "paiement",
+            "character": "etudiant",
+            "register": "camfranglais",
+            "text": "Tiens, {prix}. On est ensemble, le mbom !",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "paiement-professeur",
+            "trigger": "paiement",
+            "character": "professeur",
+            "register": "fr",
+            "text": "Voici, mon fils. Conduis toujours comme ça et tu iras loin.",
+            "replies": [
+                {
+                    "id": "merci",
+                    "text": "Merci, maître.",
+                    "reputation": 1,
+                    "tip": 0
+                }
+            ],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "detour-fonctionnaire",
+            "trigger": "detour",
+            "character": "fonctionnaire",
+            "register": "fr",
+            "text": "Où allez-vous ? {destination}, c'est de l'autre côté. Je n'ai pas le temps.",
+            "replies": [
+                {
+                    "id": "pardon",
+                    "text": "Pardon, je reviens.",
+                    "reputation": 1,
+                    "tip": 0
+                },
+                {
+                    "id": "raccourci",
+                    "text": "Je connais un raccourci.",
+                    "reputation": 0,
+                    "tip": 0
+                }
+            ],
+            "voice": "tchip",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "detour-commercante",
+            "trigger": "detour",
+            "character": "commercante",
+            "register": "fr",
+            "text": "Eh ! Tu me promènes ? Je descends à {destination}, pas au village.",
+            "replies": [
+                {
+                    "id": "pardon",
+                    "text": "Pardon, maman.",
+                    "reputation": 1,
+                    "tip": 0
+                }
+            ],
+            "voice": "eh",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "detour-camfranglais",
+            "trigger": "detour",
+            "character": "",
+            "register": "camfranglais",
+            "text": "Le mbom, je wanda : c'est pas la route de {destination}, ça.",
+            "replies": [
+                {
+                    "id": "pardon",
+                    "text": "Pardon, je tourne.",
+                    "reputation": 1,
+                    "tip": 0
+                }
+            ],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "detour-pidgin",
+            "trigger": "detour",
+            "character": "",
+            "register": "pidgin",
+            "text": "Driver, dis no be road for {destination}!",
+            "replies": [
+                {
+                    "id": "pardon",
+                    "text": "Pardon, je reviens.",
+                    "reputation": 1,
+                    "tip": 0
+                }
+            ],
+            "voice": "eh",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "discussion-match",
+            "trigger": "discussion",
+            "character": "",
+            "register": "fr",
+            "text": "Tu as vu le match des Lions hier ? On a souffert jusqu'à la fin.",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "discussion-courant",
+            "trigger": "discussion",
+            "character": "",
+            "register": "fr",
+            "text": "Chez nous, le courant est parti trois fois cette semaine.",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "discussion-ecole",
+            "trigger": "discussion",
+            "character": "",
+            "register": "fr",
+            "text": "Les fournitures de la rentrée coûtent les yeux de la tête cette année.",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "discussion-marche",
+            "trigger": "discussion",
+            "character": "",
+            "register": "fr",
+            "text": "Le marché était plein ce matin. Tout le monde a peur qu'il pleuve.",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "discussion-tara",
+            "trigger": "discussion",
+            "character": "",
+            "register": "camfranglais",
+            "text": "Mon tara a enfin trouvé un boulot. Il est content, il nous invite samedi.",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "discussion-pidgin",
+            "trigger": "discussion",
+            "character": "",
+            "register": "pidgin",
+            "text": "Dis Yaoundé sun hot too much, eh!",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "discussion-bebe",
+            "trigger": "discussion",
+            "character": "maman-bebe",
+            "register": "fr",
+            "text": "Il dort comme un ange, regardez. Les taxis le bercent toujours.",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "place-devant",
+            "trigger": "place",
+            "character": "",
+            "register": "fr",
+            "text": "Bon, je passe devant. Mais tu me ramènes derrière après, hein.",
+            "replies": [
+                {
+                    "id": "oui",
+                    "text": "Promis.",
+                    "reputation": 1,
+                    "tip": 0
+                }
+            ],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "place-commercante",
+            "trigger": "place",
+            "character": "commercante",
+            "register": "fr",
+            "text": "Pousse-toi un peu, ma fille, mes paniers ont besoin de place eux aussi.",
+            "replies": [],
+            "voice": "hmm",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "place-camfranglais",
+            "trigger": "place",
+            "character": "",
+            "register": "camfranglais",
+            "text": "Je bouge, je bouge… On est serrés comme du poisson, le mbom.",
+            "replies": [],
+            "voice": "rire",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "place-pidgin",
+            "trigger": "place",
+            "character": "",
+            "register": "pidgin",
+            "text": "No wahala, I go shift.",
+            "replies": [
+                {
+                    "id": "merci",
+                    "text": "Merci beaucoup !",
+                    "reputation": 1,
+                    "tip": 0
+                }
+            ],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
         }
     ]
 }
