@@ -7,6 +7,8 @@ namespace TaxiKmer.Core.Talk
     public sealed class Bubble
     {
         public LineData Line { get; internal set; }
+        /// <summary>Texte à afficher : la réplique avec ses valeurs remplies (<see cref="DialogueText"/>).</summary>
+        public string Text { get; internal set; } = "";
         /// <summary>Registre du passager qui parle (vide : discussion sans passager désigné).</summary>
         public string Register { get; internal set; } = "";
         /// <summary>Personnage type de celui qui parle (vide : passager quelconque).</summary>
@@ -131,17 +133,22 @@ namespace TaxiKmer.Core.Talk
         /// Une situation se produit : un passager parle si personne ne parle, si le silence a assez duré et s'il reste
         /// une réplique de cette situation qui n'a pas été dite récemment. Rend true si une bulle s'affiche.
         /// </summary>
-        public bool Trigger(string trigger, string speakerId, string character = "")
+        /// <param name="values">
+        /// Valeurs du moment que les répliques peuvent citer (<see cref="TalkValues"/> : destination, prix, offre) ;
+        /// une réplique qui cite une valeur absente n'est pas choisie.
+        /// </param>
+        public bool Trigger(string trigger, string speakerId, string character = "", IDictionary<string, string> values = null)
         {
             if (!_config.enabled || Current != null || _silence < _config.minGapSeconds) return false;
             var designated = !string.IsNullOrEmpty(speakerId);
             if (designated && string.IsNullOrEmpty(character)) character = CharacterOf(speakerId);
             var register = string.IsNullOrEmpty(speakerId) ? "" : RegisterOf(speakerId, character);
-            var line = Pick(trigger, character, register, designated);
+            var line = Pick(trigger, character, register, designated, values);
             if (line == null && !string.IsNullOrEmpty(register) && !string.IsNullOrEmpty(_config.fallbackRegister) && register != _config.fallbackRegister)
-                line = Pick(trigger, character, _config.fallbackRegister, designated);
+                line = Pick(trigger, character, _config.fallbackRegister, designated, values);
             if (line == null) return false;
-            Current = new Bubble { Line = line, Register = register, SpeakerId = speakerId ?? "", Character = character ?? "", ShowSeconds = ShowSecondsFor(_config, line.text), Voice = _config.VoiceFor(line, character) };
+            var text = DialogueText.Fill(line.text, values);
+            Current = new Bubble { Line = line, Text = text, Register = register, SpeakerId = speakerId ?? "", Character = character ?? "", ShowSeconds = ShowSecondsFor(_config, text), Voice = _config.VoiceFor(line, character) };
             Said++;
             if (!_saidToday.Add(line.id)) Repeats++;
             _recent.Add(line.id);
@@ -234,12 +241,13 @@ namespace TaxiKmer.Core.Talk
         /// Un passager précis parle : sans personnage type, il ne dit pas les répliques réservées à un personnage
         /// (la maman ne parle pas de son bébé par la bouche d'un autre).
         /// </param>
-        private LineData Pick(string trigger, string character, string register, bool designated = false)
+        private LineData Pick(string trigger, string character, string register, bool designated = false, IDictionary<string, string> values = null)
         {
             var candidates = new List<LineData>();
             foreach (var l in _config.lines ?? Array.Empty<LineData>())
             {
                 if (l.trigger != trigger || string.IsNullOrEmpty(l.text) || _recent.Contains(l.id)) continue;
+                if (!DialogueText.CanFill(l.text, values)) continue;
                 if (!string.IsNullOrEmpty(register) && !string.IsNullOrEmpty(l.register) && l.register != register) continue;
                 if (!string.IsNullOrEmpty(l.character) && !string.IsNullOrEmpty(character) && l.character != character) continue;
                 if (!string.IsNullOrEmpty(l.character) && string.IsNullOrEmpty(character) && designated) continue;

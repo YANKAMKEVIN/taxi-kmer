@@ -1,5 +1,5 @@
 {
-    "_note": "Dialogues des passagers (jalon 5, docs/tech/jalon-05.md). ACTIVÉ le 21/11 (tranché par Kevin le 21/11). Texte + petits sons de voix (option B) : voiceSounds = emplacements « à fournir » (clip vide, aucun fichier audio) ; voice d'une réplique ou d'un personnage = id d'un son. Répliques écrites par Claude, à valider par Kevin (option B) : statut « proposée » (puis « validée ») ; traduction « à traduire » = écrite en français faute de tournure sûre dans le registre visé. trigger : montee, discussion, place, detour, paiement, negociation, refus-paiement, destination, prix, panne, controle, pluie, silence. character : id d'un personnage type (vide = n'importe quel passager). replies : réponses du chauffeur ; reputation = effet sur la réputation, tip = pourboire payé avec la course (décision de Kevin). Négociation option A : haggleChance (× effet de la réputation), le client propose haggleDiscountMin à haggleDiscountMax de moins (arrondi haggleRoundTo, plancher haggleFloor), le joueur accepte ou refuse. Refus de payer option C : refusesToPayChance ; le joueur laisse partir ou appelle la police (refusalPoliceMinutes perdues, il paie selon refusalPolicePayChance). silenceAfterSeconds : un passager rompt un long silence. Langues : français, camfranglais, pidgin ; registers = parts des passagers (choix de Claude, à régler) ; fallbackRegister = registre de secours. Lecture en conduisant : minShowSeconds, charsPerSecond, maxChars ; minGapSeconds ; noRepeatWithin ; replySeconds ; detourMeters. Valeurs de chance et de durée : défauts de Claude, à régler avec Kevin.",
+    "_note": "Dialogues des passagers (jalon 5, docs/tech/jalon-05.md). ACTIVÉ le 21/11 (tranché par Kevin le 21/11). Texte + petits sons de voix (option B) : voiceSounds = emplacements « à fournir » (clip vide, aucun fichier audio) ; voice d'une réplique ou d'un personnage = id d'un son. Répliques écrites par Claude, à valider par Kevin (option B) : statut « proposée » (puis « validée ») ; traduction « à traduire » = écrite en français faute de tournure sûre dans le registre visé. trigger : montee, discussion, place, detour, paiement, negociation, refus-paiement, destination, prix, panne, controle, pluie, silence. character : id d'un personnage type (vide = n'importe quel passager). Valeurs entre accolades (22/11) : {destination} (lieu du passager), {prix} (prix annoncé), {offre} (contre-offre) — jamais de lieu ni de somme écrits en dur ; une réplique dont la valeur manque n'est pas dite (DialogueText, situations qui fournissent chaque valeur : DialogueText.ValuesFor). replies : réponses du chauffeur ; reputation = effet sur la réputation, tip = pourboire payé avec la course (décision de Kevin). Négociation option A : haggleChance (× effet de la réputation), le client propose haggleDiscountMin à haggleDiscountMax de moins (arrondi haggleRoundTo, plancher haggleFloor), le joueur accepte ou refuse. Refus de payer option C : refusesToPayChance ; le joueur laisse partir ou appelle la police (refusalPoliceMinutes perdues, il paie selon refusalPolicePayChance). silenceAfterSeconds : un passager rompt un long silence. Langues : français, camfranglais, pidgin ; registers = parts des passagers (choix de Claude, à régler) ; fallbackRegister = registre de secours. Lecture en conduisant : minShowSeconds, charsPerSecond, maxChars ; minGapSeconds ; noRepeatWithin ; replySeconds ; detourMeters. Valeurs de chance et de durée : défauts de Claude, à régler avec Kevin.",
     "enabled": true,
     "minShowSeconds": 2.5,
     "charsPerSecond": 14,
@@ -214,7 +214,7 @@
             "trigger": "montee",
             "character": "professeur",
             "register": "fr",
-            "text": "Bonjour, mon fils. L'école publique d'Emana, tu vois où c'est ?",
+            "text": "Bonjour, mon fils. L'école publique, vers {destination}, tu vois où c'est ?",
             "replies": [
                 {
                     "id": "oui-maitre",
@@ -238,7 +238,7 @@
             "trigger": "montee",
             "character": "",
             "register": "camfranglais",
-            "text": "C'est comment, le mbom ? Tu vas vers Étoudi ?",
+            "text": "C'est comment, le mbom ? Tu vas vers {destination} ?",
             "replies": [
                 {
                     "id": "ensemble",
@@ -262,7 +262,7 @@
             "trigger": "montee",
             "character": "etudiant",
             "register": "camfranglais",
-            "text": "Mola, je go à Étoudi, j'ai cours à dix heures.",
+            "text": "Mola, je go à {destination}, j'ai cours à dix heures.",
             "replies": [
                 {
                     "id": "go",
@@ -280,7 +280,7 @@
             "trigger": "montee",
             "character": "",
             "register": "pidgin",
-            "text": "Driver, how na? You di go for Étoudi?",
+            "text": "Driver, how na? You di go for {destination}?",
             "replies": [
                 {
                     "id": "oui",
@@ -298,7 +298,7 @@
             "trigger": "destination",
             "character": "commercante",
             "register": "fr",
-            "text": "Moi, c'est le marché de Messassi. Devant les vendeuses de pagnes.",
+            "text": "Moi, je descends à {destination}. Devant les vendeuses de pagnes.",
             "replies": [],
             "voice": "",
             "statut": "proposée",
@@ -309,7 +309,7 @@
             "trigger": "destination",
             "character": "fonctionnaire",
             "register": "fr",
-            "text": "Déposez-moi devant le palais, pas après. Je ne vais pas marcher au soleil.",
+            "text": "Déposez-moi bien à {destination}, pas après. Je ne vais pas marcher au soleil.",
             "replies": [
                 {
                     "id": "bien",
@@ -333,7 +333,7 @@
             "trigger": "destination",
             "character": "etudiant",
             "register": "fr",
-            "text": "Je descends à Borne Fontaine. Je vous fais signe.",
+            "text": "Je descends à {destination}. Je vous fais signe.",
             "replies": [],
             "voice": "",
             "statut": "proposée",
@@ -344,7 +344,7 @@
             "trigger": "destination",
             "character": "",
             "register": "pidgin",
-            "text": "Abeg, you go drop me for pont d'Emana.",
+            "text": "Abeg, you go drop me for {destination}.",
             "replies": [],
             "voice": "",
             "statut": "proposée",
@@ -355,7 +355,7 @@
             "trigger": "prix",
             "character": "",
             "register": "fr",
-            "text": "Trois cents pour Emana ? Hier c'était deux cents, hein.",
+            "text": "{prix} pour {destination} ? Hier c'était moins, hein.",
             "replies": [
                 {
                     "id": "carburant",
@@ -415,7 +415,7 @@
             "trigger": "negociation",
             "character": "commercante",
             "register": "fr",
-            "text": "Je te donne deux cents. Tu vois bien que je suis une habituée.",
+            "text": "Je te donne {offre}. Tu vois bien que je suis une habituée.",
             "replies": [],
             "voice": "eh",
             "statut": "proposée",
@@ -437,7 +437,7 @@
             "trigger": "negociation",
             "character": "",
             "register": "pidgin",
-            "text": "Abeg, take two hundred. Na all wey I get.",
+            "text": "Abeg, take {offre}. Na all wey I get.",
             "replies": [],
             "voice": "",
             "statut": "proposée",
@@ -448,7 +448,7 @@
             "trigger": "negociation",
             "character": "ecolier",
             "register": "fr",
-            "text": "Tonton, je n'ai que deux cents… Maman paiera le reste demain.",
+            "text": "Tonton, je n'ai que {offre}… Maman paiera le reste demain.",
             "replies": [],
             "voice": "",
             "statut": "proposée",

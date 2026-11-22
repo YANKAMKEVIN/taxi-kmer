@@ -361,6 +361,37 @@ namespace TaxiKmer.Core.DotnetTests
             Assert.Greater(d.charsPerSecond, 0f);
         }
 
+        [Test]
+        public void Dialogues_NeverContradictTheGame_PlacesAndAmountsAreValues()
+        {
+            // 22/11 : « Trois cents pour Emana ? » alors que la course coûte 600 à 1 600 (prix ×2, Kevin) et va peut-être à
+            // Étoudi. Lieux et sommes passent par {destination}, {prix}, {offre}, fournis par la situation.
+            var d = Load<TaxiKmer.Core.Talk.DialogueConfig>("dialogues.json");
+            var stops = Load<StopsConfig>("stops_messassi_etoudi.json");
+            var longestPlace = stops.stops.Select(st => TaxiKmer.Core.Ux.StopNames.Short(st.name)).OrderByDescending(n => n.Length).First();
+            var longest = new Dictionary<string, string>
+            {
+                [TaxiKmer.Core.Talk.TalkValues.Destination] = longestPlace,
+                [TaxiKmer.Core.Talk.TalkValues.Price] = TaxiKmer.Core.Talk.TalkValues.Amount(9999),
+                [TaxiKmer.Core.Talk.TalkValues.Offer] = TaxiKmer.Core.Talk.TalkValues.Amount(9999),
+            };
+            var numberWords = new[] { "cent", "mille", "hundred", "thousand", "fcfa", "francs" };
+            var places = stops.stops.Select(st => TaxiKmer.Core.Ux.StopNames.Short(st.name)).Where(n => n.Length >= 4).Distinct().ToArray();
+            foreach (var l in d.lines)
+            {
+                var allowed = TaxiKmer.Core.Talk.DialogueText.ValuesFor(l.trigger);
+                foreach (var name in TaxiKmer.Core.Talk.DialogueText.Placeholders(l.text))
+                    CollectionAssert.Contains(allowed, name, $"{l.id} : « {{{name}}} » n'est pas fourni pour « {l.trigger} »");
+                var bare = l.text;
+                foreach (var name in TaxiKmer.Core.Talk.TalkValues.All) bare = bare.Replace("{" + name + "}", "");
+                Assert.IsFalse(bare.Any(char.IsDigit), $"{l.id} : somme ou nombre écrit en dur");
+                var words = bare.ToLowerInvariant().Split(new[] { ' ', ',', '.', '!', '?', '…', '\'', ':', ';' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var w in numberWords) Assert.IsFalse(words.Any(x => x == w || x == w + "s"), $"{l.id} : « {w} » écrit en dur, utiliser {{prix}} / {{offre}}");
+                foreach (var place in places) StringAssert.DoesNotContain(place, bare, $"{l.id} : lieu écrit en dur, utiliser {{destination}}");
+                Assert.LessOrEqual(TaxiKmer.Core.Talk.DialogueText.Fill(l.text, longest).Length, d.maxChars, $"{l.id} : trop long une fois rempli");
+            }
+        }
+
         /// <summary>Vrais noms de stations et de marques à ne jamais reprendre (stations fictives, décision de Kevin du 21/11).</summary>
         private static readonly string[] RealRadioNames =
         {

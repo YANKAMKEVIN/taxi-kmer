@@ -253,5 +253,36 @@ namespace TaxiKmer.Core.Tests
             Assert.IsTrue(d.Trigger(TalkTriggers.Chat, ""), "Discussion sans passager désigné : tous les registres.");
             Assert.AreEqual("", d.Current.Register);
         }
+        [Test]
+        public void Values_FilledInText_LineSkippedWhenAValueIsMissing()
+        {
+            // 22/11 : lieux et sommes passent par {destination}, {prix}, {offre} pour ne jamais contredire le jeu.
+            Assert.AreEqual(new List<string> { "prix", "destination" }, DialogueText.Placeholders("{prix} pour {destination} ?"));
+            Assert.AreEqual("600 francs", TalkValues.Amount(600));
+            Assert.AreEqual("1 200 francs", TalkValues.Amount(1200));
+            var values = new Dictionary<string, string> { [TalkValues.Destination] = "Emana", [TalkValues.Price] = TalkValues.Amount(800) };
+            Assert.AreEqual("800 francs pour Emana ?", DialogueText.Fill("{prix} pour {destination} ?", values));
+            Assert.IsFalse(DialogueText.CanFill("Je te donne {offre}.", values));
+            Assert.IsTrue(DialogueText.CanFill("Sans valeur.", null));
+            CollectionAssert.Contains(DialogueText.ValuesFor(TalkTriggers.Haggle), TalkValues.Offer);
+            CollectionAssert.IsEmpty(DialogueText.ValuesFor(TalkTriggers.Rain));
+
+            var config = new DialogueConfig
+            {
+                enabled = true,
+                lines = new[]
+                {
+                    new LineData { id = "offre", trigger = TalkTriggers.Haggle, text = "Je te donne {offre}." },
+                    new LineData { id = "prix", trigger = TalkTriggers.Price, text = "{prix} pour {destination} ? Bon." },
+                },
+            };
+            var d = new DialogueDirector(config, new Random(1));
+            Wait(d, 10f);
+            Assert.IsFalse(d.Trigger(TalkTriggers.Haggle, "c1", "", values), "Sans contre-offre, la réplique n'est pas dite.");
+            Assert.IsNull(d.Current);
+            Assert.IsTrue(d.Trigger(TalkTriggers.Price, "c1", "", values));
+            Assert.AreEqual("800 francs pour Emana ? Bon.", d.Current.Text);
+            Assert.AreEqual(Math.Max(2.5f, d.Current.Text.Length / 14f), d.Current.ShowSeconds, 1e-4f, "Temps de lecture sur le texte rempli.");
+        }
     }
 }

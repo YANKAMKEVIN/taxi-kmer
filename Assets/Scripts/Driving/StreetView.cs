@@ -496,7 +496,7 @@ namespace TaxiKmer.Driving
         {
             var result = Street.Honk(state, out var client);
             if ((result == HonkResult.Accepted || result == HonkResult.AcceptedNeedsMove) && Street.PendingHaggle == null)
-                _talk?.Say(Core.Talk.TalkTriggers.Price, client.Client.Id);
+                _talk?.Say(Core.Talk.TalkTriggers.Price, client.Client.Id, TalkView.RideValues(Street, client.Client.DestinationStopId, client.Client.ProposedFare));
             switch (result)
             {
                 case HonkResult.Accepted:
@@ -579,7 +579,7 @@ namespace TaxiKmer.Driving
                         Haptics.Play(HapticEvent.Payment);
                     }
                     foreach (var c in outcome.Dropped) { SpawnLeavingPerson(c); _talk?.Forget(c.Id); }
-                    if (outcome.Refusal == null && outcome.Dropped != null && outcome.Dropped.Count > 0) _talk?.Say(Core.Talk.TalkTriggers.Paid, outcome.Dropped[0].Id);
+                    if (outcome.Refusal == null && outcome.Dropped != null && outcome.Dropped.Count > 0) _talk?.Say(Core.Talk.TalkTriggers.Paid, outcome.Dropped[0].Id, TalkView.RideValues(Street, outcome.Dropped[0].DestinationStopId, outcome.Dropped[0].ProposedFare));
                     break;
                 case StreetActionKind.Refuel:
                     if (outcome.FuelLitres > 0f)
@@ -597,7 +597,7 @@ namespace TaxiKmer.Driving
                         var moved = outcome.Moved != null ? "Un passager a changé de place. " : "";
                         Toast($"{moved}Monté : {ShortName(outcome.Boarded.DestinationStopId)}, {Money(outcome.Boarded.ProposedFare)}");
                         if (outcome.Moved != null) _talk?.Say(Core.Talk.TalkTriggers.SeatMove, outcome.Moved.Id);
-                        else _talk?.Say(Core.Talk.TalkTriggers.Boarding, outcome.Boarded.Id);
+                        else _talk?.Say(Core.Talk.TalkTriggers.Boarding, outcome.Boarded.Id, TalkView.RideValues(Street, outcome.Boarded.DestinationStopId, outcome.Boarded.ProposedFare));
                     }
                     else if (outcome.Board == BoardResult.DayOver) Toast("La journée est finie");
                     else
