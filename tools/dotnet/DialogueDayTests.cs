@@ -46,6 +46,9 @@ namespace TaxiKmer.Core.DotnetTests
             }
             TestContext.WriteLine($"{d.Said} bulles, {d.Repeats} répétées");
             Assert.Greater(d.Said, 40);
+            // 3e lot (22/11, ≈ 170 répliques, décision de Kevin) : 135 bulles dont 62 déjà dites dans la journée (46 %),
+            // contre 109 dont 71 (65 %) avec 85 répliques. Moins d'une bulle sur deux répétée.
+            Assert.Less(d.Repeats * 2, d.Said, "Plus d'une bulle sur deux répétée dans la journée");
         }
     }
 }

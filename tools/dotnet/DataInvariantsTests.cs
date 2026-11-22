@@ -316,9 +316,9 @@ namespace TaxiKmer.Core.DotnetTests
             Assert.That(d.refusalPolicePayChance, Is.InRange(0f, 1f));
             Assert.LessOrEqual(d.haggleDiscountMin, d.haggleDiscountMax);
             Assert.AreEqual(d.lines.Length, d.lines.Select(l => l.id).Distinct().Count());
-            Assert.That(d.lines.Length, Is.InRange(80, 130), "Deux lots proposés (43 le 21/11, 42 le 22/11).");
+            Assert.That(d.lines.Length, Is.InRange(160, 200), "Trois lots proposés (43 le 21/11, 42 puis 85 le 22/11 : ≈ 170 décidé par Kevin).");
             foreach (var t in TaxiKmer.Core.Talk.TalkTriggers.All)
-                Assert.GreaterOrEqual(d.lines.Count(l => l.trigger == t), 5, $"« {t} » : au moins 5 répliques (2e lot, 22/11)");
+                Assert.GreaterOrEqual(d.lines.Count(l => l.trigger == t), 9, $"« {t} » : au moins 9 répliques (3e lot, 22/11)");
             var characters = new HashSet<string>(d.characters.Select(c => c.id));
             CollectionAssert.IsSupersetOf(characters, new[] { "commercante", "ecolier", "etudiant", "fonctionnaire", "maman-bebe", "professeur" },
                 "Personnages de Kevin.");
