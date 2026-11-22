@@ -96,8 +96,27 @@ namespace TaxiKmer.Core.Talk
             if (string.IsNullOrEmpty(text) || values == null || text.IndexOf('{') < 0) return text ?? "";
             var sb = new StringBuilder(text);
             foreach (var kv in values)
-                if (!string.IsNullOrEmpty(kv.Key) && kv.Value != null) sb.Replace("{" + kv.Key + "}", kv.Value);
+            {
+                if (string.IsNullOrEmpty(kv.Key) || kv.Value == null) continue;
+                var key = "{" + kv.Key + "}";
+                if (StartsWithVowel(kv.Value))
+                    foreach (var w in Elided)
+                    {
+                        // « la route de {destination} » + « Emana » → « la route d'Emana » (élision du français).
+                        sb.Replace(" " + w + " " + key, " " + w.Substring(0, w.Length - 1) + "'" + kv.Value);
+                        var head = w + " " + key;
+                        if (sb.Length >= head.Length && sb.ToString(0, head.Length) == head)
+                            sb.Remove(0, head.Length).Insert(0, w.Substring(0, w.Length - 1) + "'" + kv.Value);
+                    }
+                sb.Replace(key, kv.Value);
+            }
             return sb.ToString();
         }
+
+        /// <summary>Mots élidés devant une voyelle (« de Emana » → « d'Emana », « que Étoudi » → « qu'Étoudi »).</summary>
+        private static readonly string[] Elided = { "de", "De", "que", "Que" };
+
+        private static bool StartsWithVowel(string s) =>
+            !string.IsNullOrEmpty(s) && "AEIOUYÉÈÊÀÂÎÔÛaeiouyéèêàâîôû".IndexOf(s[0]) >= 0;
     }
 }

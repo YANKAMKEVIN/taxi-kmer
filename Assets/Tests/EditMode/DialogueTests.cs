@@ -264,6 +264,14 @@ namespace TaxiKmer.Core.Tests
             Assert.AreEqual("800 francs pour Emana ?", DialogueText.Fill("{prix} pour {destination} ?", values));
             Assert.IsFalse(DialogueText.CanFill("Je te donne {offre}.", values));
             Assert.IsTrue(DialogueText.CanFill("Sans valeur.", null));
+            // QA (22/11) : élision devant un lieu qui commence par une voyelle (Emana, Étoudi), comme dans les vraies répliques.
+            Assert.AreEqual("c'est pas la route d'Emana, ça.", DialogueText.Fill("c'est pas la route de {destination}, ça.", values));
+            Assert.AreEqual("Maman dit qu'Étoudi, c'est de l'autre côté.",
+                DialogueText.Fill("Maman dit que {destination}, c'est de l'autre côté.", new Dictionary<string, string> { [TalkValues.Destination] = "Étoudi" }));
+            Assert.AreEqual("On s'éloigne de Borne Fontaine.",
+                DialogueText.Fill("On s'éloigne de {destination}.", new Dictionary<string, string> { [TalkValues.Destination] = "Borne Fontaine" }));
+            Assert.AreEqual("Qu'Emana ?", DialogueText.Fill("Que {destination} ?", values));
+            Assert.AreEqual("La route de Emanuel", DialogueText.Fill("La route de Emanuel", values), "Seulement devant une valeur remplie.");
             CollectionAssert.Contains(DialogueText.ValuesFor(TalkTriggers.Haggle), TalkValues.Offer);
             CollectionAssert.IsEmpty(DialogueText.ValuesFor(TalkTriggers.Rain));
 
