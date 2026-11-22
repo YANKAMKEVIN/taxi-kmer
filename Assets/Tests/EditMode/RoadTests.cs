@@ -269,6 +269,9 @@ namespace TaxiKmer.Core.Tests
             Assert.IsTrue(road.FitSpareWheel(shift));
             Assert.AreEqual(before + config.spareWheelMinutes, shift.Clock.GameMinutes, 1);
             Assert.IsFalse(road.FitSpareWheel(shift));
+            // QA (22/11) : le bouton dit la durée des données (road.json), pas « 20 min » écrit en dur.
+            Assert.AreEqual("Changer la roue (20 min)", road.SpareWheelButton);
+            Assert.AreEqual("Changer la roue (1 h 15)", new RoadDay(new RoadConfig { spareWheelMinutes = 75 }, 6000f, 3, 0f, 360, 1200, 3, new Random(2)).SpareWheelButton);
             road.Car.BreakDown();
             Assert.AreEqual(0f, road.SpeedCapKmh);
             var quote = road.MechanicQuote();
