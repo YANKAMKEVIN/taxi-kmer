@@ -293,7 +293,8 @@ namespace TaxiKmer.Driving
 
             // Menu d'abord : la touche qui ouvre la pause ne doit pas la refermer dans la même image.
             // Le bilan passe devant tout (l'écran titre ne reste pas affiché par-dessus).
-            ApplyMenu(_menuView.Update(Street.DayFinished ? MenuScreen.None : _menu.Screen, _settings, shift.Cabin.PassengerCount));
+            ApplyMenu(_menuView.Update(Street.DayFinished ? MenuScreen.None : _menu.Screen, _settings, shift.Cabin.PassengerCount,
+                _police != null ? _police.Police.Papers.Summary(_police.Police.Day) : ""));
             if (controls.PauseTriggered && !Street.DayFinished && _menu.Pause()) SetTimeStopped(true);
             controls.Locked = _menu.Frozen || _summaryView != null || (_police != null && _police.Active);
 

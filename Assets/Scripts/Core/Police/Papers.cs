@@ -75,5 +75,23 @@ namespace TaxiKmer.Core.Police
             if (left == 0) return $"{p.name} : expirée";
             return $"{p.name} : {left} jour{(left > 1 ? "s" : "")}";
         }
+
+        /// <summary>
+        /// Les papiers qui expirent, en une ligne pour l'écran de pause (jalon 4) : « Assurance : 9 jours · Visite
+        /// technique : 160 jours · Licence de taxi : 300 jours ». Les papiers qui n'expirent pas (permis, carte grise)
+        /// sont omis ; un papier expiré est annoncé en premier. Vide si aucun papier n'expire.
+        /// </summary>
+        public string Summary(int day)
+        {
+            var expired = new List<string>();
+            var valid = new List<string>();
+            foreach (var p in Papers)
+            {
+                if (LastValidDay(p.id) == int.MaxValue) continue;
+                (DaysLeft(p.id, day) == 0 ? expired : valid).Add(Status(p.id, day));
+            }
+            expired.AddRange(valid);
+            return string.Join(" · ", expired);
+        }
     }
 }

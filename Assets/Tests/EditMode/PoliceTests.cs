@@ -581,5 +581,13 @@ namespace TaxiKmer.Core.Tests
             Assert.IsTrue(PoliceMarkers.LabelShown(fixedPost, fixedPost.Along - 200f));
             Assert.IsFalse(PoliceMarkers.LabelShown(fixedPost, fixedPost.Along + 300f));
         }
+        [Test]
+        public void Papers_Summary_ForPauseScreen_ExpiredFirst_SkipsNeverExpiring()
+        {
+            var papers = new PaperSet(new PoliceConfig());
+            Assert.AreEqual("Assurance : 12 jours · Visite technique : 25 jours · Licence de taxi : 40 jours", papers.Summary(1));
+            Assert.AreEqual("Assurance : expirée · Visite technique : 13 jours · Licence de taxi : 28 jours", papers.Summary(13));
+            Assert.AreEqual("", new PaperSet(new PoliceConfig { papers = new[] { new PaperData { id = "permis", name = "Permis de conduire" } } }).Summary(1));
+        }
     }
 }
