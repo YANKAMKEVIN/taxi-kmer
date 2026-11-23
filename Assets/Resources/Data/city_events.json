@@ -1,0 +1,46 @@
+{
+    "_note": "Événements de ville rares (idée n° 14, proposés par Claude : ton et fréquence à valider par Kevin). Au plus un par jour, tiré avec la graine de la carrière. chancePerDay : chance un jour permis ; weekdays : indices de calendar.json (0 = lundi), vide = tous ; trafficFactor / clientsFactor : multiplient trafic et clients pendant l'événement ; closedFromAlong / closedToAlong : tronçon fermé (m le long de l'itinéraire ; Étoudi à 6 132 m) ; announce : annonce du matin ; endText : à la fin. Les répliques liées à un événement portent cityEvent (dialogues.json).",
+    "enabled": true,
+    "events": [
+        {
+            "id": "cortege",
+            "name": "Cortège officiel à Étoudi",
+            "chancePerDay": 0.05,
+            "weekdays": [
+                0,
+                1,
+                2,
+                3,
+                4
+            ],
+            "fromTime": "08:00",
+            "untilTime": "09:30",
+            "trafficFactor": 1.6,
+            "clientsFactor": 0.8,
+            "closedFromAlong": 5900,
+            "closedToAlong": 6200,
+            "announce": "Cortège officiel ce matin : la route est fermée devant le palais d'Étoudi de 08:00 à 09:30.",
+            "endText": "Le cortège est passé : la route d'Étoudi est rouverte.",
+            "statut": "proposé"
+        },
+        {
+            "id": "match",
+            "name": "Match des Lions indomptables",
+            "chancePerDay": 0.15,
+            "weekdays": [
+                2,
+                5,
+                6
+            ],
+            "fromTime": "16:30",
+            "untilTime": "20:00",
+            "trafficFactor": 1.3,
+            "clientsFactor": 1.4,
+            "closedFromAlong": 0,
+            "closedToAlong": 0,
+            "announce": "Ce soir, les Lions indomptables jouent : les supporters cherchent un taxi après 16:30.",
+            "endText": "Le match est fini : la ville se calme.",
+            "statut": "proposé"
+        }
+    ]
+}

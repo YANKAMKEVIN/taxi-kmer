@@ -88,6 +88,20 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void CityEvents_MatchDefaults_AndTheirLinesExist()
+        {
+            var e = Load<TaxiKmer.Core.Day.CityEventsConfig>("city_events.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Day.CityEventsConfig(), Opts), JsonSerializer.Serialize(e, Opts));
+            var d = Load<TaxiKmer.Core.Talk.DialogueConfig>("dialogues.json");
+            var ids = new System.Collections.Generic.HashSet<string>();
+            foreach (var ev in e.events) ids.Add(ev.id);
+            foreach (var l in d.lines)
+                if (!string.IsNullOrEmpty(l.cityEvent)) Assert.IsTrue(ids.Contains(l.cityEvent), $"{l.id} : événement inconnu");
+            foreach (var ev in e.events)
+                Assert.IsTrue(System.Array.Exists(d.lines, l => l.cityEvent == ev.id), $"{ev.id} : au moins une réplique");
+        }
+
+        [Test]
         public void Quality_MatchesDefaults()
         {
             var q = Load<TaxiKmer.Core.Quality.QualityConfig>("quality.json");

@@ -89,6 +89,10 @@ namespace TaxiKmer.Driving
         private PhoneView _phone;
         // Pluie visible (rain.json, idée n° 12), créée seulement avec la route (road.json).
         private RainView _rain;
+        // Événement de ville du jour (city_events.json, idée n° 14) et barrières du tronçon fermé.
+        private CityEventDay _cityEvent = new CityEventDay(null);
+        private GameObject _closure;
+        private bool _cityEventWasActive;
         private readonly List<(float x, float z, Color color)> _mapMarkers = new List<(float, float, Color)>();
         private CabinPlanView _cabinView;
         private ShiftGaugesView _gauges;
@@ -195,6 +199,8 @@ namespace TaxiKmer.Driving
             // Réputation : celle de la veille (visible ou cachée selon reputation.json, question ouverte de Kevin).
             Street.Reputation = Core.Save.SaveSnapshot.LoadReputation(Save.Data, Load("Data/reputation", new Core.Career.ReputationConfig()));
             Street.SpawnRateScale = Today.ClientsFactor;
+            _cityEvent = CityEventDay.Draw(Load("Data/city_events", new CityEventsConfig()), Today, 0);
+            if (_cityEvent.Any) _paperNews.Insert(0, _cityEvent.Event.announce);
             ApplyTrafficScale();
             var trafficView = gameObject.AddComponent<TrafficView>();
             trafficView.baseMaterial = personMaterial;
@@ -301,6 +307,7 @@ namespace TaxiKmer.Driving
         private void ApplyTrafficScale()
         {
             var scale = (_quality != null ? _quality.Current.trafficScale : 1f) * (_calendar != null ? Today.TrafficFactor : 1f)
+                * (_cityEvent != null ? _cityEvent.TrafficFactor(Street.Shift.Clock.GameMinutes) : 1f)
                 * (_road != null ? _road.Road.Weather.TrafficFactor(Street.Shift.Clock.GameMinutes) : 1f);
             City.Traffic.DensityScale = scale;
             City.Pedestrians.DensityScale = scale;
@@ -399,6 +406,7 @@ namespace TaxiKmer.Driving
                 if (_road.IncidentStarted) _talk?.Say(Core.Talk.TalkTriggers.Breakdown, TalkView.AnyPassenger(Street));
                 Street.SpawnRateScale = Today.ClientsFactor * _road.Road.Weather.ClientsFactor(shift.Clock.GameMinutes);
             }
+            UpdateCityEvent(shift.Clock.GameMinutes);
             if (_radio != null) UpdateRadioNews();
             if (_talk != null)
             {
@@ -821,6 +829,40 @@ namespace TaxiKmer.Driving
         /// abri bleu, barrière rouge et blanche, plots ; volant = plots et pick-up de police. Un policier attend au bord
         /// de la chaussée (il s'avance quand il arrête le taxi). Règle d'affichage : <see cref="Core.Police.PoliceMarkers"/>.
         /// </summary>
+        /// <summary>
+        /// Événement de ville (idée n° 14) : clients en plus ou en moins, répliques dédiées, barrières de police en travers
+        /// de la route fermée (avec collider : le taxi ne passe pas) pendant le cortège, message de fin.
+        /// </summary>
+        private void UpdateCityEvent(int minute)
+        {
+            if (!_cityEvent.Any) return;
+            var active = _cityEvent.ActiveAt(minute);
+            Street.SpawnRateScale *= _cityEvent.ClientsFactor(minute);
+            if (_talk != null) _talk.Director.CityEvent = _cityEvent.ActiveId(minute);
+            if (_cityEventWasActive && !active && _cityEvent.Event.endText.Length > 0) Toast(_cityEvent.Event.endText, 6f);
+            _cityEventWasActive = active;
+            if (!_cityEvent.HasClosure) return;
+            if (_closure == null)
+            {
+                _closure = new GameObject("Route fermée : " + _cityEvent.Event.name);
+                _closure.transform.SetParent(transform, false);
+                foreach (var along in new[] { _cityEvent.Event.closedFromAlong, _cityEvent.Event.closedToAlong })
+                {
+                    WorldGeometry.SampleAlong(_xz, _cum, along, out var x, out var z, out var dx, out var dz);
+                    var barrier = new GameObject("Barrière");
+                    barrier.transform.SetParent(_closure.transform, false);
+                    barrier.transform.SetPositionAndRotation(new Vector3(x, 0f, z), Quaternion.LookRotation(new Vector3(dx, 0f, dz), Vector3.up));
+                    for (var i = -4; i <= 4; i++)
+                        Part(barrier.transform, PrimitiveType.Cube, new Vector3(i * 1.6f, 0.6f, 0f), new Vector3(1.5f, 0.25f, 0.2f),
+                            i % 2 == 0 ? new Color(0.8f, 0.12f, 0.1f) : new Color(0.92f, 0.92f, 0.9f));
+                    var wall = barrier.AddComponent<BoxCollider>();
+                    wall.center = new Vector3(0f, 0.8f, 0f);
+                    wall.size = new Vector3(16f, 1.6f, 0.4f);
+                }
+            }
+            _closure.SetActive(_cityEvent.ClosedAt(_cityEvent.Event.closedFromAlong, minute));
+        }
+
         /// <summary>Voiture de police qui suit le taxi pendant une poursuite, sur la voie du taxi (primitives provisoires).</summary>
         private void UpdateChaseCar(TaxiOnRoute state)
         {

@@ -125,6 +125,9 @@ namespace TaxiKmer.Core.Talk
         /// <summary>Histoires de passagers réguliers (idée n° 13) ; null : leurs répliques ne sont jamais dites.</summary>
         public StoryArcs Stories { get; set; }
 
+        /// <summary>Événement de ville en cours (id de city_events.json, idée n° 14) ; vide : aucun.</summary>
+        public string CityEvent { get; set; } = "";
+
         /// <summary>Temps d'affichage d'un texte : de quoi le lire en conduisant.</summary>
         public static float ShowSecondsFor(DialogueConfig config, string text)
         {
@@ -306,6 +309,7 @@ namespace TaxiKmer.Core.Talk
                 if (!string.IsNullOrEmpty(register) && !string.IsNullOrEmpty(l.register) && l.register != register) continue;
                 if (!string.IsNullOrEmpty(l.character) && !string.IsNullOrEmpty(character) && l.character != character) continue;
                 if (!string.IsNullOrEmpty(l.character) && string.IsNullOrEmpty(character) && designated) continue;
+                if (!string.IsNullOrEmpty(l.cityEvent) && l.cityEvent != CityEvent) continue;
                 if (!string.IsNullOrEmpty(l.arc) && (Stories == null || !Stories.Eligible(l) || l.character != character)) continue;
                 candidates.Add(l);
             }

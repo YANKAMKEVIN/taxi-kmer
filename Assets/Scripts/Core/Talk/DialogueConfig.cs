@@ -141,6 +141,8 @@ namespace TaxiKmer.Core.Talk
         /// </summary>
         public string arc = "";
         public int arcStep;
+        /// <summary>Réplique dite seulement pendant cet événement de ville (idée n° 14, city_events.json) ; vide : toujours.</summary>
+        public string cityEvent = "";
 
         /// <summary>La réplique peut être dite à cette heure (minutes depuis minuit ; négatif : heure inconnue, toujours vrai).</summary>
         public bool SaidAt(int minuteOfDay)
