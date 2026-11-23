@@ -58,12 +58,13 @@ namespace TaxiKmer.Driving
         }
 
         /// <param name="pauseNote">Ligne sous le titre de la pause (état des papiers, jalon 4) ; vide : rien.</param>
-        public MenuChoice Update(MenuScreen screen, GameSettings settings, int passengersOnBoard, string pauseNote = "")
+        /// <param name="pending">Choix en attente : « Terminer la journée » dit quoi régler d'abord et ne fait rien (Kevin, 23/11).</param>
+        public MenuChoice Update(MenuScreen screen, GameSettings settings, int passengersOnBoard, string pauseNote = "", PendingChoices pending = default)
         {
             var open = screen != MenuScreen.None;
             _root.gameObject.SetActive(open);
             if (!open) return MenuChoice.None;
-            Layout(screen, settings, passengersOnBoard, pauseNote);
+            Layout(screen, settings, passengersOnBoard, pauseNote, pending);
 
             var back = UnityEngine.Input.GetKeyDown(KeyCode.Escape);
             switch (screen)
@@ -87,7 +88,7 @@ namespace TaxiKmer.Driving
             return MenuChoice.None;
         }
 
-        private void Layout(MenuScreen screen, GameSettings settings, int passengersOnBoard, string pauseNote)
+        private void Layout(MenuScreen screen, GameSettings settings, int passengersOnBoard, string pauseNote, PendingChoices pending)
         {
             float h = Screen.height;
             var bw = Mathf.Min(h * 0.9f, Screen.width * 0.8f);
@@ -126,8 +127,9 @@ namespace TaxiKmer.Driving
                     _subtitle.fontSize = Mathf.RoundToInt(h * 0.032f);
                     _primaryText.text = "Reprendre";
                     _secondaryText.text = "Réglages";
-                    _tertiaryText.text = GameMenu.EndDayLabel(passengersOnBoard);
-                    _tertiaryText.fontSize = Mathf.RoundToInt(h * (passengersOnBoard > 0 ? 0.036f : 0.045f));
+                    _tertiaryText.text = GameMenu.EndDayLabel(passengersOnBoard, pending);
+                    _tertiaryText.fontSize = Mathf.RoundToInt(h * (pending.Any ? 0.03f : passengersOnBoard > 0 ? 0.036f : 0.045f));
+                    _tertiary.color = pending.Any ? Grey : Red; // bouton grisé : il faut d'abord répondre au choix en attente
                     UiKit.PlaceTopCenter(_primary.rectTransform, h * 0.3f, bw, bh);
                     UiKit.PlaceTopCenter(_secondary.rectTransform, h * 0.46f, bw, bh);
                     UiKit.PlaceTopCenter(_tertiary.rectTransform, h * 0.66f, bw, bh);

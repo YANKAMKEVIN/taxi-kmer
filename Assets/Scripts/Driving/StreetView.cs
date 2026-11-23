@@ -306,8 +306,9 @@ namespace TaxiKmer.Driving
 
             // Menu d'abord : la touche qui ouvre la pause ne doit pas la refermer dans la même image.
             // Le bilan passe devant tout (l'écran titre ne reste pas affiché par-dessus).
+            var pending = _menu.Screen == MenuScreen.Pause && !Street.DayFinished ? CurrentPendingChoices() : default; // seulement en pause (projection du taxi)
             ApplyMenu(_menuView.Update(Street.DayFinished ? MenuScreen.None : _menu.Screen, _settings, shift.Cabin.PassengerCount,
-                _police != null ? _police.Police.Papers.Summary(_police.Police.Day) : ""));
+                _police != null ? _police.Police.Papers.Summary(_police.Police.Day) : "", pending), pending);
             if (controls.PauseTriggered && !Street.DayFinished && _menu.Pause()) SetTimeStopped(true);
             controls.Locked = _menu.Frozen || _summaryView != null || (_police != null && _police.Active);
 
@@ -416,7 +417,15 @@ namespace TaxiKmer.Driving
             _cabinView.Update(Street.Shift.Cabin, !Street.DayFinished);
         }
 
-        private void ApplyMenu(MenuChoice choice)
+        /// <summary>
+        /// Choix qui attendent le joueur (contrôle, accrochage, négociation, refus de payer, panne sèche, crevaison, panne) :
+        /// « Terminer la journée » est refusé tant qu'il y en a un (décision de Kevin du 23/11).
+        /// </summary>
+        private PendingChoices CurrentPendingChoices() =>
+            Core.Ux.PendingChoices.Of(Street, TaxiState(), _police != null && _police.Active,
+                _road != null ? _road.Crash.Pending : Core.Road.CrashChoice.None, _road?.Road.Car);
+
+        private void ApplyMenu(MenuChoice choice, PendingChoices pending = default)
         {
             switch (choice)
             {
@@ -428,7 +437,7 @@ namespace TaxiKmer.Driving
                 case MenuChoice.OpenSettings: _menu.OpenSettings(); break;
                 case MenuChoice.CloseSettings: _menu.CloseSettings(); break;
                 case MenuChoice.EndDay:
-                    if (_menu.EndDay()) Street.EndDayNow();
+                    if (_menu.EndDay(pending)) Street.EndDayNow(); // refusé tant qu'un choix attend (le bouton dit lequel)
                     break;
                 case MenuChoice.ToggleVibration:
                     _settings.Vibration = !_settings.Vibration;
