@@ -184,7 +184,7 @@ namespace TaxiKmer.Driving
         {
             var root = new GameObject(kind == VehicleKind.Taxi ? "Taxi concurrent" : "Voiture");
             root.transform.SetParent(transform, false);
-            var paint = Part(root.transform, PrimitiveType.Cube, new Vector3(0f, 0.72f, 0f), new Vector3(1.74f, 0.6f, 4.3f), Color.white);
+            var paint = BigPart(root.transform, PrimitiveType.Cube, new Vector3(0f, 0.72f, 0f), new Vector3(1.74f, 0.6f, 4.3f), Color.white);
             Part(root.transform, PrimitiveType.Cube, new Vector3(0f, 1.22f, -0.2f), new Vector3(1.58f, 0.44f, 2.1f), Glass);
             Part(root.transform, PrimitiveType.Cube, new Vector3(0f, 0.3f, 0f), new Vector3(1.66f, 0.3f, 3.9f), Rubber);
             // Taxis de Yaoundé (photos de référence) : pas d'enseigne sur le toit, mais baguette sombre et pastille numérotée.
@@ -204,7 +204,7 @@ namespace TaxiKmer.Driving
                 var wheel = Part(root.transform, PrimitiveType.Cylinder, new Vector3(0f, 0.32f, z), new Vector3(0.64f, 0.06f, 0.64f), Rubber);
                 wheel.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
             }
-            var shirt = Part(root.transform, PrimitiveType.Capsule, new Vector3(0f, 1.25f, -0.1f), new Vector3(0.45f, 0.45f, 0.35f), Color.white);
+            var shirt = BigPart(root.transform, PrimitiveType.Capsule, new Vector3(0f, 1.25f, -0.1f), new Vector3(0.45f, 0.45f, 0.35f), Color.white);
             Part(root.transform, PrimitiveType.Sphere, new Vector3(0f, 1.85f, -0.05f), Vector3.one * 0.25f, Skin);
             var passenger = new GameObject("Passager");
             passenger.transform.SetParent(root.transform, false);
@@ -300,12 +300,41 @@ namespace TaxiKmer.Driving
             contact.center = new Vector3(0f, 0.9f, 0f);
             contact.radius = 0.3f;
             contact.height = 1.8f;
-            var shirt = Part(root.transform, PrimitiveType.Capsule, new Vector3(0f, 0.8f, 0f), new Vector3(0.56f, 0.8f, 0.42f), Color.white);
+            var shirt = BigPart(root.transform, PrimitiveType.Capsule, new Vector3(0f, 0.8f, 0f), new Vector3(0.56f, 0.8f, 0.42f), Color.white);
             Part(root.transform, PrimitiveType.Sphere, new Vector3(0f, 1.78f, 0f), Vector3.one * 0.26f, Skin);
             return new Body { Root = root, Shirt = shirt };
         }
 
         // ---------- Outils ----------
+
+        /// <summary>Ombres du trafic (quality.json → trafficShadows, idée n° 20) ; réglé par StreetView à chaque changement de niveau.</summary>
+        public int ShadowMode
+        {
+            get => _shadowMode;
+            set
+            {
+                if (value == _shadowMode) return;
+                _shadowMode = value;
+                _parts.RemoveAll(p => p.renderer == null); // pièces détruites
+                foreach (var (r, body) in _parts)
+                    if (r != null) r.shadowCastingMode = Shadow(body);
+            }
+        }
+
+        private int _shadowMode = TaxiKmer.Core.Quality.TrafficShadows.Bodies;
+        private readonly List<(Renderer renderer, bool body)> _parts = new List<(Renderer, bool)>();
+
+        private UnityEngine.Rendering.ShadowCastingMode Shadow(bool body) =>
+            TaxiKmer.Core.Quality.TrafficShadows.Casts(_shadowMode, body) ? UnityEngine.Rendering.ShadowCastingMode.On : UnityEngine.Rendering.ShadowCastingMode.Off;
+
+        /// <summary>Grande pièce (caisse, corps) : la seule qui garde une ombre au niveau « caisses seulement ».</summary>
+        private Renderer BigPart(Transform parent, PrimitiveType type, Vector3 pos, Vector3 scale, Color color)
+        {
+            var r = Part(parent, type, pos, scale, color);
+            _parts[_parts.Count - 1] = (r, true);
+            r.shadowCastingMode = Shadow(true);
+            return r;
+        }
 
         private Renderer Part(Transform parent, PrimitiveType type, Vector3 pos, Vector3 scale, Color color)
         {
@@ -316,7 +345,8 @@ namespace TaxiKmer.Driving
             go.transform.localScale = scale;
             var r = go.GetComponent<MeshRenderer>();
             r.sharedMaterial = MaterialFor(color);
-            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+            r.shadowCastingMode = Shadow(false);
+            _parts.Add((r, false));
             return r;
         }
 
@@ -326,6 +356,7 @@ namespace TaxiKmer.Driving
             if (baseMaterial == null) return null;
             m = new Material(baseMaterial) { name = $"Trafic {ColorUtility.ToHtmlStringRGB(color)}" };
             m.SetColor("_BaseColor", color);
+            m.enableInstancing = true; // idée n° 20 : instanciation GPU quand le SRP Batcher ne s'applique pas
             _materials[color] = m;
             return m;
         }

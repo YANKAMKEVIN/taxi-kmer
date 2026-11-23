@@ -89,6 +89,7 @@ namespace TaxiKmer.Driving
         private PhoneView _phone;
         // Pluie visible (rain.json, idée n° 12), créée seulement avec la route (road.json).
         private RainView _rain;
+        private TrafficView _trafficView;
         // Dégâts visibles sur le taxi (idée n° 17).
         private DamageView _damage;
         // Événement de ville du jour (city_events.json, idée n° 14) et barrières du tronçon fermé.
@@ -207,6 +208,7 @@ namespace TaxiKmer.Driving
             var trafficView = gameObject.AddComponent<TrafficView>();
             trafficView.baseMaterial = personMaterial;
             trafficView.City = City;
+            _trafficView = trafficView;
             // Le taxi du joueur prend les mêmes détails que ceux de Yaoundé (plaques, baguette, pastille).
             trafficView.Decorate(taxi.transform, TaxiFactory.Length, TaxiFactory.Width, true, 0);
 
@@ -420,6 +422,7 @@ namespace TaxiKmer.Driving
             UpdateDryTank(state);
             // La radio se tait en pause et au bilan ; elle baisse quand un passager parle (jalon 5).
             _radio?.Update(dt, !Street.DayFinished && !_menu.Frozen && _summaryView == null, _talk != null && _talk.Speaking);
+            if (_trafficView != null && _quality != null) _trafficView.ShadowMode = _quality.Current.trafficShadows; // idée n° 20
             _dayLight?.Update(Street.Shift.Clock.GameMinutes, _quality != null && _quality.Level >= 2);
             _damage?.Update(_road.Road.Car.Damage);
             _rain?.Update(dt, _road.Raining, _quality != null ? _quality.Level : 1, !_menu.Frozen && !Street.DayFinished);

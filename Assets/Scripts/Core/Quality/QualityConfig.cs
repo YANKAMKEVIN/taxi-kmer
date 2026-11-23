@@ -22,6 +22,22 @@ namespace TaxiKmer.Core.Quality
         public float fogEnd = 450f;
         /// <summary>Part du trafic et des piétons affichés (1 = densité des données ; moins au réglage bas).</summary>
         public float trafficScale = 1f;
+        /// <summary>
+        /// Ombres du trafic et des piétons (idée n° 20) : 0 aucune, 1 seulement la caisse des véhicules et le corps des
+        /// passants, 2 toutes les pièces. Les petites pièces (plaques, roues, feux) coûtent cher pour rien.
+        /// </summary>
+        public int trafficShadows = 1;
+    }
+
+    /// <summary>Ombres des pièces du trafic selon le niveau (idée n° 20).</summary>
+    public static class TrafficShadows
+    {
+        public const int None = 0;
+        public const int Bodies = 1;
+        public const int All = 2;
+
+        /// <summary>Cette pièce projette-t-elle une ombre ? <paramref name="body"/> : caisse d'un véhicule, corps d'un passant.</summary>
+        public static bool Casts(int mode, bool body) => mode >= All || (mode == Bodies && body);
     }
 
     /// <summary>Réglages de qualité (données : Assets/Resources/Data/quality.json).</summary>
@@ -40,9 +56,9 @@ namespace TaxiKmer.Core.Quality
         {
             return new[]
             {
-                new QualityLevel { name = "Bas", targetFrameRate = 30, drawDistance = 300f, fogStart = 100f, fogEnd = 300f, trafficScale = 0.6f },
-                new QualityLevel { name = "Moyen", targetFrameRate = 30, drawDistance = 450f, fogStart = 150f, fogEnd = 450f },
-                new QualityLevel { name = "Haut", targetFrameRate = 60, drawDistance = 600f, fogStart = 150f, fogEnd = 600f },
+                new QualityLevel { name = "Bas", targetFrameRate = 30, drawDistance = 300f, fogStart = 100f, fogEnd = 300f, trafficScale = 0.6f, trafficShadows = TrafficShadows.None },
+                new QualityLevel { name = "Moyen", targetFrameRate = 30, drawDistance = 450f, fogStart = 150f, fogEnd = 450f, trafficShadows = TrafficShadows.None },
+                new QualityLevel { name = "Haut", targetFrameRate = 60, drawDistance = 600f, fogStart = 150f, fogEnd = 600f, trafficShadows = TrafficShadows.Bodies },
             };
         }
 
