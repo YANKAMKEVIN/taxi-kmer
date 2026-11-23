@@ -19,6 +19,8 @@ namespace TaxiKmer.Core.World
         public RouteData route = new RouteData();
         /// <summary>Trajectoires du trafic, une par sens (tools/osm/osm_traffic.py) ; vides dans un monde plus ancien.</summary>
         public TrafficPathsData traffic = new TrafficPathsData();
+        /// <summary>Relief (idée n° 8, tools/osm/osm_elevation.py) ; vide = monde plat.</summary>
+        public TerrainGrid terrain = new TerrainGrid();
     }
 
     [Serializable]
@@ -117,5 +119,49 @@ namespace TaxiKmer.Core.World
     {
         public int lengthMeters;
         public float[] xz = Array.Empty<float>();
+    }
+
+    /// <summary>
+    /// Grille d'altitudes du monde (idée n° 8) : Copernicus DEM GLO-30, en mètres relatifs à l'origine du monde,
+    /// ligne par ligne depuis (originX, originZ) vers +x puis +z. Vide (width = 0) : monde plat.
+    /// </summary>
+    [Serializable]
+    public class TerrainGrid
+    {
+        public string attribution = "";
+        public float originX;
+        public float originZ;
+        public float cellMeters = 30f;
+        public int width;
+        public int height;
+        public float baseAltitude;
+        public float[] heights = Array.Empty<float>();
+
+        public bool HasData => width >= 2 && height >= 2 && heights != null && heights.Length == width * height;
+
+        /// <summary>Altitude (m, relative à l'origine) au point x, z, interpolée ; 0 sans relief, bornée au bord de la grille.</summary>
+        public float HeightAt(float x, float z)
+        {
+            if (!HasData) return 0f;
+            var fx = Math.Max(0f, Math.Min(width - 1.001f, (x - originX) / cellMeters));
+            var fz = Math.Max(0f, Math.Min(height - 1.001f, (z - originZ) / cellMeters));
+            int i = (int)fx, j = (int)fz;
+            float tx = fx - i, tz = fz - j;
+            float a = heights[j * width + i], b = heights[j * width + i + 1];
+            float c = heights[(j + 1) * width + i], d = heights[(j + 1) * width + i + 1];
+            return (a * (1 - tx) + b * tx) * (1 - tz) + (c * (1 - tx) + d * tx) * tz;
+        }
+
+        /// <summary>Pente (en %, positive en montée) le long de la polyligne au point <paramref name="along"/>, mesurée sur ± <paramref name="span"/> m.</summary>
+        public float GradePercent(float[] xz, float[] cumulative, float along, float span = 30f)
+        {
+            if (!HasData || cumulative == null || cumulative.Length < 2) return 0f;
+            var total = cumulative[cumulative.Length - 1];
+            float a = Math.Max(0f, along - span), b = Math.Min(total, along + span);
+            if (b - a < 1f) return 0f;
+            WorldGeometry.SampleAlong(xz, cumulative, a, out var ax, out var az, out _, out _);
+            WorldGeometry.SampleAlong(xz, cumulative, b, out var bx, out var bz, out _, out _);
+            return (HeightAt(bx, bz) - HeightAt(ax, az)) / (b - a) * 100f;
+        }
     }
 }

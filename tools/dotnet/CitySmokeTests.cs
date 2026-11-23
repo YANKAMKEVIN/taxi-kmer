@@ -134,5 +134,22 @@ namespace TaxiKmer.Core.DotnetTests
             Assert.LessOrEqual(p.LengthMeters, length * 1.05f);
             Assert.Greater(p.LengthMeters, length * 0.5f);
         }
+
+        [Test]
+        public void Terrain_RealWorld_HasYaoundeHills()
+        {
+            // Idée n° 8 : relief Copernicus GLO-30 (tools/osm/osm_elevation.py), altitudes relatives à l'origine.
+            var world = Load<WorldData>("world_messassi_etoudi.json");
+            var t = world.terrain;
+            Assert.IsTrue(t.HasData);
+            Assert.That(t.baseAltitude, Is.InRange(600f, 900f), "Yaoundé est à 700-800 m");
+            StringAssert.Contains("Copernicus", t.attribution);
+            Assert.AreEqual(0f, t.HeightAt(0f, 0f), 1f, "0 à l'origine");
+            var xz = world.route.xz;
+            var cum = WorldGeometry.CumulativeLengths(xz);
+            var maxGrade = 0f;
+            for (var d = 0f; d < cum[cum.Length - 1]; d += 25f) maxGrade = Math.Max(maxGrade, Math.Abs(t.GradePercent(xz, cum, d)));
+            Assert.That(maxGrade, Is.InRange(1f, 25f), "des montées, mais une route carrossable");
+        }
     }
 }

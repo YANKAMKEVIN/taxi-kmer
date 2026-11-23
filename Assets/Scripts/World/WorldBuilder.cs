@@ -26,8 +26,14 @@ namespace TaxiKmer.World
         [Tooltip("Lampadaires doubles sur le muret, tous les … m.")]
         public float lampSpacing = 38f;
         public float lampHeight = 10f;
+        [Tooltip("Relief réel (idée n° 8, world.terrain) : routes, bâtiments et sol suivent les collines. Coupé tant que " +
+                 "le trafic, les piétons et les clients sont posés à y = 0 (à vérifier dans Unity avant de l'activer).")]
+        public bool applyTerrain;
 
         public WorldData Data { get; private set; }
+
+        /// <summary>Altitude du sol au point x, z (0 si le relief est coupé ou absent).</summary>
+        public float HeightAt(float x, float z) => applyTerrain && Data != null && Data.terrain != null ? Data.terrain.HeightAt(x, z) : 0f;
         /// <summary>Groupe des têtes de lampadaires (allumées la nuit par le cycle jour / nuit).</summary>
         public Transform LampHeads { get; private set; }
 
@@ -93,6 +99,9 @@ namespace TaxiKmer.World
                 }
 
             var root = transform;
+            if (applyTerrain && data.terrain != null && data.terrain.HasData)
+                foreach (var set in new[] { roads, mainRoads, buildings, medians, lamps, lampHeads })
+                    foreach (var mesh in set.Values) Lift(mesh, data.terrain);
             Emit(root, "Routes", roads, roadMaterial, false);
             Emit(root, "Murets centraux", medians, buildingMaterial, true);
             Emit(root, "Lampadaires", lamps, buildingMaterial, false);
@@ -101,6 +110,11 @@ namespace TaxiKmer.World
             Emit(root, "Grands axes", mainRoads, mainRoadMaterial != null ? mainRoadMaterial : roadMaterial, false);
             Emit(root, "Bâtiments", buildings, buildingMaterial, buildingColliders);
 
+            if (applyTerrain && data.terrain != null && data.terrain.HasData)
+            {
+                BuildTerrainGround(root, data.terrain);
+                return;
+            }
             var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
             ground.name = "Sol";
             ground.transform.SetParent(root, false);
@@ -112,6 +126,46 @@ namespace TaxiKmer.World
 
             Debug.Log($"[TaxiKmer] Monde construit : {data.roads.Length} routes, {data.buildings.Length} bâtiments, " +
                       $"{roads.Count + mainRoads.Count + buildings.Count} blocs de maillage.");
+        }
+
+        /// <summary>Monte chaque sommet à l'altitude du sol sous lui (idée n° 8).</summary>
+        private static void Lift(MeshData mesh, TerrainGrid terrain)
+        {
+            for (var i = 0; i < mesh.Vertices.Count; i++)
+            {
+                var v = mesh.Vertices[i];
+                v.Y += terrain.HeightAt(v.X, v.Z);
+                mesh.Vertices[i] = v;
+            }
+        }
+
+        /// <summary>Sol en relief : une grille de la taille du MNT, avec collider (le taxi roule dessus).</summary>
+        private void BuildTerrainGround(Transform root, TerrainGrid t)
+        {
+            var verts = new Vector3[t.width * t.height];
+            for (var j = 0; j < t.height; j++)
+            for (var i = 0; i < t.width; i++)
+                verts[j * t.width + i] = new Vector3(t.originX + i * t.cellMeters, t.heights[j * t.width + i] - 0.02f, t.originZ + j * t.cellMeters);
+            var tris = new int[(t.width - 1) * (t.height - 1) * 6];
+            var k = 0;
+            for (var j = 0; j < t.height - 1; j++)
+            for (var i = 0; i < t.width - 1; i++)
+            {
+                var a = j * t.width + i;
+                tris[k++] = a; tris[k++] = a + t.width; tris[k++] = a + 1;
+                tris[k++] = a + 1; tris[k++] = a + t.width; tris[k++] = a + t.width + 1;
+            }
+            var mesh = new Mesh { name = "Sol en relief", indexFormat = verts.Length > 65000 ? IndexFormat.UInt32 : IndexFormat.UInt16 };
+            mesh.vertices = verts;
+            mesh.triangles = tris;
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            var go = new GameObject("Sol");
+            go.transform.SetParent(root, false);
+            go.isStatic = true;
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            go.AddComponent<MeshRenderer>().sharedMaterial = groundMaterial;
+            go.AddComponent<MeshCollider>().sharedMesh = mesh;
         }
 
         /// <summary>Lampadaire double tous les <see cref="lampSpacing"/> m : mât au milieu du muret, deux bras vers les chaussées.</summary>
