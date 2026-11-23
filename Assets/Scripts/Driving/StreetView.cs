@@ -90,6 +90,8 @@ namespace TaxiKmer.Driving
         // Pluie visible (rain.json, idée n° 12), créée seulement avec la route (road.json).
         private RainView _rain;
         private TrafficView _trafficView;
+        // Petits objectifs du jour (goals.json, idée n° 25).
+        private DailyGoals _goals;
         // Vendeurs ambulants aux feux (vendors.json, idée n° 24).
         private StreetVendors _vendors;
         private readonly List<(int id, float along)> _lightAlongs = new List<(int, float)>();
@@ -280,6 +282,7 @@ namespace TaxiKmer.Driving
                 Time.timeScale = 0f; // rien ne bouge tant que le monde se construit
             }
             else OnWorldReady();
+            _goals = new DailyGoals(Load("Data/goals", new DailyGoalsConfig()), Save.Career.DayNumber, 0);
             var vendors = Load("Data/vendors", new VendorsConfig());
             if (vendors.enabled)
             {
@@ -387,7 +390,7 @@ namespace TaxiKmer.Driving
             // Le bilan passe devant tout (l'écran titre ne reste pas affiché par-dessus).
             var pending = _menu.Screen == MenuScreen.Pause && !Street.DayFinished ? CurrentPendingChoices() : default; // seulement en pause (projection du taxi)
             ApplyMenu(_menuView.Update(Street.DayFinished ? MenuScreen.None : _menu.Screen, _settings, shift.Cabin.PassengerCount,
-                _police != null ? _police.Police.Papers.Summary(_police.Police.Day) : "", pending), pending);
+                PauseNote(), pending), pending);
             if (controls.PauseTriggered && !Street.DayFinished && _menu.Pause()) SetTimeStopped(true);
             controls.Locked = _menu.Frozen || _summaryView != null || (_police != null && _police.Active);
 
@@ -502,6 +505,7 @@ namespace TaxiKmer.Driving
             _strip.Update(Street, state.Along, !Street.DayFinished);
             if (_miniMap != null) UpdateMiniMap();
             if (_vendors != null && !_menu.Frozen && !Street.DayFinished) UpdateVendor(dt, state);
+            if (_goals != null && !Street.DayFinished) UpdateGoals();
             if (_talk?.Director.Stories != null && _talk.Director.Stories.Changed)
             {
                 Save.Data.career.stories = _talk.Director.Stories.Save(); // écrit avec la prochaine sauvegarde
@@ -670,6 +674,7 @@ namespace TaxiKmer.Driving
 
         private void OnVehicleHit(int vehicleId)
         {
+            _goals?.Crash();
             ChaseCam()?.CrashShake(); // idée n° 16
             if (_road == null || Street == null || Street.DayFinished || City == null) return;
             foreach (var v in City.Traffic.Vehicles)
@@ -711,6 +716,7 @@ namespace TaxiKmer.Driving
             {
                 case StreetActionKind.Drop:
                     if (outcome.Paid > 0) StartPaymentPop(outcome.Paid);
+                    if (outcome.Paid > 0) _goals?.RidePaid(Street.Shift.Clock.GameMinutes);
                     _sounds.PlayDoor();
                     if (outcome.Paid > 0)
                     {
@@ -764,6 +770,27 @@ namespace TaxiKmer.Driving
         }
 
         /// <summary>Flashs d'information : pluie, contrôles volants, heures de pointe, jour de marché (radio.json → flashes).</summary>
+        /// <summary>Ligne sous le titre de la pause : papiers (jalon 4) et objectifs du jour (idée n° 25).</summary>
+        private string PauseNote()
+        {
+            var papers = _police != null ? _police.Police.Papers.Summary(_police.Police.Day) : "";
+            var goals = _goals != null ? _goals.Summary() : "";
+            return papers.Length > 0 && goals.Length > 0 ? papers + "\n" + goals : papers + goals;
+        }
+
+        /// <summary>Objectifs du jour (idée n° 25) : suivis à chaque image depuis le grand livre de la journée.</summary>
+        private void UpdateGoals()
+        {
+            var ledger = Street.Shift.Ledger;
+            var police = 0;
+            foreach (var e in ledger.Expenses) if (e.Label == Street.PoliceExpenseLabel) police += e.Amount;
+            _goals.PolicePaid(police);
+            _goals.Revenue(ledger.Revenue);
+            _goals.Passengers(Street.Shift.Cabin.PassengerCount);
+            var done = _goals.TakeJustDone();
+            if (done != null) Toast("Objectif réussi : " + done.Label, 5f);
+        }
+
         /// <summary>Vendeur ambulant (idée n° 24) : il vient à la fenêtre du chauffeur au feu ; un passager peut acheter et en parler.</summary>
         private void UpdateVendor(float dt, TaxiOnRoute state)
         {
@@ -1046,10 +1073,14 @@ namespace TaxiKmer.Driving
             foreach (var p in _pops) Destroy(p.text.gameObject);
             _pops.Clear();
             if (_road != null) Save.Data.career.vehicleDamage = _road.Road.Car.Damage; // les dégâts passent d'un jour à l'autre
+            _goals?.EndDay();
+            if (_goals != null && _goals.Reward > 0) Save.Career.AddBonus(_goals.Reward); // prime, si Kevin l'active
             var closure = Save.CloseDay();
             _summaryView = gameObject.AddComponent<DaySummaryView>();
             var reputation = Street.Reputation != null && Street.Reputation.Visible
                 ? Core.Career.DriverReputation.SummaryLine(Street.Reputation.Config, Street.Summary.Reputation, Street.Summary.ReputationChange) : "";
+            var goals = _goals != null ? _goals.Summary() : "";
+            if (goals.Length > 0) reputation = reputation.Length > 0 ? reputation + "\n" + goals.Replace("\n", " · ") : goals.Replace("\n", " · ");
             _summaryView.Show(Street.Summary, closure, Street.Shift.Clock.Display, controls.Font, Today.Name, reputation);
             _summaryView.NewCareerRequested += Save.StartNewCareer;
         }

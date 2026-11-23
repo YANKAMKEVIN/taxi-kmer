@@ -1,0 +1,54 @@
+{
+    "_note": "Petits objectifs du jour (idée n° 25, proposés par Claude) : minPerDay à maxPerDay défis tirés le matin (même jour = même tirage) parmi goals. kind : courses-avant (count courses payées avant beforeTime), zero-controle-paye, recette (amount FCFA), zero-accrochage, taxi-plein (count passagers à bord). reward = prime proposée (FCFA) ; rewardsEnabled = false tant que Kevin n'a pas tranché les récompenses (pas d'effet sur l'équilibrage).",
+    "enabled": true,
+    "minPerDay": 1,
+    "maxPerDay": 3,
+    "rewardsEnabled": false,
+    "goals": [
+        {
+            "id": "matinal",
+            "kind": "courses-avant",
+            "label": "Déposer {n} passagers avant {heure}",
+            "count": 3,
+            "beforeTime": "08:00",
+            "amount": 0,
+            "reward": 200
+        },
+        {
+            "id": "honnete",
+            "kind": "zero-controle-paye",
+            "label": "Ne rien payer aux contrôles",
+            "count": 0,
+            "beforeTime": "",
+            "amount": 0,
+            "reward": 200
+        },
+        {
+            "id": "bonne-recette",
+            "kind": "recette",
+            "label": "Faire {montant} de recette",
+            "count": 0,
+            "beforeTime": "",
+            "amount": 12000,
+            "reward": 300
+        },
+        {
+            "id": "prudent",
+            "kind": "zero-accrochage",
+            "label": "Aucun accrochage de la journée",
+            "count": 0,
+            "beforeTime": "",
+            "amount": 0,
+            "reward": 200
+        },
+        {
+            "id": "plein",
+            "kind": "taxi-plein",
+            "label": "Rouler avec {n} passagers à bord",
+            "count": 5,
+            "beforeTime": "",
+            "amount": 0,
+            "reward": 200
+        }
+    ]
+}

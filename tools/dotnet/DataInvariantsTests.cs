@@ -71,6 +71,7 @@ namespace TaxiKmer.Core.DotnetTests
             ["city_events.json"] = typeof(TaxiKmer.Core.Day.CityEventsConfig),
             ["buildings.json"] = typeof(TaxiKmer.Core.World.BuildingLookConfig),
             ["vendors.json"] = typeof(TaxiKmer.Core.Traffic.VendorsConfig),
+            ["goals.json"] = typeof(TaxiKmer.Core.Day.DailyGoalsConfig),
         };
 
         [Test]

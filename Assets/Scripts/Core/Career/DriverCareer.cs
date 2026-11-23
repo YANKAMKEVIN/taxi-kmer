@@ -100,6 +100,13 @@ namespace TaxiKmer.Core.Career
             Savings -= amount;
         }
 
+        /// <summary>Prime des objectifs du jour (idée n° 25, si Kevin l'active) : ajoutée à l'épargne.</summary>
+        public void AddBonus(int amount)
+        {
+            if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            Savings += amount;
+        }
+
         /// <summary>Versements manqués dans la fenêtre qui se termine au jour <paramref name="day"/>.</summary>
         public int MissesInWindow(int day)
         {

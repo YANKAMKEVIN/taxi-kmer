@@ -118,6 +118,15 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void Goals_MatchDefaults_KnownKinds()
+        {
+            var d = Load<TaxiKmer.Core.Day.DailyGoalsConfig>("goals.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Day.DailyGoalsConfig(), Opts), JsonSerializer.Serialize(d, Opts));
+            foreach (var g in d.goals) CollectionAssert.Contains(TaxiKmer.Core.Day.GoalKinds.All, g.kind, g.id);
+            Assert.IsFalse(d.rewardsEnabled, "Récompenses à trancher par Kevin");
+        }
+
+        [Test]
         public void Quality_MatchesDefaults()
         {
             var q = Load<TaxiKmer.Core.Quality.QualityConfig>("quality.json");
