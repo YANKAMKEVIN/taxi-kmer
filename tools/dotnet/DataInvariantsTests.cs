@@ -341,7 +341,7 @@ namespace TaxiKmer.Core.DotnetTests
                 CollectionAssert.Contains(TaxiKmer.Core.Talk.TalkTriggers.All, l.trigger, l.id);
                 Assert.LessOrEqual(l.text.Length, d.maxChars, $"{l.id} : trop long pour être lu en conduisant");
                 Assert.IsTrue(string.IsNullOrEmpty(l.character) || characters.Contains(l.character), $"{l.id} : personnage inconnu");
-                Assert.IsTrue(l.statut == "proposée" || l.statut == "validée", $"{l.id} : statut « proposée » tant que Kevin n'a pas validé");
+                Assert.IsTrue(l.statut == "proposée" || l.statut == "validée" || l.statut == "à revoir", $"{l.id} : statut « proposée » tant que Kevin n'a pas validé (page tools/texts)");
                 Assert.IsTrue(l.traduction == "" || l.traduction == "à traduire", l.id);
                 Assert.IsTrue(string.IsNullOrEmpty(l.voice) || voices.Contains(l.voice), $"{l.id} : son inconnu");
                 Assert.IsTrue(TaxiKmer.Core.Talk.TalkRegisters.All.Contains(l.register) || l.register == "", $"{l.id} : registre inconnu « {l.register} »");
@@ -515,7 +515,7 @@ namespace TaxiKmer.Core.DotnetTests
                     Assert.GreaterOrEqual(p.seconds, 0f);
                     if (p.text.Length > 0)
                     {
-                        Assert.AreEqual("proposée", p.statut, $"{s.id}/{p.id}");
+                        CollectionAssert.Contains(new[] { "proposée", "validée", "à revoir" }, p.statut, $"{s.id}/{p.id}");
                         CollectionAssert.Contains(TaxiKmer.Core.Talk.TalkRegisters.All, p.register, $"{s.id}/{p.id}");
                         Assert.IsTrue(p.traduction == "" || p.traduction == "à traduire", p.id);
                         Assert.LessOrEqual(p.text.Length, 110, $"{s.id}/{p.id} : lisible en conduisant");
@@ -538,7 +538,7 @@ namespace TaxiKmer.Core.DotnetTests
             foreach (var f in r.flashes)
             {
                 CollectionAssert.Contains(TaxiKmer.Core.Radio.RadioEvents.All, f.@event, f.id);
-                Assert.AreEqual("proposée", f.statut, f.id);
+                CollectionAssert.Contains(new[] { "proposée", "validée", "à revoir" }, f.statut, f.id);
                 Assert.IsFalse(TaxiKmer.Core.Police.PoliceTexts.IsCrude(f.text), $"{f.id} : ton réaliste");
             }
             // Aucun fichier son ni musique dans le dépôt.

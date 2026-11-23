@@ -14,5 +14,6 @@ jobs:
           dotnet-version: "8.0.x"
       - run: tools/test_core.sh
       - run: python3 -m unittest discover -s tools/osm -p "test_*.py"
+      - run: python3 -m unittest discover -s tools/texts -p "test_*.py"
       - name: Compilation du code Unity (références UnityEngine 2021.3, hors Unity)
         run: tools/check_unity_compile.sh
