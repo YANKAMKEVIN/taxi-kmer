@@ -90,6 +90,10 @@ namespace TaxiKmer.Driving
         // Pluie visible (rain.json, idée n° 12), créée seulement avec la route (road.json).
         private RainView _rain;
         private TrafficView _trafficView;
+        // Construction progressive du monde (idée n° 21) : écran de chargement, puis les vues qui ont besoin des maillages.
+        private LoadingView _loading;
+        private DayLightConfig _daylightConfig;
+        private Core.Road.RainLookConfig _rainConfig;
         // Dégâts visibles sur le taxi (idée n° 17).
         private DamageView _damage;
         // Événement de ville du jour (city_events.json, idée n° 14) et barrières du tronçon fermé.
@@ -236,8 +240,7 @@ namespace TaxiKmer.Driving
                 }
                 _ambience = new AmbienceView(taxi.gameObject, ambience, markets.ToArray(), actualSeed + 67);
             }
-            var daylight = Load("Data/daylight", new DayLightConfig());
-            if (daylight.enabled) _dayLight = new DayLightView(daylight, world.LampHeads, taxi.gameObject);
+            _daylightConfig = Load("Data/daylight", new DayLightConfig());
             var police = Load("Data/police", new Core.Police.PoliceConfig());
             var dayCfg = Load("Data/day", new DayConfig());
             var dialogues = Load("Data/dialogues", new Core.Talk.DialogueConfig());
@@ -253,8 +256,7 @@ namespace TaxiKmer.Driving
             if (road.enabled)
                 _road = new RoadView(controls.Overlay, controls.Font, road, _cum[_cum.Length - 1], Save.Data.career.vehicleDamage,
                     dayCfg.startHour * 60, dayCfg.endHour * 60, Today.Month, actualSeed + 61);
-            var rainLook = Load("Data/rain", new Core.Road.RainLookConfig());
-            if (_road != null && rainLook.enabled) _rain = new RainView(rainLook, world.transform, taxi.gameObject);
+            _rainConfig = Load("Data/rain", new Core.Road.RainLookConfig());
             if (_road != null) _damage = new DamageView(road, taxi.gameObject);
             if (police.enabled)
                 _police = new PoliceView(controls.Overlay, controls.Font, police, Save.StartDayPapers(police, _paperNews), Save.Career.DayNumber, _cum[_cum.Length - 1],
@@ -268,6 +270,12 @@ namespace TaxiKmer.Driving
             Haptics.Enabled = _settings.Vibration;
             _strip = new RouteStripView(controls.Overlay, controls.Font, stops.stops, _cum[_cum.Length - 1]);
             _cabinView = new CabinPlanView(controls.Overlay, controls.Font, stops.stops);
+            if (!world.Ready)
+            {
+                _loading = new LoadingView(transform, controls.Font);
+                Time.timeScale = 0f; // rien ne bouge tant que le monde se construit
+            }
+            else OnWorldReady();
             var miniMap = Load("Data/minimap", new MiniMapConfig());
             if (miniMap.enabled) _miniMap = new MiniMapView(controls.Overlay, miniMap, world.Data);
             var phone = Load("Data/phone", new Core.Phone.PhoneConfig());
@@ -337,8 +345,27 @@ namespace TaxiKmer.Driving
             };
         }
 
+        /// <summary>Le monde est construit : vues qui ont besoin de ses maillages (lampadaires, chaussées).</summary>
+        private void OnWorldReady()
+        {
+            if (_daylightConfig != null && _daylightConfig.enabled) _dayLight = new DayLightView(_daylightConfig, world.LampHeads, taxi.gameObject);
+            if (_road != null && _rainConfig != null && _rainConfig.enabled) _rain = new RainView(_rainConfig, world.transform, taxi.gameObject);
+        }
+
         private void Update()
         {
+            if (_loading != null)
+            {
+                if (!world.Ready)
+                {
+                    _loading.Update(world.Progress);
+                    return;
+                }
+                _loading.Close();
+                _loading = null;
+                Time.timeScale = 1f;
+                OnWorldReady();
+            }
             var dt = Time.deltaTime;
             var shift = Street.Shift;
 
@@ -542,7 +569,11 @@ namespace TaxiKmer.Driving
             if (paused && Street != null && _menu != null && !Street.DayFinished && _menu.Pause()) SetTimeStopped(true);
         }
 
-        private void OnDestroy() => SetTimeStopped(false);
+        private void OnDestroy()
+        {
+            SetTimeStopped(false);
+            if (_loading != null) Time.timeScale = 1f; // scène quittée pendant le chargement
+        }
 
         /// <summary>Tutoriel de la première journée : consigne sous le bouton contextuel, bouton concerné mis en avant.</summary>
         private void UpdateTutorial(float dt, TaxiOnRoute state)

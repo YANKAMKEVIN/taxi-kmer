@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using TaxiKmer.Core.World;
 using UnityEngine;
@@ -29,8 +30,17 @@ namespace TaxiKmer.World
         [Tooltip("Relief réel (idée n° 8, world.terrain) : routes, bâtiments et sol suivent les collines. Coupé tant que " +
                  "le trafic, les piétons et les clients sont posés à y = 0 (à vérifier dans Unity avant de l'activer).")]
         public bool applyTerrain;
+        [Tooltip("Idée n° 21 : construire le monde sur plusieurs images (écran de chargement) au lieu de figer le lancement.")]
+        public bool progressive = true;
+        [Tooltip("Temps de construction par image (ms) en mode progressif.")]
+        public float frameBudgetMs = 12f;
 
         public WorldData Data { get; private set; }
+        /// <summary>Le monde est entièrement construit (idée n° 21 : construction sur plusieurs images).</summary>
+        public bool Ready { get; private set; }
+        /// <summary>Avancement de la construction (0 à 1), pour l'écran de chargement.</summary>
+        public float Progress { get; private set; }
+        private bool _building;
 
         /// <summary>Altitude du sol au point x, z (0 si le relief est coupé ou absent).</summary>
         public float HeightAt(float x, float z) => applyTerrain && Data != null && Data.terrain != null ? Data.terrain.HeightAt(x, z) : 0f;
@@ -42,31 +52,69 @@ namespace TaxiKmer.World
             "trunk", "primary", "secondary", "trunk_link", "primary_link", "secondary_link",
         };
 
-        private void Awake() => BuildNow();
+        private void Awake()
+        {
+            // Idée n° 21 : en jeu, le monde se construit sur plusieurs images derrière un écran de chargement ; les
+            // données sont lues tout de suite (les autres composants en ont besoin dès leur Start).
+            if (!progressive || !Application.isPlaying) { BuildNow(); return; }
+            if (LoadData()) StartCoroutine(BuildOverFrames());
+        }
 
-        /// <summary>Charge et construit le monde (aussi appelé par l'éditeur pour les captures de contrôle).</summary>
+        /// <summary>Charge et construit le monde d'un coup (aussi appelé par l'éditeur pour les captures de contrôle).</summary>
         public void BuildNow()
         {
-            if (Data != null) return;
+            if (Ready || _building) return;
+            if (Data == null && !LoadData()) return;
+            _building = true;
+            var steps = Build(Data);
+            while (steps.MoveNext()) { }
+        }
+
+        private bool LoadData()
+        {
+            if (Data != null) return true;
             var text = Resources.Load<TextAsset>(worldResource);
             if (text == null)
             {
                 Debug.LogError($"[TaxiKmer] Monde introuvable : Resources/{worldResource}");
-                return;
+                return false;
             }
             Data = JsonUtility.FromJson<WorldData>(text.text);
-            Build(Data);
+            return true;
         }
 
-        private void Build(WorldData data)
+        /// <summary>Exécute les étapes de construction tant que l'image a du temps (frameBudgetMs), puis rend la main.</summary>
+        private IEnumerator BuildOverFrames()
+        {
+            _building = true;
+            var steps = Build(Data);
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            while (steps.MoveNext())
+            {
+                if (clock.Elapsed.TotalMilliseconds < frameBudgetMs) continue;
+                yield return null;
+                clock.Restart();
+            }
+        }
+
+        /// <summary>Construction du monde en petites étapes (chaque « yield » est un point où l'on peut passer à l'image suivante).</summary>
+        private IEnumerator Build(WorldData data)
         {
             var roads = new Dictionary<Vector2Int, MeshData>();
             var mainRoads = new Dictionary<Vector2Int, MeshData>();
             var buildings = new Dictionary<Vector2Int, MeshData>();
             float minX = float.MaxValue, minZ = float.MaxValue, maxX = float.MinValue, maxZ = float.MinValue;
+            var startX = data.route?.xz != null && data.route.xz.Length >= 2 ? data.route.xz[0] : 0f;
+            var startZ = data.route?.xz != null && data.route.xz.Length >= 2 ? data.route.xz[1] : 0f;
+            var work = new WorldBuildProgress(data.roads.Length + data.buildings.Length);
+            var root = transform;
+            var terrain = applyTerrain && data.terrain != null && data.terrain.HasData ? data.terrain : null;
 
             foreach (var r in data.roads)
             {
+                work.Done(1);
+                Progress = work.Fraction;
+                yield return null;
                 if (r.xz.Length < 4) continue;
                 var main = MainRoads.Contains(r.highway);
                 var target = Get(main ? mainRoads : roads, Cell(r.xz[0], r.xz[1]));
@@ -79,8 +127,26 @@ namespace TaxiKmer.World
                 }
             }
 
+            // Le sol d'abord : le taxi doit pouvoir s'y poser pendant que le reste se construit.
+            if (terrain != null) BuildTerrainGround(root, terrain);
+            else
+            {
+                var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
+                ground.name = "Sol";
+                ground.transform.SetParent(root, false);
+                const float margin = 300f;
+                ground.transform.position = new Vector3((minX + maxX) / 2f, 0f, (minZ + maxZ) / 2f);
+                // Un Plane Unity mesure 10 × 10 m.
+                ground.transform.localScale = new Vector3((maxX - minX + 2 * margin) / 10f, 1f, (maxZ - minZ + 2 * margin) / 10f);
+                if (groundMaterial != null) ground.GetComponent<MeshRenderer>().sharedMaterial = groundMaterial;
+            }
+            yield return null;
+
             foreach (var b in data.buildings)
             {
+                work.Done(1);
+                Progress = work.Fraction;
+                yield return null;
                 if (b.xz.Length < 6) continue;
                 var target = Get(buildings, Cell(b.xz[0], b.xz[1]));
                 WorldGeometry.AddBuilding(target, b.xz, Mathf.Max(1, b.levels) * WorldGeometry.LevelHeight);
@@ -97,33 +163,48 @@ namespace TaxiKmer.World
                     WorldGeometry.AddWallStrip(Get(medians, Cell(m.xz[0], m.xz[1])), m.xz, medianWidth, medianHeight);
                     AddLamps(lamps, lampHeads, m.xz);
                 }
+            yield return null;
 
-            var root = transform;
-            if (applyTerrain && data.terrain != null && data.terrain.HasData)
+            if (terrain != null)
                 foreach (var set in new[] { roads, mainRoads, buildings, medians, lamps, lampHeads })
-                    foreach (var mesh in set.Values) Lift(mesh, data.terrain);
-            Emit(root, "Routes", roads, roadMaterial, false);
-            Emit(root, "Murets centraux", medians, buildingMaterial, true);
-            Emit(root, "Lampadaires", lamps, buildingMaterial, false);
-            // Têtes de lampe à part : le cycle jour / nuit les allume (idée n° 3, DayLightView).
-            LampHeads = Emit(root, "Têtes de lampadaires", lampHeads, buildingMaterial, false);
-            Emit(root, "Grands axes", mainRoads, mainRoadMaterial != null ? mainRoadMaterial : roadMaterial, false);
-            Emit(root, "Bâtiments", buildings, buildingMaterial, buildingColliders);
+                    foreach (var mesh in set.Values) { Lift(mesh, terrain); yield return null; }
 
-            if (applyTerrain && data.terrain != null && data.terrain.HasData)
+            // Groupes créés tout de suite, cases remplies de la plus proche du départ à la plus lointaine.
+            var jobs = new List<(Transform group, Vector2Int cell, MeshData mesh, Material material, bool collider, string name)>();
+            void Group(string name, Dictionary<Vector2Int, MeshData> chunks, Material material, bool collider, out Transform group)
             {
-                BuildTerrainGround(root, data.terrain);
-                return;
+                group = new GameObject(name).transform;
+                group.SetParent(root, false);
+                foreach (var kv in chunks) jobs.Add((group, kv.Key, kv.Value, material, collider, name));
             }
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            ground.name = "Sol";
-            ground.transform.SetParent(root, false);
-            const float margin = 300f;
-            ground.transform.position = new Vector3((minX + maxX) / 2f, 0f, (minZ + maxZ) / 2f);
-            // Un Plane Unity mesure 10 × 10 m.
-            ground.transform.localScale = new Vector3((maxX - minX + 2 * margin) / 10f, 1f, (maxZ - minZ + 2 * margin) / 10f);
-            if (groundMaterial != null) ground.GetComponent<MeshRenderer>().sharedMaterial = groundMaterial;
+            Group("Routes", roads, roadMaterial, false, out _);
+            Group("Murets centraux", medians, buildingMaterial, true, out _);
+            Group("Lampadaires", lamps, buildingMaterial, false, out _);
+            // Têtes de lampe à part : le cycle jour / nuit les allume (idée n° 3, DayLightView).
+            Group("Têtes de lampadaires", lampHeads, buildingMaterial, false, out var heads);
+            LampHeads = heads;
+            Group("Grands axes", mainRoads, mainRoadMaterial != null ? mainRoadMaterial : roadMaterial, false, out _);
+            Group("Bâtiments", buildings, buildingMaterial, buildingColliders, out _);
 
+            var centers = new float[jobs.Count * 2];
+            for (var i = 0; i < jobs.Count; i++)
+            {
+                centers[2 * i] = (jobs[i].cell.x + 0.5f) * chunkSize;
+                centers[2 * i + 1] = (jobs[i].cell.y + 0.5f) * chunkSize;
+            }
+            var order = WorldBuildPlan.NearestFirst(centers, startX, startZ);
+            work.Add(jobs.Count);
+            foreach (var i in order)
+            {
+                var job = jobs[i];
+                EmitChunk(job.group, $"{job.name} {job.cell.x},{job.cell.y}", job.mesh, job.material, job.collider);
+                work.Done(1);
+                Progress = work.Fraction;
+                yield return null;
+            }
+
+            Ready = true;
+            Progress = 1f;
             Debug.Log($"[TaxiKmer] Monde construit : {data.roads.Length} routes, {data.buildings.Length} bâtiments, " +
                       $"{roads.Count + mainRoads.Count + buildings.Count} blocs de maillage.");
         }
@@ -198,38 +279,31 @@ namespace TaxiKmer.World
             return m;
         }
 
-        private static Transform Emit(Transform root, string name, Dictionary<Vector2Int, MeshData> chunks, Material material, bool collider)
+        private static void EmitChunk(Transform group, string name, MeshData data, Material material, bool collider)
         {
-            var group = new GameObject(name).transform;
-            group.SetParent(root, false);
-            foreach (var kv in chunks)
+            if (data.Vertices.Count == 0) return;
+            var mesh = new Mesh
             {
-                var data = kv.Value;
-                if (data.Vertices.Count == 0) continue;
-                var mesh = new Mesh
-                {
-                    name = $"{name} {kv.Key.x},{kv.Key.y}",
-                    indexFormat = data.Vertices.Count > 65000 ? IndexFormat.UInt32 : IndexFormat.UInt16,
-                };
-                var verts = new Vector3[data.Vertices.Count];
-                for (var i = 0; i < verts.Length; i++)
-                {
-                    var v = data.Vertices[i];
-                    verts[i] = new Vector3(v.X, v.Y, v.Z);
-                }
-                mesh.vertices = verts;
-                mesh.triangles = data.Triangles.ToArray();
-                mesh.RecalculateNormals();
-                mesh.RecalculateBounds();
-
-                var go = new GameObject(mesh.name);
-                go.transform.SetParent(group, false);
-                go.isStatic = true;
-                go.AddComponent<MeshFilter>().sharedMesh = mesh;
-                go.AddComponent<MeshRenderer>().sharedMaterial = material;
-                if (collider) go.AddComponent<MeshCollider>().sharedMesh = mesh;
+                name = name,
+                indexFormat = data.Vertices.Count > 65000 ? IndexFormat.UInt32 : IndexFormat.UInt16,
+            };
+            var verts = new Vector3[data.Vertices.Count];
+            for (var i = 0; i < verts.Length; i++)
+            {
+                var v = data.Vertices[i];
+                verts[i] = new Vector3(v.X, v.Y, v.Z);
             }
-            return group;
+            mesh.vertices = verts;
+            mesh.triangles = data.Triangles.ToArray();
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+
+            var go = new GameObject(mesh.name);
+            go.transform.SetParent(group, false);
+            go.isStatic = true;
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            go.AddComponent<MeshRenderer>().sharedMaterial = material;
+            if (collider) go.AddComponent<MeshCollider>().sharedMesh = mesh;
         }
     }
 }
