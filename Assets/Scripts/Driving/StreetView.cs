@@ -81,6 +81,9 @@ namespace TaxiKmer.Driving
         private Image _tutorialPanel;
         private Text _tutorialText;
         private RouteStripView _strip;
+        // Mini-carte GPS (minimap.json, idée n° 6) et ses repères de l'image en cours.
+        private MiniMapView _miniMap;
+        private readonly List<(float x, float z, Color color)> _mapMarkers = new List<(float, float, Color)>();
         private CabinPlanView _cabinView;
         private ShiftGaugesView _gauges;
         private GameMenu _menu;
@@ -244,6 +247,8 @@ namespace TaxiKmer.Driving
             Haptics.Enabled = _settings.Vibration;
             _strip = new RouteStripView(controls.Overlay, controls.Font, stops.stops, _cum[_cum.Length - 1]);
             _cabinView = new CabinPlanView(controls.Overlay, controls.Font, stops.stops);
+            var miniMap = Load("Data/minimap", new MiniMapConfig());
+            if (miniMap.enabled) _miniMap = new MiniMapView(controls.Overlay, miniMap, world.Data);
         }
 
         private static T Load<T>(string resource, T fallback)
@@ -419,6 +424,7 @@ namespace TaxiKmer.Driving
             SyncStopMarkers(state.Along);
             UpdateHud();
             _strip.Update(Street, state.Along, !Street.DayFinished);
+            if (_miniMap != null) UpdateMiniMap();
             _cabinView.Update(Street.Shift.Cabin, !Street.DayFinished);
         }
 
@@ -654,6 +660,32 @@ namespace TaxiKmer.Driving
         }
 
         /// <summary>Flashs d'information : pluie, contrôles volants, heures de pointe, jour de marché (radio.json → flashes).</summary>
+        /// <summary>Repères de la mini-carte : destinations des passagers, postes de police visibles, stations-service.</summary>
+        private void UpdateMiniMap()
+        {
+            _mapMarkers.Clear();
+            var seen = new HashSet<string>();
+            foreach (var c in Street.Shift.Cabin.Passengers)
+            {
+                if (!seen.Add(c.DestinationStopId)) continue;
+                var index = System.Array.FindIndex(_stopList, st => st.id == c.DestinationStopId);
+                if (index >= 0) AddMapMarker(_stopList[index].distanceAlongRouteMeters, StopPalette.For(index));
+            }
+            if (_police != null)
+                foreach (var post in _police.Police.Schedule.Posts)
+                    if (Core.Police.PoliceMarkers.Visible(post, Street.Shift.Clock.GameMinutes)) AddMapMarker(post.Along, new Color(0.2f, 0.4f, 1f));
+            if (_fuel.stations != null)
+                foreach (var station in _fuel.stations) AddMapMarker(station.distanceAlongRouteMeters, new Color(0.2f, 0.85f, 0.35f));
+            var forward = taxi.transform.forward;
+            _miniMap.Update(taxi.transform.position, forward, _mapMarkers, !Street.DayFinished && !_menu.Frozen);
+        }
+
+        private void AddMapMarker(float along, Color color)
+        {
+            WorldGeometry.SampleAlong(_xz, _cum, along, out var x, out var z, out _, out _);
+            _mapMarkers.Add((x, z, color));
+        }
+
         private void UpdateRadioNews()
         {
             if (Street.DayFinished) return;

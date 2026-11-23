@@ -29,6 +29,15 @@ namespace UnityEngine.UI
         public Type type { get; set; }
         public bool preserveAspect { get; set; }
     }
+    public class RawImage : MaskableGraphic
+    {
+        public Texture texture { get; set; }
+        public Rect uvRect { get; set; }
+    }
+    public class Mask : MonoBehaviour
+    {
+        public bool showMaskGraphic { get; set; }
+    }
     public class Shadow : MonoBehaviour
     {
         public Color effectColor { get; set; }

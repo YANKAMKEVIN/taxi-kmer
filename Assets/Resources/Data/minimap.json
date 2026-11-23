@@ -1,0 +1,11 @@
+{
+    "_note": "Mini-carte GPS ronde (idée n° 6, valeurs par défaut de Claude) : rayon de terrain montré (m), résolution de l'image des routes (m par pixel, relevée pour rester sous maxTexturePixels), placement en haut à droite sous le klaxon (fractions de la hauteur d'écran), carte qui tourne avec le taxi ou nord en haut.",
+    "enabled": true,
+    "radiusMeters": 220,
+    "metersPerPixel": 2,
+    "maxTexturePixels": 2048,
+    "side": 0.04,
+    "edge": 0.32,
+    "size": 0.24,
+    "rotateWithTaxi": true
+}

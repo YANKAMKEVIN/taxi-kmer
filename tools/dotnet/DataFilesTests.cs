@@ -66,6 +66,13 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void MiniMap_MatchesDefaults()
+        {
+            var d = Load<TaxiKmer.Core.Ux.MiniMapConfig>("minimap.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Ux.MiniMapConfig(), Opts), JsonSerializer.Serialize(d, Opts));
+        }
+
+        [Test]
         public void Quality_MatchesDefaults()
         {
             var q = Load<TaxiKmer.Core.Quality.QualityConfig>("quality.json");
