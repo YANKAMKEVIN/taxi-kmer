@@ -102,6 +102,15 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void Buildings_MatchDefaults()
+        {
+            var d = Load<TaxiKmer.Core.World.BuildingLookConfig>("buildings.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.World.BuildingLookConfig(), Opts), JsonSerializer.Serialize(d, Opts));
+            Assert.AreEqual(d.WallCount, d.wallWeights.Length);
+            Assert.AreEqual(d.RoofCount, d.roofWeights.Length);
+        }
+
+        [Test]
         public void Quality_MatchesDefaults()
         {
             var q = Load<TaxiKmer.Core.Quality.QualityConfig>("quality.json");

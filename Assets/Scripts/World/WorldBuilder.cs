@@ -103,6 +103,10 @@ namespace TaxiKmer.World
             var roads = new Dictionary<Vector2Int, MeshData>();
             var mainRoads = new Dictionary<Vector2Int, MeshData>();
             var buildings = new Dictionary<Vector2Int, MeshData>();
+            // Idée n° 23 : murs et toits par couleur (buildings.json) ; coupé : un seul matériau comme avant.
+            var look = LoadLook();
+            var walls = new Dictionary<int, Dictionary<Vector2Int, MeshData>>();
+            var roofs = new Dictionary<int, Dictionary<Vector2Int, MeshData>>();
             float minX = float.MaxValue, minZ = float.MaxValue, maxX = float.MinValue, maxZ = float.MinValue;
             var startX = data.route?.xz != null && data.route.xz.Length >= 2 ? data.route.xz[0] : 0f;
             var startZ = data.route?.xz != null && data.route.xz.Length >= 2 ? data.route.xz[1] : 0f;
@@ -148,8 +152,16 @@ namespace TaxiKmer.World
                 Progress = work.Fraction;
                 yield return null;
                 if (b.xz.Length < 6) continue;
-                var target = Get(buildings, Cell(b.xz[0], b.xz[1]));
-                WorldGeometry.AddBuilding(target, b.xz, Mathf.Max(1, b.levels) * WorldGeometry.LevelHeight);
+                var cell = Cell(b.xz[0], b.xz[1]);
+                var height = Mathf.Max(1, b.levels) * WorldGeometry.LevelHeight;
+                if (look == null)
+                {
+                    WorldGeometry.AddBuilding(Get(buildings, cell), b.xz, height);
+                    continue;
+                }
+                var wall = Get(Bucket(walls, BuildingLook.Wall(look, b.id)), cell);
+                var roof = Get(Bucket(roofs, BuildingLook.Roof(look, b.id, b.levels)), cell);
+                WorldGeometry.AddBuilding(wall, roof, b.xz, height);
             }
 
             // Murets centraux et lampadaires doubles (références photo de Kevin : RN1 en 2 × 2 voies).
@@ -166,8 +178,13 @@ namespace TaxiKmer.World
             yield return null;
 
             if (terrain != null)
-                foreach (var set in new[] { roads, mainRoads, buildings, medians, lamps, lampHeads })
+            {
+                var sets = new List<Dictionary<Vector2Int, MeshData>> { roads, mainRoads, buildings, medians, lamps, lampHeads };
+                sets.AddRange(walls.Values);
+                sets.AddRange(roofs.Values);
+                foreach (var set in sets)
                     foreach (var mesh in set.Values) { Lift(mesh, terrain); yield return null; }
+            }
 
             // Groupes créés tout de suite, cases remplies de la plus proche du départ à la plus lointaine.
             var jobs = new List<(Transform group, Vector2Int cell, MeshData mesh, Material material, bool collider, string name)>();
@@ -185,6 +202,10 @@ namespace TaxiKmer.World
             LampHeads = heads;
             Group("Grands axes", mainRoads, mainRoadMaterial != null ? mainRoadMaterial : roadMaterial, false, out _);
             Group("Bâtiments", buildings, buildingMaterial, buildingColliders, out _);
+            foreach (var kv in walls)
+                Group($"Bâtiments (murs {kv.Key})", kv.Value, Tinted(BuildingLook.Color(look.wallColors, kv.Key)), buildingColliders, out _);
+            foreach (var kv in roofs)
+                Group($"Bâtiments (toits {kv.Key})", kv.Value, Tinted(BuildingLook.Color(look.roofColors, kv.Key)), false, out _);
 
             var centers = new float[jobs.Count * 2];
             for (var i = 0; i < jobs.Count; i++)
@@ -268,6 +289,31 @@ namespace TaxiKmer.World
                     WorldGeometry.AddBox(Get(heads, Cell(x, z)), x + rx * side * 2.4f, lampHeight - 0.45f, z + rz * side * 2.4f, 0.25f, 0.15f, 0.6f, rx, rz);
                 }
             }
+        }
+
+        private static Dictionary<Vector2Int, MeshData> Bucket(Dictionary<int, Dictionary<Vector2Int, MeshData>> byColor, int color)
+        {
+            if (!byColor.TryGetValue(color, out var d)) byColor[color] = d = new Dictionary<Vector2Int, MeshData>();
+            return d;
+        }
+
+        /// <summary>Couleurs des bâtiments (idée n° 23) ; null si le fichier manque ou si elles sont coupées.</summary>
+        private static BuildingLookConfig LoadLook()
+        {
+            var text = Resources.Load<TextAsset>("Data/buildings");
+            var config = text != null ? JsonUtility.FromJson<BuildingLookConfig>(text.text) : null;
+            return config != null && config.enabled && config.WallCount > 0 && config.RoofCount > 0 ? config : null;
+        }
+
+        /// <summary>Copie du matériau des bâtiments dans une couleur.</summary>
+        private Material Tinted(float[] rgb)
+        {
+            if (buildingMaterial == null) return null;
+            var m = new Material(buildingMaterial) { name = $"Bâtiment {rgb[0]:0.00} {rgb[1]:0.00} {rgb[2]:0.00}" };
+            var color = new Color(rgb[0], rgb[1], rgb[2]);
+            m.SetColor("_BaseColor", color);
+            m.color = color;
+            return m;
         }
 
         private Vector2Int Cell(float x, float z) =>

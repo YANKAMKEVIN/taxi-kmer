@@ -128,7 +128,10 @@ namespace TaxiKmer.Core.World
         }
 
         /// <summary>Bloc : murs verticaux et toit plat, à partir de l'emprise (polygone fermé implicite).</summary>
-        public static void AddBuilding(MeshData mesh, float[] xz, float height)
+        public static void AddBuilding(MeshData mesh, float[] xz, float height) => AddBuilding(mesh, mesh, xz, height);
+
+        /// <summary>Bâtiment avec le toit dans un maillage à part (idée n° 23 : toits de tôle d'une autre couleur que les murs).</summary>
+        public static void AddBuilding(MeshData mesh, MeshData roofMesh, float[] xz, float height)
         {
             var n = xz.Length / 2;
             if (n < 3) return;
@@ -150,10 +153,10 @@ namespace TaxiKmer.Core.World
                 mesh.AddTriangle(a0, b1, a1, outward);
             }
 
-            var roofStart = mesh.Vertices.Count;
-            for (var i = 0; i < n; i++) mesh.AddVertex(new Vec3(xz[i * 2], height, xz[i * 2 + 1]));
+            var roofStart = roofMesh.Vertices.Count;
+            for (var i = 0; i < n; i++) roofMesh.AddVertex(new Vec3(xz[i * 2], height, xz[i * 2 + 1]));
             foreach (var t in Triangulate(xz))
-                mesh.AddTriangle(roofStart + t.A, roofStart + t.B, roofStart + t.C, Up);
+                roofMesh.AddTriangle(roofStart + t.A, roofStart + t.B, roofStart + t.C, Up);
         }
 
         /// <summary>Aire signée (formule du lacet) dans le plan x, z : positive dans le sens trigonométrique.</summary>

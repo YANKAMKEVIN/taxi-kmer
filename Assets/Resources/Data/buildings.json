@@ -1,0 +1,53 @@
+{
+    "_note": "Couleurs des bâtiments (idée n° 23, valeurs par défaut de Claude à régler à l'œil sur le Mac) : wallColors / roofColors = couleurs r, g, b (0..1) à la suite, tirées par bâtiment selon wallWeights / roofWeights (toujours la même pour un bâtiment) ; à partir de concreteRoofFromLevels niveaux, toit-terrasse en béton (dernière couleur de toit). Un atlas de façades CC0 (ambientCG) remplacera ensuite les couleurs unies.",
+    "enabled": true,
+    "wallColors": [
+        0.8,
+        0.62,
+        0.42,
+        0.88,
+        0.8,
+        0.66,
+        0.92,
+        0.91,
+        0.87,
+        0.72,
+        0.48,
+        0.36,
+        0.78,
+        0.84,
+        0.76,
+        0.86,
+        0.76,
+        0.52
+    ],
+    "wallWeights": [
+        3,
+        3,
+        2,
+        1.5,
+        0.75,
+        1
+    ],
+    "roofColors": [
+        0.7,
+        0.72,
+        0.74,
+        0.52,
+        0.54,
+        0.56,
+        0.55,
+        0.33,
+        0.22,
+        0.62,
+        0.62,
+        0.6
+    ],
+    "roofWeights": [
+        2,
+        3,
+        3,
+        0
+    ],
+    "concreteRoofFromLevels": 3
+}
