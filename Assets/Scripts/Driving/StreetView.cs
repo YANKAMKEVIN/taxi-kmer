@@ -85,6 +85,8 @@ namespace TaxiKmer.Driving
         private RouteStripView _strip;
         // Mini-carte GPS (minimap.json, idée n° 6) et ses repères de l'image en cours.
         private MiniMapView _miniMap;
+        // Téléphone du chauffeur (phone.json, idée n° 11).
+        private PhoneView _phone;
         private readonly List<(float x, float z, Color color)> _mapMarkers = new List<(float, float, Color)>();
         private CabinPlanView _cabinView;
         private ShiftGaugesView _gauges;
@@ -251,6 +253,13 @@ namespace TaxiKmer.Driving
             _cabinView = new CabinPlanView(controls.Overlay, controls.Font, stops.stops);
             var miniMap = Load("Data/minimap", new MiniMapConfig());
             if (miniMap.enabled) _miniMap = new MiniMapView(controls.Overlay, miniMap, world.Data);
+            var phone = Load("Data/phone", new Core.Phone.PhoneConfig());
+            if (phone.enabled)
+            {
+                _phone = new PhoneView(controls.Overlay, controls.Font);
+                foreach (var m in Core.Phone.PhoneMessages.Morning(phone, Save.Data, Load("Data/owner", new Core.Career.OwnerConfig()), new System.Random(actualSeed + 71)))
+                    _phone.Inbox.Receive(m);
+            }
         }
 
         private static T Load<T>(string resource, T fallback)
@@ -428,6 +437,7 @@ namespace TaxiKmer.Driving
             UpdateHud();
             _strip.Update(Street, state.Along, !Street.DayFinished);
             if (_miniMap != null) UpdateMiniMap();
+            _phone?.Update(!Street.DayFinished && !_menu.Frozen && (_police == null || !_police.Active));
             _cabinView.Update(Street.Shift.Cabin, !Street.DayFinished);
         }
 

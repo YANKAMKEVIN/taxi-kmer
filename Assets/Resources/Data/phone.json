@@ -1,0 +1,21 @@
+{
+    "_note": "Téléphone du chauffeur (idée n° 11, première tranche : messages du propriétaire le matin, tirés du bilan de la veille). Textes proposés par Claude, à valider par Kevin ; appName = nom de l'appli de courses fictive du jalon 8, vide tant que Kevin ne l'a pas choisi. {manque} = somme qui manquait au versement, {reste} = manques encore tolérés cette semaine. thanksEveryDays : un merci du propriétaire tous les N jours de versement payé.",
+    "enabled": true,
+    "ownerName": "Le propriétaire",
+    "appName": "",
+    "ownerThanks": [
+        "Bien reçu le versement d'hier. Continue comme ça.",
+        "Versement reçu. Fais attention au taxi, hein."
+    ],
+    "thanksEveryDays": 3,
+    "ownerThreat": [
+        "Il manquait {manque} hier. Encore {reste} comme ça cette semaine et je reprends mon taxi.",
+        "Tu me dois {manque}. Je ne suis pas une banque : encore {reste} et c'est fini."
+    ],
+    "ownerLastWarning": [
+        "Dernier avertissement. Le prochain versement manqué, tu me rends les clés."
+    ],
+    "ownerImpound": [
+        "Mon taxi à la fourrière ! La prochaine fois, tu cherches un autre travail."
+    ]
+}

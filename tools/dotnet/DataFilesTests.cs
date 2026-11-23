@@ -73,6 +73,13 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void Phone_MatchesDefaults()
+        {
+            var d = Load<TaxiKmer.Core.Phone.PhoneConfig>("phone.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Phone.PhoneConfig(), Opts), JsonSerializer.Serialize(d, Opts));
+        }
+
+        [Test]
         public void Quality_MatchesDefaults()
         {
             var q = Load<TaxiKmer.Core.Quality.QualityConfig>("quality.json");
