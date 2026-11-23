@@ -1,0 +1,26 @@
+{
+    "_note": "Écran « Crédits et licences » (idée n° 42), ouvert depuis la pause. entries : données et outils à créditer (OpenStreetMap ODbL, relief Copernicus…) ; les morceaux de la radio (radio.json, clip + credit) s'ajoutent tout seuls sous musicTitle. intro : à valider par Kevin (nom affiché).",
+    "title": "Crédits et licences",
+    "intro": "Taxi Kmer, un jeu de Kevin Yankam.",
+    "entries": [
+        {
+            "what": "Routes et bâtiments de Yaoundé",
+            "who": "© contributeurs OpenStreetMap",
+            "licence": "ODbL 1.0",
+            "source": "openstreetmap.org/copyright"
+        },
+        {
+            "what": "Relief",
+            "who": "Copernicus DEM GLO-30 : © DLR e.V. 2010-2014 et © Airbus Defence and Space GmbH 2014-2018, fourni dans le cadre de COPERNICUS par l'Union européenne et l'ESA",
+            "licence": "licence Copernicus DEM",
+            "source": "spacedata.copernicus.eu"
+        },
+        {
+            "what": "Moteur",
+            "who": "Unity 6 (Unity Technologies)",
+            "licence": "",
+            "source": ""
+        }
+    ],
+    "musicTitle": "Musiques de la radio"
+}

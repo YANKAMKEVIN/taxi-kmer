@@ -279,6 +279,7 @@ namespace TaxiKmer.Driving
             _menu = new GameMenu(!TitleDone);
             _menuView = new GameMenuView(transform, controls.Font) { Career = Save.Data };
             _photo = new PhotoModeView(transform, controls.Font);
+            _menuView.CreditLines = Credits.Lines(Load("Data/credits", new CreditsConfig()), Load("Data/radio", new Core.Radio.RadioConfig()));
             _settings.Load(PrefsStore.Instance); // mêmes clés qu'avant pour le volume et les vibrations
             AudioListener.volume = _settings.Volume;
             Haptics.Enabled = _settings.Vibration;
@@ -604,6 +605,8 @@ namespace TaxiKmer.Driving
                     _menuView.ConfirmingNewCareer = _menu.ConfirmingNewCareer;
                     break;
                 case MenuChoice.OpenPhoto: _menu.OpenPhoto(); break;
+                case MenuChoice.OpenCredits: _menu.OpenCredits(); break;
+                case MenuChoice.CloseCredits: _menu.Back(); break;
                 case MenuChoice.ClosePhoto: _menu.Back(); break;
                 case MenuChoice.Resume: _menu.Resume(); break;
                 case MenuChoice.OpenSettings: _menu.OpenSettings(); _menuView.ConfirmingNewCareer = false; break;

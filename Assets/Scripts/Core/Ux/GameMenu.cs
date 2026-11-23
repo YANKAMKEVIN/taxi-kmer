@@ -60,6 +60,8 @@ namespace TaxiKmer.Core.Ux
         Settings,
         /// <summary>Mode photo (idée n° 27) : ouvert depuis la pause, HUD masqué, caméra libre, heure figée.</summary>
         Photo,
+        /// <summary>Crédits et licences (idée n° 42), depuis la pause ou l'écran titre.</summary>
+        Credits,
     }
 
     /// <summary>
@@ -78,7 +80,19 @@ namespace TaxiKmer.Core.Ux
         /// l'écran titre, le décor continue de vivre, seule l'horloge de la journée attend.
         /// </summary>
         public bool TimeStopped => Screen == MenuScreen.Pause || Screen == MenuScreen.Photo
+            || (Screen == MenuScreen.Credits && _creditsReturn == MenuScreen.Pause)
             || (Screen == MenuScreen.Settings && _settingsReturn == MenuScreen.Pause);
+
+        private MenuScreen _creditsReturn = MenuScreen.Pause;
+
+        /// <summary>« Crédits » dans la pause ou sur l'écran titre (idée n° 42) ; Retour y ramène.</summary>
+        public bool OpenCredits()
+        {
+            if (Screen != MenuScreen.Pause && Screen != MenuScreen.Title) return false;
+            _creditsReturn = Screen;
+            Screen = MenuScreen.Credits;
+            return true;
+        }
 
         /// <summary>« Mode photo » dans la pause (idée n° 27).</summary>
         public bool OpenPhoto()
@@ -135,6 +149,7 @@ namespace TaxiKmer.Core.Ux
         {
             if (Screen == MenuScreen.Settings) CloseSettings();
             else if (Screen == MenuScreen.Photo) Screen = MenuScreen.Pause;
+            else if (Screen == MenuScreen.Credits) Screen = _creditsReturn;
             else Resume();
         }
 

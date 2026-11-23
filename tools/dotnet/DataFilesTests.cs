@@ -144,6 +144,18 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void Credits_MatchDefaults_CreditOsmAndCopernicus()
+        {
+            var c = Load<TaxiKmer.Core.Ux.CreditsConfig>("credits.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Ux.CreditsConfig(), Opts), JsonSerializer.Serialize(c, Opts));
+            var lines = string.Join("\n", TaxiKmer.Core.Ux.Credits.Lines(c, Load<TaxiKmer.Core.Radio.RadioConfig>("radio.json")));
+            StringAssert.Contains("OpenStreetMap", lines);
+            StringAssert.Contains("ODbL", lines);
+            var world = Load<TaxiKmer.Core.World.WorldData>("world_messassi_etoudi.json");
+            if (world.terrain.HasData) StringAssert.Contains("Copernicus", lines, "relief utilisé : à créditer");
+        }
+
+        [Test]
         public void Quality_MatchesDefaults()
         {
             var q = Load<TaxiKmer.Core.Quality.QualityConfig>("quality.json");

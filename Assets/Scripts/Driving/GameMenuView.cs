@@ -24,6 +24,10 @@ namespace TaxiKmer.Driving
         ClosePhoto,
         /// <summary>Une ligne des réglages (idées n° 29 à 31) : <see cref="GameMenuView.RowId"/> dit laquelle.</summary>
         SettingRow,
+        /// <summary>« Crédits » (idée n° 42).</summary>
+        OpenCredits,
+        /// <summary>Retour des crédits.</summary>
+        CloseCredits,
     }
 
     /// <summary>
@@ -38,6 +42,10 @@ namespace TaxiKmer.Driving
         private readonly Image _primary, _secondary, _tertiary, _minus, _plus, _toggle;
         private readonly Text _primaryText, _secondaryText, _tertiaryText, _toggleText;
         private readonly Image _photo;
+        private readonly Image _credits;
+
+        /// <summary>Lignes de l'écran des crédits (Core.Ux.Credits), posées par StreetView.</summary>
+        public System.Collections.Generic.List<string> CreditLines { get; set; } = new System.Collections.Generic.List<string>();
         private readonly Font _font;
         private readonly System.Collections.Generic.List<(Image button, Text text)> _rows = new System.Collections.Generic.List<(Image, Text)>();
         private System.Collections.Generic.List<SettingRow> _rowData = new System.Collections.Generic.List<SettingRow>();
@@ -71,6 +79,7 @@ namespace TaxiKmer.Driving
             _plus = UiKit.NewButton(_root, font, "+", Grey, out _);
             _toggle = UiKit.NewButton(_root, font, "", Grey, out _toggleText);
             _photo = UiKit.NewButton(_root, font, "Mode photo", Grey, out _);
+            _credits = UiKit.NewButton(_root, font, "Crédits", Grey, out _);
             _font = font;
             _toggle.gameObject.SetActive(false); // remplacé par les lignes des réglages
         }
@@ -96,12 +105,17 @@ namespace TaxiKmer.Driving
                     if (UiKit.Tapped(_primary.rectTransform) || UiKit.KeyDown(KeyAction.Action)) return MenuChoice.StartDay;
                     if (UiKit.Tapped(_secondary.rectTransform)) return MenuChoice.OpenSettings;
                     if (TitleScreen.HasCareer(Career) && UiKit.Tapped(_tertiary.rectTransform)) return MenuChoice.NewCareer;
+                    if (UiKit.Tapped(_credits.rectTransform)) return MenuChoice.OpenCredits;
                     break;
                 case MenuScreen.Pause:
                     if (UiKit.Tapped(_primary.rectTransform) || back) return MenuChoice.Resume;
                     if (UiKit.Tapped(_secondary.rectTransform)) return MenuChoice.OpenSettings;
                     if (UiKit.Tapped(_tertiary.rectTransform)) return MenuChoice.EndDay;
                     if (UiKit.Tapped(_photo.rectTransform)) return MenuChoice.OpenPhoto;
+                    if (UiKit.Tapped(_credits.rectTransform)) return MenuChoice.OpenCredits;
+                    break;
+                case MenuScreen.Credits:
+                    if (UiKit.Tapped(_primary.rectTransform) || back) return MenuChoice.CloseCredits;
                     break;
                 case MenuScreen.Settings:
                     if (UiKit.Tapped(_primary.rectTransform) || back) return MenuChoice.CloseSettings;
@@ -131,6 +145,7 @@ namespace TaxiKmer.Driving
             _subtitle.fontSize = Mathf.RoundToInt(h * 0.04f);
             UiKit.PlaceTopCenter(_subtitle.rectTransform, h * 0.26f, Screen.width, h * 0.06f);
             _info.fontSize = Mathf.RoundToInt(h * 0.032f);
+            _info.alignment = TextAnchor.MiddleCenter; // l'écran des crédits l'aligne en haut
 
             _subtitle.gameObject.SetActive(screen != MenuScreen.Pause || !string.IsNullOrEmpty(pauseNote));
             _secondary.gameObject.SetActive(screen != MenuScreen.Settings);
@@ -138,7 +153,7 @@ namespace TaxiKmer.Driving
             _minus.gameObject.SetActive(screen == MenuScreen.Settings);
             _plus.gameObject.SetActive(screen == MenuScreen.Settings);
             // Aide du clavier dans la pause, hors téléphone (éditeur, démo web) : table KeyMap, une touche par action.
-            _info.gameObject.SetActive(screen == MenuScreen.Settings || (screen == MenuScreen.Pause && !Application.isMobilePlatform));
+            _info.gameObject.SetActive(screen == MenuScreen.Settings || screen == MenuScreen.Credits || (screen == MenuScreen.Pause && !Application.isMobilePlatform));
             _toggle.gameObject.SetActive(false);
             _rowData = screen == MenuScreen.Settings ? settings.Rows() : new System.Collections.Generic.List<SettingRow>();
             while (_rows.Count < _rowData.Count)
@@ -148,6 +163,12 @@ namespace TaxiKmer.Driving
             }
             for (var i = 0; i < _rows.Count; i++) _rows[i].button.gameObject.SetActive(i < _rowData.Count);
             _photo.gameObject.SetActive(screen == MenuScreen.Pause);
+            _credits.gameObject.SetActive(screen == MenuScreen.Pause || screen == MenuScreen.Title);
+            if (screen == MenuScreen.Pause || screen == MenuScreen.Title)
+            {
+                UiKit.PlaceTopLeft(_credits.rectTransform, h * 0.04f, h * 0.04f, h * 0.25f, h * 0.09f);
+                _credits.GetComponentInChildren<Text>().fontSize = Mathf.RoundToInt(h * 0.032f);
+            }
             if (screen == MenuScreen.Pause)
             {
                 UiKit.PlaceTopLeft(_photo.rectTransform, Screen.width - h * 0.34f, h * 0.04f, h * 0.3f, h * 0.1f);
@@ -184,6 +205,17 @@ namespace TaxiKmer.Driving
                     _info.text = "Clavier : " + KeyMap.Help();
                     _info.fontSize = Mathf.RoundToInt(h * 0.022f);
                     UiKit.PlaceTopCenter(_info.rectTransform, h * 0.8f, Screen.width * 0.96f, h * 0.18f);
+                    break;
+                case MenuScreen.Credits:
+                    _title.text = "Crédits";
+                    _subtitle.text = "";
+                    _info.text = string.Join("\n\n", CreditLines);
+                    _info.fontSize = Mathf.RoundToInt(h * 0.026f);
+                    _info.alignment = TextAnchor.UpperCenter;
+                    UiKit.PlaceTopCenter(_info.rectTransform, h * 0.22f, Screen.width * 0.85f, h * 0.55f);
+                    _primaryText.text = "Retour";
+                    UiKit.PlaceTopCenter(_primary.rectTransform, h * 0.82f, bw, bh * 0.8f);
+                    _secondary.gameObject.SetActive(false);
                     break;
                 case MenuScreen.Settings:
                     _title.text = "Réglages";
