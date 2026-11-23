@@ -127,6 +127,23 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void UiTexts_MatchDefaults_CiteOnlyAllowedValues_AreReadable()
+        {
+            var d = Load<TaxiKmer.Core.Ux.UiTextsConfig>("ui_texts.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Ux.UiTextsConfig(), Opts), JsonSerializer.Serialize(d, Opts));
+            foreach (var f in typeof(TaxiKmer.Core.Ux.UiTextsConfig).GetFields())
+            {
+                if (f.FieldType != typeof(string)) continue;
+                var text = (string)f.GetValue(d);
+                Assert.IsNotEmpty(text, f.Name);
+                Assert.LessOrEqual(text.Length, 120, $"{f.Name} : lisible en conduisant");
+                TaxiKmer.Core.Ux.UiTextsConfig.Allowed.TryGetValue(f.Name, out var allowed);
+                foreach (var name in TaxiKmer.Core.Talk.DialogueText.Placeholders(text))
+                    CollectionAssert.Contains(allowed ?? new string[0], name, $"{f.Name} : {{{name}}} inconnu");
+            }
+        }
+
+        [Test]
         public void Quality_MatchesDefaults()
         {
             var q = Load<TaxiKmer.Core.Quality.QualityConfig>("quality.json");

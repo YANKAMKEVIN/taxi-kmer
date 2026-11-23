@@ -90,6 +90,8 @@ namespace TaxiKmer.Driving
         // Pluie visible (rain.json, idée n° 12), créée seulement avec la route (road.json).
         private RainView _rain;
         private TrafficView _trafficView;
+        // Textes de l'interface (ui_texts.json, idée n° 32).
+        private UiTextsConfig _texts = new UiTextsConfig();
         private PhotoModeView _photo;
         // Petits objectifs du jour (goals.json, idée n° 25).
         private DailyGoals _goals;
@@ -185,6 +187,7 @@ namespace TaxiKmer.Driving
 
             var stops = Load("Data/stops_messassi_etoudi", new StopsConfig());
             _stopList = stops.stops ?? new Stop[0];
+            _texts = Load("Data/ui_texts", new UiTextsConfig());
             var fares = Load("Data/fares", FareConfig.Default());
             _fuel = Load("Data/fuel", new FuelConfig());
             var shift = new Shift(Load("Data/day", new DayConfig()), Load("Data/seating", new SeatingConfig()), _fuel);
@@ -417,13 +420,14 @@ namespace TaxiKmer.Driving
                 if (Save.TryResume())
                 {
                     state = TaxiState();
-                    Toast($"Jour {Save.Career.DayNumber} ({Today.Name}) repris à {Street.Shift.Clock.Display}", 4f);
+                    Toast(UiText.Fill(_texts.dayResumed, "jour", Save.Career.DayNumber.ToString(), "semaine", Today.Name, "heure", Street.Shift.Clock.Display), 4f);
                 }
                 else
                 {
                     var start = Load("Data/day", new DayConfig());
-                    var career = Save.StartedNewCareer ? "Nouvelle carrière. " : "";
-                    Toast($"{career}Jour {Save.Career.DayNumber}, {Today.Name} : le patron te veut sur la route de {start.startHour} h à {start.endHour} h", 6f);
+                    var career = Save.StartedNewCareer ? _texts.newCareer : "";
+                    Toast(UiText.Fill(_texts.dayStart, "carriere", career, "jour", Save.Career.DayNumber.ToString(), "semaine", Today.Name,
+                        "debut", start.startHour.ToString(), "fin", start.endHour.ToString()), 6f);
                     var news = _calendar.Announcement(Today);
                     if (news.Length > 0) Toast(news, 6f);
                     // Papiers renouvelés, ou restés expirés faute d'épargne : après les annonces du jour (pile de 2 messages).
@@ -485,9 +489,9 @@ namespace TaxiKmer.Driving
             _actionKind = action.Kind;
             controls.ActionLabel = action.Kind switch
             {
-                StreetActionKind.Drop => action.Count > 1 ? $"Faire descendre ({action.Count})" : "Faire descendre",
-                StreetActionKind.Board => action.MoveFirst != null ? "Changer de place et monter" : "Faire monter",
-                StreetActionKind.EndDay => "Terminer la journée",
+                StreetActionKind.Drop => action.Count > 1 ? UiText.Fill(_texts.dropMany, "n", action.Count.ToString()) : _texts.dropOne,
+                StreetActionKind.Board => action.MoveFirst != null ? _texts.moveAndBoard : _texts.board,
+                StreetActionKind.EndDay => _texts.endDay,
                 StreetActionKind.Refuel => FuelGauge.ActionLabel(action.FuelLitres, action.FuelCost),
                 _ => "",
             };
@@ -500,7 +504,7 @@ namespace TaxiKmer.Driving
             if (shift.Clock.IsOver && !_dayOverShown && !Street.DayFinished)
             {
                 _dayOverShown = true;
-                Toast("Fin de la journée : dépose tes passagers, ou arrête-toi pour terminer", 8f);
+                Toast(_texts.dayOverDropPassengers, 8f);
             }
             if (Street.DayFinished) ShowSummary();
             UpdateTutorial(dt, state);
@@ -656,13 +660,13 @@ namespace TaxiKmer.Driving
             switch (result)
             {
                 case HonkResult.Accepted:
-                    Toast($"OK pour {ShortName(client.Client.DestinationStopId)} ({Money(client.Client.ProposedFare)}) : arrête-toi");
+                    Toast(UiText.Fill(_texts.honkAccepted, "lieu", ShortName(client.Client.DestinationStopId), "prix", Money(client.Client.ProposedFare)));
                     break;
                 case HonkResult.AcceptedNeedsMove:
-                    Toast("OK, mais il faudra faire changer un passager de place");
+                    Toast(_texts.honkNeedsMove);
                     break;
                 case HonkResult.NoRoom:
-                    Toast($"Pas de place pour ce client ({CorpulenceLabel(client.Client)})");
+                    Toast(UiText.Fill(_texts.honkNoRoom, "carrure", CorpulenceLabel(client.Client)));
                     Haptics.Play(HapticEvent.Refused);
                     _cabinView.ShowRefused(client.Client);
                     break;
@@ -677,9 +681,9 @@ namespace TaxiKmer.Driving
             if (outcome.Severity == InjurySeverity.None) return; // simple bousculade
             City.Pedestrians.Remove(pedestrianId);
             if (outcome.Arrested) return; // garde à vue : le bilan s'affiche (journée terminée)
-            var who = outcome.Severity == InjurySeverity.Light ? "blessé léger" : "blessé grave";
+            var who = outcome.Severity == InjurySeverity.Light ? _texts.pedestrianLight : _texts.pedestrianSerious;
             var hours = outcome.LostGameMinutes >= 60 ? $"{outcome.LostGameMinutes / 60} h {outcome.LostGameMinutes % 60:00}" : $"{outcome.LostGameMinutes} min";
-            Toast($"Piéton renversé ({who}) : hôpital et soins -{Money(outcome.CareCost)}, {hours} perdues, tes passagers sont partis sans payer", 9f);
+            Toast(UiText.Fill(_texts.pedestrianHit, "blessure", who, "prix", Money(outcome.CareCost), "duree", hours), 9f);
         }
 
         /// <summary>
@@ -709,19 +713,19 @@ namespace TaxiKmer.Driving
         {
             if (lost.WasAccepted && lost.Reason == ClientLostReason.GaveUp)
             {
-                Toast("Ton client en a eu marre d'attendre : il fait signe aux autres taxis");
+                Toast(_texts.clientGaveUp);
                 return;
             }
             if (lost.Reason != ClientLostReason.TookOtherTaxi) return;
             if (lost.WasAccepted)
             {
-                Toast("Un bendskin a pris ton client avant que tu arrives !");
+                Toast(_texts.clientTakenByMoto);
                 return;
             }
             var place = City.Place(lost.Client);
             var d = new Vector2(place.X - taxi.transform.position.x, place.Z - taxi.transform.position.z).magnitude;
-            var who = lost.ByMoto ? "Un bendskin" : "Un autre taxi";
-            if (d < 120f) Toast($"{who} a pris le client pour {ShortName(lost.Client.Client.DestinationStopId)}");
+            var who = lost.ByMoto ? _texts.rivalMoto : _texts.rivalTaxi;
+            if (d < 120f) Toast(UiText.Fill(_texts.clientTakenNearby, "qui", who, "lieu", ShortName(lost.Client.Client.DestinationStopId)));
         }
 
         private void OnAction(TaxiOnRoute state)
@@ -755,8 +759,8 @@ namespace TaxiKmer.Driving
                     {
                         _sounds.PlayDoor();
                         Haptics.Play(HapticEvent.Board);
-                        var moved = outcome.Moved != null ? "Un passager a changé de place. " : "";
-                        Toast($"{moved}Monté : {ShortName(outcome.Boarded.DestinationStopId)}, {Money(outcome.Boarded.ProposedFare)}");
+                        var moved = outcome.Moved != null ? _texts.passengerMoved : "";
+                        Toast(UiText.Fill(_texts.boarded, "deplace", moved, "lieu", ShortName(outcome.Boarded.DestinationStopId), "prix", Money(outcome.Boarded.ProposedFare)));
                         if (outcome.Moved != null) _talk?.Say(Core.Talk.TalkTriggers.SeatMove, outcome.Moved.Id);
                         else
                         {
@@ -765,10 +769,10 @@ namespace TaxiKmer.Driving
                             _talk?.Director.Follow(Core.Talk.TalkTriggers.Destination, outcome.Boarded.Id, values); // il précise où il descend
                         }
                     }
-                    else if (outcome.Board == BoardResult.DayOver) Toast("La journée est finie");
+                    else if (outcome.Board == BoardResult.DayOver) Toast(_texts.dayIsOver);
                     else
                     {
-                        Toast("Il ne rentre pas");
+                        Toast(_texts.doesNotFit);
                         Haptics.Play(HapticEvent.Refused);
                         if (candidate != null) _cabinView.ShowRefused(candidate.Client);
                     }
@@ -782,7 +786,7 @@ namespace TaxiKmer.Driving
             Stop best = null;
             foreach (var st in _stopList)
                 if (best == null || Mathf.Abs(st.distanceAlongRouteMeters - along) < Mathf.Abs(best.distanceAlongRouteMeters - along)) best = st;
-            return best != null ? $"vers {ShortName(best.id)}" : "";
+            return best != null ? UiText.Fill(_texts.towards, "lieu", ShortName(best.id)) : "";
         }
 
         /// <summary>Flashs d'information : pluie, contrôles volants, heures de pointe, jour de marché (radio.json → flashes).</summary>
@@ -816,7 +820,7 @@ namespace TaxiKmer.Driving
             _goals.Revenue(ledger.Revenue);
             _goals.Passengers(Street.Shift.Cabin.PassengerCount);
             var done = _goals.TakeJustDone();
-            if (done != null) Toast("Objectif réussi : " + done.Label, 5f);
+            if (done != null) Toast(UiText.Fill(_texts.goalDone, "objectif", done.Label), 5f);
         }
 
         /// <summary>Vendeur ambulant (idée n° 24) : il vient à la fenêtre du chauffeur au feu ; un passager peut acheter et en parler.</summary>
@@ -1474,11 +1478,11 @@ namespace TaxiKmer.Driving
 
         private string ShortName(string stopId) => StopNames.Short(Street.FindStop(stopId)?.name ?? stopId);
 
-        private static string CorpulenceLabel(Client c) => c.Corpulence switch
+        private string CorpulenceLabel(Client c) => c.Corpulence switch
         {
-            Core.Rides.Corpulence.Mince => "mince",
-            Core.Rides.Corpulence.Costaud => "costaud",
-            _ => "carrure normale",
+            Core.Rides.Corpulence.Mince => _texts.slim,
+            Core.Rides.Corpulence.Costaud => _texts.big,
+            _ => _texts.normalBuild,
         };
 
         private static string Money(int amount) => DaySummary.Money(amount);
