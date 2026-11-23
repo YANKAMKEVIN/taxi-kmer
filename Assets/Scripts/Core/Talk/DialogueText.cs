@@ -21,6 +21,8 @@ namespace TaxiKmer.Core.Talk
         public const string Price = "prix";
         /// <summary>Contre-offre du client qui négocie (« 450 francs »).</summary>
         public const string Offer = "offre";
+        /// <summary>Ce que vend le vendeur ambulant (« de l'eau fraîche », idée n° 24).</summary>
+        public const string Article = "article";
 
         public static readonly string[] All = { Destination, DestinationAt, DestinationOf, DestinationBare, Price, Offer };
 
@@ -112,6 +114,8 @@ namespace TaxiKmer.Core.Talk
                 case TalkTriggers.RefusesToPay:
                 case TalkTriggers.Detour:
                     return new[] { TalkValues.Destination, TalkValues.DestinationAt, TalkValues.DestinationOf, TalkValues.DestinationBare, TalkValues.Price };
+                case TalkTriggers.Vendor:
+                    return new[] { TalkValues.Article };
                 default:
                     return new string[0];
             }

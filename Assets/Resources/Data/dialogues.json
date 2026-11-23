@@ -1,5 +1,5 @@
 {
-    "_note": "Dialogues des passagers (jalon 5, docs/tech/jalon-05.md). ACTIVÉ le 21/11 (tranché par Kevin le 21/11). Texte + petits sons de voix (option B) : voiceSounds = emplacements « à fournir » (clip vide, aucun fichier audio) ; voice d'une réplique ou d'un personnage = id d'un son. Répliques écrites par Claude, à valider par Kevin (option B) : statut « proposée » (puis « validée ») ; traduction « à traduire » = écrite en français faute de tournure sûre dans le registre visé. trigger : montee, discussion, place, detour, paiement, negociation, refus-paiement, destination, prix, panne, controle, pluie, silence. character : id d'un personnage type (vide = n'importe quel passager). Valeurs entre accolades (22/11) : {destination} (lieu du passager), {prix} (prix annoncé), {offre} (contre-offre) — jamais de lieu ni de somme écrits en dur ; une réplique dont la valeur manque n'est pas dite (DialogueText, situations qui fournissent chaque valeur : DialogueText.ValuesFor). replies : réponses du chauffeur ; reputation = effet sur la réputation, tip = pourboire payé avec la course (décision de Kevin). Négociation option A : haggleChance (× effet de la réputation), le client propose haggleDiscountMin à haggleDiscountMax de moins (arrondi haggleRoundTo, plancher haggleFloor), le joueur accepte ou refuse. Refus de payer option C : refusesToPayChance ; le joueur laisse partir ou appelle la police (refusalPoliceMinutes perdues, il paie selon refusalPolicePayChance). silenceAfterSeconds : un passager rompt un long silence. Langues : français, camfranglais, pidgin ; registers = parts des passagers (choix de Claude, à régler) ; fallbackRegister = registre de secours. Lecture en conduisant : minShowSeconds, charsPerSecond, maxChars ; minGapSeconds ; noRepeatWithin ; replySeconds ; detourMeters. Valeurs de chance et de durée : défauts de Claude, à régler avec Kevin. Histoires de passagers réguliers (idée n° 13, proposées par Claude, à valider par Kevin) : arcs = histoires de 3 à 5 rencontres ; une réplique avec arc et arcStep n'est dite qu'à son tour, une rencontre au plus par minDaysBetween jours ; l'avancement est gardé dans la sauvegarde. Répliques d'événements de ville (idée n° 14) : cityEvent = id de city_events.json, dites seulement pendant l'événement.",
+    "_note": "Dialogues des passagers (jalon 5, docs/tech/jalon-05.md). ACTIVÉ le 21/11 (tranché par Kevin le 21/11). Texte + petits sons de voix (option B) : voiceSounds = emplacements « à fournir » (clip vide, aucun fichier audio) ; voice d'une réplique ou d'un personnage = id d'un son. Répliques écrites par Claude, à valider par Kevin (option B) : statut « proposée » (puis « validée ») ; traduction « à traduire » = écrite en français faute de tournure sûre dans le registre visé. trigger : montee, discussion, place, detour, paiement, negociation, refus-paiement, destination, prix, panne, controle, pluie, silence. character : id d'un personnage type (vide = n'importe quel passager). Valeurs entre accolades (22/11) : {destination} (lieu du passager), {prix} (prix annoncé), {offre} (contre-offre) — jamais de lieu ni de somme écrits en dur ; une réplique dont la valeur manque n'est pas dite (DialogueText, situations qui fournissent chaque valeur : DialogueText.ValuesFor). replies : réponses du chauffeur ; reputation = effet sur la réputation, tip = pourboire payé avec la course (décision de Kevin). Négociation option A : haggleChance (× effet de la réputation), le client propose haggleDiscountMin à haggleDiscountMax de moins (arrondi haggleRoundTo, plancher haggleFloor), le joueur accepte ou refuse. Refus de payer option C : refusesToPayChance ; le joueur laisse partir ou appelle la police (refusalPoliceMinutes perdues, il paie selon refusalPolicePayChance). silenceAfterSeconds : un passager rompt un long silence. Langues : français, camfranglais, pidgin ; registers = parts des passagers (choix de Claude, à régler) ; fallbackRegister = registre de secours. Lecture en conduisant : minShowSeconds, charsPerSecond, maxChars ; minGapSeconds ; noRepeatWithin ; replySeconds ; detourMeters. Valeurs de chance et de durée : défauts de Claude, à régler avec Kevin. Histoires de passagers réguliers (idée n° 13, proposées par Claude, à valider par Kevin) : arcs = histoires de 3 à 5 rencontres ; une réplique avec arc et arcStep n'est dite qu'à son tour, une rencontre au plus par minDaysBetween jours ; l'avancement est gardé dans la sauvegarde. Répliques d'événements de ville (idée n° 14) : cityEvent = id de city_events.json, dites seulement pendant l'événement. Trigger vendeur (idée n° 24) : un passager achète au vendeur ambulant d'un feu ; valeur {article}.",
     "enabled": true,
     "minShowSeconds": 2.5,
     "charsPerSecond": 14,
@@ -3469,6 +3469,105 @@
             "statut": "proposée",
             "traduction": "",
             "cityEvent": "cortege"
+        },
+        {
+            "id": "vendeur-1",
+            "trigger": "vendeur",
+            "character": "",
+            "register": "fr",
+            "text": "Attendez, je prends {article}. Il fait trop chaud.",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "vendeur-2",
+            "trigger": "vendeur",
+            "character": "",
+            "register": "fr",
+            "text": "Pardon, monsieur ! Donnez-moi {article}, je paie.",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "vendeur-3",
+            "trigger": "vendeur",
+            "character": "",
+            "register": "fr",
+            "text": "Chauffeur, une seconde, j'achète {article} au feu.",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "vendeur-4",
+            "trigger": "vendeur",
+            "character": "",
+            "register": "camfranglais",
+            "text": "Le frère, laisse-moi d'abord prendre {article}, je go vite.",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "vendeur-5",
+            "trigger": "vendeur",
+            "character": "",
+            "register": "camfranglais",
+            "text": "Massa, give-moi {article}, on est ensemble !",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "vendeur-6",
+            "trigger": "vendeur",
+            "character": "",
+            "register": "camfranglais",
+            "text": "Le feu-là est long, je prends {article} pour tuer le temps.",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "vendeur-7",
+            "trigger": "vendeur",
+            "character": "",
+            "register": "pidgin",
+            "text": "Sista, give me {article} quick quick, light go change.",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "vendeur-8",
+            "trigger": "vendeur",
+            "character": "",
+            "register": "pidgin",
+            "text": "Wait small, driver. I wan buy {article}.",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
+        },
+        {
+            "id": "vendeur-9",
+            "trigger": "vendeur",
+            "character": "",
+            "register": "fr",
+            "text": "Au moins ce feu sert à quelque chose : j'ai eu {article}.",
+            "replies": [],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": ""
         }
     ],
     "arcs": [

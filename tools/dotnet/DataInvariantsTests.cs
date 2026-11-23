@@ -70,6 +70,7 @@ namespace TaxiKmer.Core.DotnetTests
             ["rain.json"] = typeof(TaxiKmer.Core.Road.RainLookConfig),
             ["city_events.json"] = typeof(TaxiKmer.Core.Day.CityEventsConfig),
             ["buildings.json"] = typeof(TaxiKmer.Core.World.BuildingLookConfig),
+            ["vendors.json"] = typeof(TaxiKmer.Core.Traffic.VendorsConfig),
         };
 
         [Test]

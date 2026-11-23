@@ -90,6 +90,10 @@ namespace TaxiKmer.Driving
         // Pluie visible (rain.json, idée n° 12), créée seulement avec la route (road.json).
         private RainView _rain;
         private TrafficView _trafficView;
+        // Vendeurs ambulants aux feux (vendors.json, idée n° 24).
+        private StreetVendors _vendors;
+        private readonly List<(int id, float along)> _lightAlongs = new List<(int, float)>();
+        private GameObject _vendor;
         // Construction progressive du monde (idée n° 21) : écran de chargement, puis les vues qui ont besoin des maillages.
         private LoadingView _loading;
         private DayLightConfig _daylightConfig;
@@ -276,6 +280,16 @@ namespace TaxiKmer.Driving
                 Time.timeScale = 0f; // rien ne bouge tant que le monde se construit
             }
             else OnWorldReady();
+            var vendors = Load("Data/vendors", new VendorsConfig());
+            if (vendors.enabled)
+            {
+                _vendors = new StreetVendors(vendors, new System.Random(actualSeed + 83));
+                foreach (var l in world.Data.traffic?.lights ?? new TrafficLightData[0])
+                {
+                    WorldGeometry.Project(_xz, _cum, l.x, l.z, out var lightAlong, out _);
+                    _lightAlongs.Add((l.id, lightAlong));
+                }
+            }
             var miniMap = Load("Data/minimap", new MiniMapConfig());
             if (miniMap.enabled) _miniMap = new MiniMapView(controls.Overlay, miniMap, world.Data);
             var phone = Load("Data/phone", new Core.Phone.PhoneConfig());
@@ -487,6 +501,7 @@ namespace TaxiKmer.Driving
             UpdateHud();
             _strip.Update(Street, state.Along, !Street.DayFinished);
             if (_miniMap != null) UpdateMiniMap();
+            if (_vendors != null && !_menu.Frozen && !Street.DayFinished) UpdateVendor(dt, state);
             if (_talk?.Director.Stories != null && _talk.Director.Stories.Changed)
             {
                 Save.Data.career.stories = _talk.Director.Stories.Save(); // écrit avec la prochaine sauvegarde
@@ -749,6 +764,34 @@ namespace TaxiKmer.Driving
         }
 
         /// <summary>Flashs d'information : pluie, contrôles volants, heures de pointe, jour de marché (radio.json → flashes).</summary>
+        /// <summary>Vendeur ambulant (idée n° 24) : il vient à la fenêtre du chauffeur au feu ; un passager peut acheter et en parler.</summary>
+        private void UpdateVendor(float dt, TaxiOnRoute state)
+        {
+            var e = _vendors.Update(dt, state.Along, state.Direction, taxi.SpeedKmh, _lightAlongs, Street.Shift.Cabin.PassengerCount);
+            if (e.Arrived)
+            {
+                Toast(StreetVendors.Message(e), 5f);
+                if (e.Bought)
+                    _talk?.Say(Core.Talk.TalkTriggers.Vendor, TalkView.AnyPassenger(Street),
+                        new Dictionary<string, string> { [Core.Talk.TalkValues.Article] = e.Goods.label });
+                if (_vendor == null)
+                {
+                    _vendor = new GameObject("Vendeur ambulant");
+                    _vendor.transform.SetParent(transform, false);
+                    Part(_vendor.transform, PrimitiveType.Capsule, new Vector3(0f, 0.85f, 0f), new Vector3(0.55f, 0.85f, 0.45f), Shirts[3]);
+                    Part(_vendor.transform, PrimitiveType.Sphere, new Vector3(0f, 1.82f, 0f), Vector3.one * 0.26f, new Color(0.35f, 0.22f, 0.14f));
+                    Part(_vendor.transform, PrimitiveType.Cylinder, new Vector3(0f, 2.05f, 0f), new Vector3(0.6f, 0.08f, 0.6f), new Color(0.75f, 0.55f, 0.25f)); // plateau sur la tête
+                }
+            }
+            var here = _vendors.VendorAt >= 0;
+            if (_vendor == null) return;
+            _vendor.SetActive(here);
+            if (!here) return;
+            // À la fenêtre du chauffeur (côté gauche du taxi).
+            var t = taxi.transform;
+            _vendor.transform.SetPositionAndRotation(t.position - t.right * 1.4f + t.forward * 0.3f, Quaternion.LookRotation(t.right, Vector3.up));
+        }
+
         /// <summary>Repères de la mini-carte : destinations des passagers, postes de police visibles, stations-service.</summary>
         private void UpdateMiniMap()
         {

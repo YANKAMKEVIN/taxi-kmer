@@ -31,8 +31,10 @@ namespace TaxiKmer.Core.Talk
         public const string Rain = "pluie";
         /// <summary>Long silence dans le taxi : un passager le rompt (ou le savoure).</summary>
         public const string Silence = "silence";
+        /// <summary>Un vendeur ambulant au feu, un passager achète (idée n° 24) : valeur {article}.</summary>
+        public const string Vendor = "vendeur";
 
-        public static readonly string[] All = { Boarding, Chat, SeatMove, Detour, Paid, Haggle, RefusesToPay, Destination, Price, Breakdown, Control, Rain, Silence };
+        public static readonly string[] All = { Boarding, Chat, SeatMove, Detour, Paid, Haggle, RefusesToPay, Destination, Price, Breakdown, Control, Rain, Silence, Vendor };
     }
 
     /// <summary>

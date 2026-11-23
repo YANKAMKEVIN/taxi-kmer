@@ -111,6 +111,13 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void Vendors_MatchDefaults()
+        {
+            var d = Load<TaxiKmer.Core.Traffic.VendorsConfig>("vendors.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Traffic.VendorsConfig(), Opts), JsonSerializer.Serialize(d, Opts));
+        }
+
+        [Test]
         public void Quality_MatchesDefaults()
         {
             var q = Load<TaxiKmer.Core.Quality.QualityConfig>("quality.json");
