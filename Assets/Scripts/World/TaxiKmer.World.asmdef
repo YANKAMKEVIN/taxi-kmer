@@ -2,7 +2,8 @@
     "name": "TaxiKmer.World",
     "rootNamespace": "TaxiKmer.World",
     "references": [
-        "TaxiKmer.Core"
+        "TaxiKmer.Core",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
