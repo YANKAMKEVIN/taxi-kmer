@@ -253,6 +253,7 @@ namespace TaxiKmer.Core.Tests
         public void Flee_ChaseThenImpoundOrWanted_NextPostSettlesIt()
         {
             var config = Enabled();
+            config.chase.enabled = false; // tirage au sort, sans poursuite visible (idée n° 9 : PoliceChaseTests)
             int caught = 0, escaped = 0;
             for (var seed = 0; seed < 400; seed++)
             {
@@ -289,6 +290,7 @@ namespace TaxiKmer.Core.Tests
         public void PoliceDay_FleeThenNextPostStopsForSure()
         {
             var config = Enabled();
+            config.chase.enabled = false;
             config.flyingChecksPerDay = 0;
             config.checkpointStopChance = 1f;
             config.fleeOutcomes = new[] { new ChoiceOutcomeData { id = "echappe", weight = 1f, payFactor = 0f, wanted = true } };

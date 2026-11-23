@@ -63,6 +63,8 @@ namespace TaxiKmer.Driving
         private readonly List<string> _paperNews = new List<string>();
         private float _paperNewsAt = -1f;
         private bool _policeWasActive;
+        // Voiture de police de la poursuite (idée n° 9), créée au premier besoin.
+        private GameObject _chaseCar;
         // Postes de contrôle dessinés dans le monde (tâche 4.5, primitives provisoires) : racine et policier de chaque poste.
         private readonly List<(Core.Police.ControlPost post, GameObject root, Transform officer)> _postViews = new List<(Core.Police.ControlPost, GameObject, Transform)>();
         // Passagers qui parlent (dialogues.json ; créés seulement si enabled, jalon 5 activé le 21/11).
@@ -372,6 +374,7 @@ namespace TaxiKmer.Driving
                 if (policeDone.Length > 0) Toast(policeDone, 6f);
                 if (_police.Active && !_policeWasActive) _talk?.Say(Core.Talk.TalkTriggers.Control, TalkView.AnyPassenger(Street));
                 _policeWasActive = _police.Active;
+                UpdateChaseCar(state);
             }
             if (_road != null)
             {
@@ -783,6 +786,32 @@ namespace TaxiKmer.Driving
         /// abri bleu, barrière rouge et blanche, plots ; volant = plots et pick-up de police. Un policier attend au bord
         /// de la chaussée (il s'avance quand il arrête le taxi). Règle d'affichage : <see cref="Core.Police.PoliceMarkers"/>.
         /// </summary>
+        /// <summary>Voiture de police qui suit le taxi pendant une poursuite, sur la voie du taxi (primitives provisoires).</summary>
+        private void UpdateChaseCar(TaxiOnRoute state)
+        {
+            var chase = _police.Chase;
+            if (chase == null)
+            {
+                if (_chaseCar != null) _chaseCar.SetActive(false);
+                return;
+            }
+            if (_chaseCar == null)
+            {
+                _chaseCar = new GameObject("Voiture de police");
+                _chaseCar.transform.SetParent(transform, false);
+                var blue = new Color(0.1f, 0.2f, 0.45f);
+                Part(_chaseCar.transform, PrimitiveType.Cube, new Vector3(0f, 0.7f, 0f), new Vector3(1.8f, 0.8f, 4.4f), blue);
+                Part(_chaseCar.transform, PrimitiveType.Cube, new Vector3(0f, 1.35f, -0.2f), new Vector3(1.6f, 0.55f, 2f), new Color(0.92f, 0.92f, 0.9f));
+                Part(_chaseCar.transform, PrimitiveType.Cube, new Vector3(-0.3f, 1.7f, -0.2f), new Vector3(0.5f, 0.15f, 0.3f), new Color(0.9f, 0.1f, 0.1f));
+                Part(_chaseCar.transform, PrimitiveType.Cube, new Vector3(0.3f, 1.7f, -0.2f), new Vector3(0.5f, 0.15f, 0.3f), new Color(0.1f, 0.3f, 1f));
+            }
+            _chaseCar.SetActive(true);
+            WorldGeometry.SampleAlong(_xz, _cum, chase.PoliceAlong, out var x, out var z, out var dx, out var dz);
+            var right = new Vector3(dz, 0f, -dx);
+            var forward = new Vector3(dx, 0f, dz) * state.Direction;
+            _chaseCar.transform.SetPositionAndRotation(new Vector3(x, 0f, z) + right * state.Lateral, Quaternion.LookRotation(forward, Vector3.up));
+        }
+
         private (Core.Police.ControlPost, GameObject, Transform) MakePolicePost(Core.Police.ControlPost post)
         {
             WorldGeometry.SampleAlong(_xz, _cum, post.Along, out var x, out var z, out var dx, out var dz);

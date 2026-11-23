@@ -185,6 +185,8 @@ namespace TaxiKmer.Core.Police
             new ChoiceOutcomeData { id = "echappe", weight = 0.6f, payFactor = 0f, lostMinutes = 5, wanted = true },
             new ChoiceOutcomeData { id = "rattrape", weight = 0.4f, payFactor = 0f, lostMinutes = 15, impound = true },
         };
+        /// <summary>Poursuite visible quand on fuit (idée n° 9) ; enabled = false : tirage de fleeOutcomes comme avant.</summary>
+        public ChaseData chase = new ChaseData();
         /// <summary>Recherché : le prochain contrôle en place l'arrête à coup sûr…</summary>
         public float wantedStopChance = 1f;
         /// <summary>… et le policier parle de cette somme si ça ne finit pas en fourrière ou en arrestation (FCFA).</summary>

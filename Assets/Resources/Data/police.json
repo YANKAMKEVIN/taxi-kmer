@@ -40,6 +40,7 @@
         { "id": "echappe", "weight": 0.6, "payFactor": 0, "lostMinutes": 5, "impound": false, "reputation": 0, "requiresInvented": false, "requiresContact": false, "onlyWithoutContact": false, "arrest": false, "wanted": true },
         { "id": "rattrape", "weight": 0.4, "payFactor": 0, "lostMinutes": 15, "impound": true, "reputation": 0, "requiresInvented": false, "requiresContact": false, "onlyWithoutContact": false, "arrest": false, "wanted": false }
     ],
+    "chase": { "enabled": true, "startGapMeters": 35, "policeKmh": 60, "policeAccelerationSeconds": 4, "catchGapMeters": 6, "escapeGapMeters": 220, "maxSeconds": 75 },
     "wantedStopChance": 1,
     "demandFled": 10000,
     "wantedOutcomes": [

@@ -18,8 +18,10 @@ namespace TaxiKmer.Driving
     public sealed class PoliceView
     {
         public PoliceDay Police { get; }
-        /// <summary>Un contrôle est en cours : la conduite est bloquée.</summary>
-        public bool Active => Police.Current != null;
+        /// <summary>Un contrôle est en cours : la conduite est bloquée (sauf pendant une poursuite, idée n° 9).</summary>
+        public bool Active => Police.Current != null && !Police.Current.Chasing;
+        /// <summary>Poursuite en cours (null sinon) : la voiture de police est à <see cref="PoliceChase.PoliceAlong"/>.</summary>
+        public PoliceChase Chase { get; private set; }
 
         private readonly PoliceConfig _config;
         private readonly Image _panel;
@@ -28,6 +30,7 @@ namespace TaxiKmer.Driving
         private readonly List<Text> _labels = new List<Text>();
         private readonly List<ControlChoice> _choices = new List<ControlChoice>();
         private float _lastAlong = -1f;
+        private readonly Text _banner;
 
         /// <param name="papers">Papiers de la carrière (sauvegardés, renouvelés au début de la journée) ; null : ceux du début de carrière.</param>
         public PoliceView(RectTransform overlay, Font font, PoliceConfig config, PaperSet papers, int day, float routeLength, int startMinute, int endMinute, int seed)
@@ -42,6 +45,9 @@ namespace TaxiKmer.Driving
                 _labels.Add(label);
             }
             _panel.gameObject.SetActive(false);
+            _banner = UiKit.NewText(overlay, font, TextAnchor.MiddleCenter, new Color(1f, 0.35f, 0.3f));
+            _banner.gameObject.AddComponent<Outline>().effectColor = Color.black;
+            _banner.gameObject.SetActive(false);
         }
 
         /// <summary>
@@ -66,6 +72,7 @@ namespace TaxiKmer.Driving
             _lastAlong = state.Along;
 
             var control = Police.Current;
+            if (control != null && control.Chasing) UpdateChase(control, state);
             if (control != null && control.Closed) done = Finish(street);
             else if (control != null)
             {
@@ -86,9 +93,32 @@ namespace TaxiKmer.Driving
                 if (control.Closed) done = Finish(street);
             }
 
-            _panel.gameObject.SetActive(Police.Current != null);
-            if (Police.Current != null) Layout(Police.Current);
+            _panel.gameObject.SetActive(Active);
+            if (Active) Layout(Police.Current);
+            UpdateBanner();
             return done;
+        }
+
+        /// <summary>Poursuite (idée n° 9) : la police suit le taxi ; rattrapé ou échappé, le contrôle se termine.</summary>
+        private void UpdateChase(PoliceControl control, TaxiOnRoute state)
+        {
+            if (Chase == null) Chase = new PoliceChase(_config.chase, state.Along, state.Direction);
+            var result = Chase.Update(Time.deltaTime, state.Along);
+            if (result == ChaseState.Running) return;
+            control.EndChase(result == ChaseState.Caught);
+            Chase = null;
+        }
+
+        private void UpdateBanner()
+        {
+            var text = Chase != null ? PoliceChase.Banner(Chase.Gap) : Police.Schedule.Wanted ? PoliceChase.WantedBanner : "";
+            _banner.gameObject.SetActive(text.Length > 0);
+            if (text.Length == 0) return;
+            _banner.text = text;
+            var h = Screen.height;
+            _banner.fontSize = Mathf.RoundToInt(h * 0.035f);
+            _banner.color = Chase != null ? new Color(1f, 0.35f, 0.3f, 0.6f + 0.4f * UiKit.Pulse(8f)) : new Color(1f, 0.6f, 0.3f);
+            UiKit.PlaceTopCenter(_banner.rectTransform, h * 0.3f, h * 1.2f, h * 0.06f);
         }
 
         private string Finish(Street street)

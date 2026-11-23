@@ -70,6 +70,8 @@ namespace TaxiKmer.Core.Police
         public bool PapersInOrder { get; }
         public int ReputationDelta { get; private set; }
         public int Negotiations { get; private set; }
+        /// <summary>Le chauffeur a fui et la police le poursuit (idée n° 9) : le contrôle se termine avec <see cref="EndChase"/>.</summary>
+        public bool Chasing { get; private set; }
         /// <summary>Issue tirée pour contester ou appeler (vide sinon).</summary>
         public string OutcomeId { get; private set; } = "";
 
@@ -153,11 +155,30 @@ namespace TaxiKmer.Core.Police
                     Apply(Pick(_config.callOutcomes));
                     return true;
                 case ControlChoice.Flee:
-                    if (!_config.fleeEnabled) return false;
+                    if (!_config.fleeEnabled || Chasing) return false;
+                    if (_config.chase != null && _config.chase.enabled)
+                    {
+                        Chasing = true; // la poursuite décide de l'issue (EndChase)
+                        return true;
+                    }
                     Apply(Pick(_config.fleeOutcomes));
                     return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Fin de la poursuite : rattrapé → l'issue de fuite qui mène à la fourrière (ou à l'arrestation) ; échappé →
+        /// celle qui rend recherché. Sans issue de ce genre dans les données, tirage de fleeOutcomes.
+        /// </summary>
+        public void EndChase(bool caught)
+        {
+            if (!Chasing || Closed) return;
+            Chasing = false;
+            ChoiceOutcomeData match = null;
+            foreach (var o in _config.fleeOutcomes ?? Array.Empty<ChoiceOutcomeData>())
+                if (caught ? o.impound || o.arrest : o.wanted) { match = o; break; }
+            Apply(match ?? Pick(_config.fleeOutcomes));
         }
 
         private void Apply(ChoiceOutcomeData o)
@@ -229,7 +250,7 @@ namespace TaxiKmer.Core.Police
         public List<ControlChoice> AvailableChoices()
         {
             var list = new List<ControlChoice>();
-            if (Closed) return list;
+            if (Closed || Chasing) return list;
             list.Add(ControlChoice.Pay);
             if (CanNegotiate) list.Add(ControlChoice.Negotiate);
             list.Add(ControlChoice.Contest);
