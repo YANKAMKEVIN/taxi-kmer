@@ -121,6 +121,16 @@ namespace TaxiKmer.Core.Traffic
         /// <summary>Chance qu'un mototaxi grille un feu rouge (décidée à chaque feu).</summary>
         public float motoRunsRedChance = 0.3f;
 
+        /// <summary>
+        /// Klaxon du joueur (idée n° 15, valeurs par défaut de Claude) : le véhicule juste devant, à moins de
+        /// hornRangeMeters dans la même voie, se range à droite et ralentit pendant yieldSeconds, avec cette chance.
+        /// </summary>
+        public float hornYieldChance = 0.7f;
+        public float hornRangeMeters = 35f;
+        public float yieldSeconds = 4f;
+        public float yieldLateralMeters = 1.2f;
+        public float yieldSpeedFactor = 0.5f;
+
         public static float[] DefaultVehicleDensity()
         {
             // 0 h … 23 h. La journée de jeu va de 6 h à 20 h ; pointes à 7-8 h et 17-18 h.

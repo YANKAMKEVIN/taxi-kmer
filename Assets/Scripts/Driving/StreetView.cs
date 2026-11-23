@@ -575,6 +575,7 @@ namespace TaxiKmer.Driving
 
         private void OnHonk(TaxiOnRoute state)
         {
+            City.Traffic.Honk(PlayerState()); // idée n° 15 : la voiture de devant se range
             var result = Street.Honk(state, out var client);
             if ((result == HonkResult.Accepted || result == HonkResult.AcceptedNeedsMove) && Street.PendingHaggle == null)
                 _talk?.Say(Core.Talk.TalkTriggers.Price, client.Client.Id, TalkView.RideValues(Street, client.Client.DestinationStopId, client.Client.ProposedFare));

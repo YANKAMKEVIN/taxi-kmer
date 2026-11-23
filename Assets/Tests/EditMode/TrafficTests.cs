@@ -147,6 +147,42 @@ namespace TaxiKmer.Core.Tests
         }
 
         [Test]
+        public void Horn_CarAheadPullsOverAndSlows_ThenGetsBackInLane()
+        {
+            var cfg = Quiet();
+            cfg.hornYieldChance = 1f;
+            var sim = new TrafficSim(cfg, North(), South(), 5);
+            var player = PlayerAt(1000f, 8f, x: 1.7f);
+            var car = sim.TrySpawn(0, 1020f, VehicleKind.Car);
+            var home = car.Lateral;
+            Assert.AreSame(car, sim.Honk(player));
+            Assert.IsTrue(car.Yielding);
+            var far = PlayerAt(1000f, 0f, x: 1.7f); // le joueur reste derrière (la voiture reste dans la zone active)
+            for (var i = 0; i < 20; i++) sim.Update(0.1f, 12f, far);
+            Assert.Greater(car.Lateral, home + 0.8f, "Rangé à droite");
+            Assert.Less(car.Speed, car.DesiredSpeed * cfg.yieldSpeedFactor + 0.3f, "Ralentit en se rangeant");
+            for (var i = 0; i < 60; i++) sim.Update(0.1f, 12f, far);
+            Assert.IsFalse(car.Yielding);
+            Assert.AreEqual(home, car.Lateral, 0.05f, "Reprend sa voie");
+        }
+
+        [Test]
+        public void Horn_IgnoredBehind_ForMotos_FarAway_AndFromTheOtherWay()
+        {
+            var cfg = Quiet();
+            cfg.hornYieldChance = 1f;
+            var sim = new TrafficSim(cfg, North(), South(), 5);
+            sim.TrySpawn(0, 980f, VehicleKind.Car); // derrière
+            sim.TrySpawn(0, 1015f, VehicleKind.Moto); // au bord
+            sim.TrySpawn(0, 1200f, VehicleKind.Car); // trop loin
+            Assert.IsNull(sim.Honk(PlayerAt(1000f, 8f, x: 1.7f)));
+            var ahead = sim.TrySpawn(0, 1030f, VehicleKind.Taxi);
+            var wrongWay = new PlayerCar { X = 1.7f, Z = 1000f, DirX = 0f, DirZ = -1f, Length = 4.4f, Width = 1.72f };
+            Assert.IsNull(sim.Honk(wrongWay), "à contresens, le klaxon ne fait pas ranger la voiture de devant");
+            Assert.AreSame(ahead, sim.Honk(PlayerAt(1000f, 8f, x: 1.7f)));
+        }
+
+        [Test]
         public void Moto_PassesCarsOnTheRight()
         {
             var cfg = Quiet();

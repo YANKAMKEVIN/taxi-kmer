@@ -36,7 +36,12 @@
         "lightRedSeconds": 20,
         "lightStopLineMeters": 6,
         "lightJunctionRadiusMeters": 25,
-        "motoRunsRedChance": 0.3
+        "motoRunsRedChance": 0.3,
+        "hornYieldChance": 0.7,
+        "hornRangeMeters": 35,
+        "yieldSeconds": 4,
+        "yieldLateralMeters": 1.2,
+        "yieldSpeedFactor": 0.5
     },
     "pedestrians": {
         "perKmBySideByHour": [1, 0, 0, 0, 1, 4, 10, 14, 14, 10, 9, 9, 10, 10, 9, 9, 11, 14, 14, 11, 7, 4, 2, 1],

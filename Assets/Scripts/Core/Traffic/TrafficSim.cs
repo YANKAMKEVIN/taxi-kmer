@@ -56,6 +56,11 @@ namespace TaxiKmer.Core.Traffic
         internal PathLight RunsLight;
         /// <summary>Dans une rue latérale : distance au carrefour (m).</summary>
         internal float SideDistance;
+        /// <summary>Se range après un coup de klaxon du joueur (idée n° 15) : secondes restantes.</summary>
+        internal float YieldTimer;
+
+        /// <summary>Le véhicule se range pour laisser passer le joueur qui a klaxonné.</summary>
+        public bool Yielding => YieldTimer > 0f;
 
         /// <summary>Dans une rue latérale (pas encore ou plus sur l'axe).</summary>
         public bool OnSideRoad => State == VehicleState.LeavingOnSideRoad || State == VehicleState.EnteringFromSideRoad;
@@ -183,6 +188,38 @@ namespace TaxiKmer.Core.Traffic
             UpdateWorldPositions();
         }
 
+        /// <summary>
+        /// Le joueur klaxonne (idée n° 15) : le véhicule juste devant lui dans sa voie, à portée, se range à droite et
+        /// ralentit quelques secondes (pas les mototaxis, déjà au bord, ni un véhicule arrêté à un feu ou pour un client).
+        /// Rend le véhicule qui cède, ou null.
+        /// </summary>
+        public TrafficVehicle Honk(PlayerCar player)
+        {
+            LocatePlayer(player);
+            TrafficVehicle best = null;
+            var bestDistance = float.MaxValue;
+            for (var p = 0; p < 2; p++)
+            {
+                if (!_playerNear[p]) continue;
+                _paths[p].Project(player.X, player.Z, out _, out var playerLateral);
+                // Le joueur roule dans le sens de ce chemin ?
+                _paths[p].Sample(_playerAlong[p], 0f, out _, out _, out var dx, out var dz);
+                if (dx * player.DirX + dz * player.DirZ < 0.5f) continue;
+                foreach (var v in _vehicles)
+                {
+                    if (v.PathIndex != p || v.OnSideRoad || v.Kind == VehicleKind.Moto || v.State != VehicleState.Driving) continue;
+                    var d = v.Along - _playerAlong[p];
+                    if (d <= 0f || d > _config.hornRangeMeters + (v.Length + player.Length) / 2f) continue;
+                    if (!Overlap(v.Lateral, v.Width, playerLateral, player.Width)) continue;
+                    if (d < bestDistance) { bestDistance = d; best = v; }
+                }
+            }
+            if (best == null || MustStopAtLight(best, out _) || _random.NextDouble() >= _config.hornYieldChance) return null;
+            best.YieldTimer = _config.yieldSeconds;
+            best.TargetLateral = best.HomeLateral + _config.yieldLateralMeters;
+            return best;
+        }
+
         // ---------- Joueur et obstacles ----------
 
         private void LocatePlayer(PlayerCar player)
@@ -287,6 +324,7 @@ namespace TaxiKmer.Core.Traffic
             if (v.OnSideRoad) return SideRoadAcceleration(v);
             var k = _config.Kind(v.Kind);
             var desired = v.DesiredSpeed;
+            if (v.Yielding) desired *= _config.yieldSpeedFactor; // il se range en ralentissant
             if (v.State == VehicleState.Exiting && v.Junction != null && v.Junction.Along - v.Along < 35f)
                 desired = Math.Min(desired, _config.turnSpeedKmh / 3.6f);
 
@@ -359,6 +397,11 @@ namespace TaxiKmer.Core.Traffic
             if (v.OnSideRoad) { AdvanceOnSideRoad(v, accel, dt); return; }
             v.Speed = Math.Max(0f, v.Speed + accel * dt);
             v.Along += v.Speed * dt;
+            if (v.YieldTimer > 0f)
+            {
+                v.YieldTimer -= dt;
+                if (v.YieldTimer <= 0f && v.State == VehicleState.Driving) v.TargetLateral = v.HomeLateral; // reprend sa voie
+            }
 
             // Changement de voie progressif.
             var dl = v.TargetLateral - v.Lateral;
