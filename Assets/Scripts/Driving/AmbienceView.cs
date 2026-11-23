@@ -44,17 +44,17 @@ namespace TaxiKmer.Driving
             foreach (var c in street.Waiting)
                 if (c.Calling) _waiting.Add(new KeyValuePair<string, float>(c.Client.Id, c.Along));
             var events = Mix.Update(dt, along, moving, jammed, _waiting, marketDay, talking, audible && !street.DayFinished);
-            _murmur.volume = Mix.MurmurVolume;
-            _market.volume = Mix.MarketVolume;
+            _murmur.volume = Mix.MurmurVolume * UiKit.StreetVolume; // idée n° 31 : volume « rue »
+            _market.volume = Mix.MarketVolume * UiKit.StreetVolume;
             if (events.Horn)
             {
                 _effects.pitch = Random.Range(0.85f, 1.15f); // pas toujours la même voiture
-                _effects.PlayOneShot(_horn, Random.Range(0.4f, 0.8f));
+                _effects.PlayOneShot(_horn, Random.Range(0.4f, 0.8f) * UiKit.StreetVolume);
             }
             foreach (var _ in events.Calls)
             {
                 _effects.pitch = Random.Range(0.9f, 1.2f);
-                _effects.PlayOneShot(_call, 0.7f);
+                _effects.PlayOneShot(_call, 0.7f * UiKit.StreetVolume);
             }
         }
 

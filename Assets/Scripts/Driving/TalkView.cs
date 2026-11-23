@@ -200,12 +200,12 @@ namespace TaxiKmer.Driving
                     }
                     _provisional[b.Voice.id] = synth;
                 }
-                if (synth != null) _voice.PlayOneShot(synth);
+                if (synth != null) _voice.PlayOneShot(synth, UiKit.VoiceVolume); // idée n° 31
                 return;
             }
             var clip = Resources.Load<AudioClip>(b.Voice.clip);
             if (clip == null) { Debug.LogWarning($"[TaxiKmer] Voix : son Resources/{b.Voice.clip} introuvable (à fournir)."); return; }
-            _voice.PlayOneShot(clip);
+            _voice.PlayOneShot(clip, UiKit.VoiceVolume);
         }
     }
 }

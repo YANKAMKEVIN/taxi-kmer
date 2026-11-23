@@ -792,6 +792,10 @@ namespace TaxiKmer.Driving
             UiKit.TextScale = _settings.TextScale;
             UiKit.ColorBlind = _settings.ColorBlind;
             controls.ApplyLayoutOptions(_settings.LeftHanded, _settings.ButtonScale, _settings.ButtonOpacity); // idée n° 30
+            UiKit.RadioVolume = _settings.RadioVolume; // idée n° 31
+            UiKit.VoiceVolume = _settings.VoiceVolume;
+            UiKit.EffectsVolume = _settings.EffectsVolume;
+            UiKit.StreetVolume = _settings.StreetVolume;
         }
 
         /// <summary>Ligne sous le titre de la pause : papiers (jalon 4) et objectifs du jour (idée n° 25).</summary>

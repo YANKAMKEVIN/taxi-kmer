@@ -47,16 +47,16 @@ namespace TaxiKmer.Driving
             var cmd = _taxi.Command;
             var max = _taxi.Config != null ? _taxi.Config.pedals.maxForwardKmh : 80f;
             _engine.pitch = SoundSynth.EnginePitch(_taxi.SpeedKmh, max);
-            _engine.volume = Muted ? 0f : engineVolume * SoundSynth.EngineVolume(cmd.Throttle);
+            _engine.volume = Muted ? 0f : engineVolume * SoundSynth.EngineVolume(cmd.Throttle) * UiKit.EffectsVolume; // idée n° 31
 
             var braking = SoundSynth.HardBraking(_taxi.SpeedKmh, cmd.Brake);
-            if (braking && !_wasBraking && !Muted) _effects.PlayOneShot(_squeal, effectsVolume * 0.7f);
+            if (braking && !_wasBraking && !Muted) _effects.PlayOneShot(_squeal, effectsVolume * 0.7f * UiKit.EffectsVolume);
             _wasBraking = braking;
         }
 
-        public void PlayDoor() => _effects.PlayOneShot(_door, effectsVolume);
+        public void PlayDoor() => _effects.PlayOneShot(_door, effectsVolume * UiKit.EffectsVolume);
 
-        public void PlayCoins() => _effects.PlayOneShot(_coins, effectsVolume);
+        public void PlayCoins() => _effects.PlayOneShot(_coins, effectsVolume * UiKit.EffectsVolume);
 
         private static AudioClip Clip(string name, float[] data)
         {

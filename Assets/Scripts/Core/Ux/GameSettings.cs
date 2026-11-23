@@ -54,6 +54,22 @@ namespace TaxiKmer.Core.Ux
         public float ButtonOpacity => ButtonOpacities[Math.Max(0, Math.Min(ButtonOpacities.Length - 1, ButtonOpacityIndex))];
         public string ButtonOpacityLabel => $"Opacité des boutons : {(int)Math.Round(ButtonOpacity * 100f)} %";
 
+        // ---------- Volumes séparés (idée n° 31) ----------
+
+        /// <summary>Paliers de chaque volume séparé (le volume général reste réglé par – / +).</summary>
+        public static readonly float[] VolumeSteps = { 1f, 0.75f, 0.5f, 0.25f, 0f };
+        public int RadioVolumeIndex { get; set; }
+        public int VoiceVolumeIndex { get; set; }
+        public int EffectsVolumeIndex { get; set; }
+        public int StreetVolumeIndex { get; set; }
+        public float RadioVolume => Step(RadioVolumeIndex);
+        public float VoiceVolume => Step(VoiceVolumeIndex);
+        public float EffectsVolume => Step(EffectsVolumeIndex);
+        public float StreetVolume => Step(StreetVolumeIndex);
+
+        private static float Step(int i) => VolumeSteps[Math.Max(0, Math.Min(VolumeSteps.Length - 1, i))];
+        private static string VolumeText(string name, float v) => v <= 0f ? $"{name} : coupé" : $"{name} : {(int)Math.Round(v * 100f)} %";
+
         /// <summary>Réglages qui défilent d'un appui, dans l'ordre de l'écran des réglages (sauf le volume et ses boutons – / +).</summary>
         public List<SettingRow> Rows()
         {
@@ -65,6 +81,10 @@ namespace TaxiKmer.Core.Ux
                 new SettingRow(SettingIds.LeftHanded, LeftHandedLabel),
                 new SettingRow(SettingIds.ButtonScale, ButtonScaleLabel),
                 new SettingRow(SettingIds.ButtonOpacity, ButtonOpacityLabel),
+                new SettingRow(SettingIds.RadioVolume, VolumeText("Radio", RadioVolume)),
+                new SettingRow(SettingIds.VoiceVolume, VolumeText("Voix", VoiceVolume)),
+                new SettingRow(SettingIds.EffectsVolume, VolumeText("Effets", EffectsVolume)),
+                new SettingRow(SettingIds.StreetVolume, VolumeText("Rue", StreetVolume)),
             };
             return rows;
         }
@@ -80,6 +100,10 @@ namespace TaxiKmer.Core.Ux
                 case SettingIds.LeftHanded: LeftHanded = !LeftHanded; break;
                 case SettingIds.ButtonScale: ButtonScaleIndex = (ButtonScaleIndex + 1) % ButtonScales.Length; break;
                 case SettingIds.ButtonOpacity: ButtonOpacityIndex = (ButtonOpacityIndex + 1) % ButtonOpacities.Length; break;
+                case SettingIds.RadioVolume: RadioVolumeIndex = (RadioVolumeIndex + 1) % VolumeSteps.Length; break;
+                case SettingIds.VoiceVolume: VoiceVolumeIndex = (VoiceVolumeIndex + 1) % VolumeSteps.Length; break;
+                case SettingIds.EffectsVolume: EffectsVolumeIndex = (EffectsVolumeIndex + 1) % VolumeSteps.Length; break;
+                case SettingIds.StreetVolume: StreetVolumeIndex = (StreetVolumeIndex + 1) % VolumeSteps.Length; break;
             }
         }
 
@@ -94,7 +118,13 @@ namespace TaxiKmer.Core.Ux
             LeftHanded = store.GetInt(SettingIds.LeftHanded, 0) == 1;
             ButtonScaleIndex = Math.Max(0, Math.Min(ButtonScales.Length - 1, store.GetInt(SettingIds.ButtonScale, 0)));
             ButtonOpacityIndex = Math.Max(0, Math.Min(ButtonOpacities.Length - 1, store.GetInt(SettingIds.ButtonOpacity, 0)));
+            RadioVolumeIndex = Clamp(store.GetInt(SettingIds.RadioVolume, 0));
+            VoiceVolumeIndex = Clamp(store.GetInt(SettingIds.VoiceVolume, 0));
+            EffectsVolumeIndex = Clamp(store.GetInt(SettingIds.EffectsVolume, 0));
+            StreetVolumeIndex = Clamp(store.GetInt(SettingIds.StreetVolume, 0));
         }
+
+        private static int Clamp(int i) => Math.Max(0, Math.Min(VolumeSteps.Length - 1, i));
 
         public void Save(ISettingsStore store)
         {
@@ -106,6 +136,10 @@ namespace TaxiKmer.Core.Ux
             store.SetInt(SettingIds.LeftHanded, LeftHanded ? 1 : 0);
             store.SetInt(SettingIds.ButtonScale, ButtonScaleIndex);
             store.SetInt(SettingIds.ButtonOpacity, ButtonOpacityIndex);
+            store.SetInt(SettingIds.RadioVolume, RadioVolumeIndex);
+            store.SetInt(SettingIds.VoiceVolume, VoiceVolumeIndex);
+            store.SetInt(SettingIds.EffectsVolume, EffectsVolumeIndex);
+            store.SetInt(SettingIds.StreetVolume, StreetVolumeIndex);
         }
     }
 
@@ -127,6 +161,10 @@ namespace TaxiKmer.Core.Ux
         public const string LeftHanded = "reglages.gaucher";
         public const string ButtonScale = "reglages.taille-boutons";
         public const string ButtonOpacity = "reglages.opacite-boutons";
+        public const string RadioVolume = "reglages.volume-radio";
+        public const string VoiceVolume = "reglages.volume-voix";
+        public const string EffectsVolume = "reglages.volume-effets";
+        public const string StreetVolume = "reglages.volume-rue";
     }
 
     /// <summary>Où sont gardés les réglages (PlayerPrefs dans Unity ; un dictionnaire dans les tests).</summary>

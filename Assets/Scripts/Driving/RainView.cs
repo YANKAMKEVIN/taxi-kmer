@@ -94,7 +94,7 @@ namespace TaxiKmer.Driving
             var angle = Look.WiperPosition * 95f;
             if (_wipers[0] != null) _wipers[0].localRotation = Quaternion.Euler(0f, 0f, angle);
             if (_wipers[1] != null) _wipers[1].localRotation = Quaternion.Euler(0f, 0f, angle);
-            _roof.volume = audible ? Look.RoofVolume : 0f;
+            _roof.volume = audible ? Look.RoofVolume * UiKit.EffectsVolume : 0f;
             if (_roof.volume > 0f && !_roof.isPlaying) _roof.Play();
             else if (_roof.volume <= 0f && _roof.isPlaying) _roof.Stop();
         }

@@ -163,6 +163,12 @@ namespace TaxiKmer.Driving
         /// <summary>Couleurs pour daltoniens (idée n° 29).</summary>
         public static bool ColorBlind { get; set; }
 
+        /// <summary>Volumes séparés (idée n° 31), appliqués par les vues qui jouent chaque famille de sons.</summary>
+        public static float RadioVolume { get; set; } = 1f;
+        public static float VoiceVolume { get; set; } = 1f;
+        public static float EffectsVolume { get; set; } = 1f;
+        public static float StreetVolume { get; set; } = 1f;
+
         public static Color Palette(float[] c) => new Color(c[0], c[1], c[2], c.Length > 3 ? c[3] : 1f);
 
         public static float Pulse(float speed = 6f) => 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * speed);

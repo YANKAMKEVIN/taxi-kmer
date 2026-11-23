@@ -67,7 +67,7 @@ namespace TaxiKmer.Driving
                 _subtitle.fontSize = Mathf.RoundToInt(h * 0.024f);
                 _subtitle.text = $"« {text} »";
             }
-            _source.volume = Radio.Volume;
+            _source.volume = Radio.Volume * UiKit.RadioVolume; // idée n° 31
 
             UpdateSound();
         }

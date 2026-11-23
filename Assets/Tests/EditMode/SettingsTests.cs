@@ -129,5 +129,31 @@ namespace TaxiKmer.Core.Tests
             Assert.AreEqual(1.15f, back.ButtonScale);
             Assert.AreEqual(0.5f, back.ButtonOpacity);
         }
+
+        [Test]
+        public void SeparateVolumes_CycleDown_ToMuted_AndPersist()
+        {
+            var s = new GameSettings();
+            Assert.AreEqual(1f, s.RadioVolume);
+            var labels = s.Rows().Select(r => r.Label).ToList();
+            CollectionAssert.Contains(labels, "Radio : 100 %");
+            CollectionAssert.Contains(labels, "Rue : 100 %");
+            for (var i = 0; i < 4; i++) s.Cycle(SettingIds.RadioVolume);
+            Assert.AreEqual(0f, s.RadioVolume);
+            CollectionAssert.Contains(s.Rows().Select(r => r.Label).ToList(), "Radio : coupé");
+            s.Cycle(SettingIds.VoiceVolume);
+            s.Cycle(SettingIds.StreetVolume);
+            s.Cycle(SettingIds.StreetVolume);
+            var store = new MemoryStore();
+            s.Save(store);
+            var back = new GameSettings();
+            back.Load(store);
+            Assert.AreEqual(0f, back.RadioVolume);
+            Assert.AreEqual(0.75f, back.VoiceVolume);
+            Assert.AreEqual(1f, back.EffectsVolume);
+            Assert.AreEqual(0.5f, back.StreetVolume);
+            s.Cycle(SettingIds.RadioVolume);
+            Assert.AreEqual(1f, s.RadioVolume, "après coupé, retour à 100 %");
+        }
     }
 }

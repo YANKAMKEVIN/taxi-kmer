@@ -34,6 +34,7 @@ namespace TaxiKmer.Driving
             {
                 if (!_source.isPlaying)
                 {
+                    _source.volume = volume * UiKit.EffectsVolume; // idée n° 31 : volume « effets »
                     Honks++;
                     _source.Play();
                 }
