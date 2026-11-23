@@ -16,6 +16,7 @@
     <Compile Include="../../Assets/Tests/EditMode/**/*.cs" />
     <Compile Include="*.cs" />
     <None Include="../../Assets/Resources/Data/*.json" Link="Data/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="SaveFixtures/*.json" Link="SaveFixtures/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
