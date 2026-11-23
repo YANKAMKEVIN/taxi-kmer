@@ -8,6 +8,7 @@ Kevin est le **directeur du jeu** : il conçoit, Claude implémente. Toute déci
 
 - `docs/design/vision.md` — **source de vérité du design** (piliers, boucles, mécaniques, questions ouvertes).
 - `docs/tech/etat-projet.md` — où en est le projet, prochaine étape (court, mis à jour à chaque tâche terminée).
+- `docs/tech/journal.md` — historique détaillé (ce qui sort de l'état du projet y est déplacé, nouvelles entrées en bas).
 
 ## Règles de travail
 
