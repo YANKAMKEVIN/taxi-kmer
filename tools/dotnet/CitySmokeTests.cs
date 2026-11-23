@@ -151,5 +151,49 @@ namespace TaxiKmer.Core.DotnetTests
             for (var d = 0f; d < cum[cum.Length - 1]; d += 25f) maxGrade = Math.Max(maxGrade, Math.Abs(t.GradePercent(xz, cum, d)));
             Assert.That(maxGrade, Is.InRange(1f, 25f), "des montées, mais une route carrossable");
         }
+
+        /// <summary>
+        /// Budget de temps (idée n° 36) : 200 véhicules et 150 piétons pendant 10 000 pas ; échoue au-delà d'un temps
+        /// moyen par pas, pour attraper une lenteur (un calcul en n² qui dérape…) avant qu'elle n'arrive sur téléphone.
+        /// Le budget est large (machine de CI partagée) : 6 ms par pas, environ 3 fois le coût mesuré en session cloud (≈ 2 ms).
+        /// </summary>
+        [Test]
+        public void Budget_200Vehicles_150Pedestrians_10000Steps()
+        {
+            var world = Load<WorldData>("world_messassi_etoudi.json");
+            var config = Load<CityConfig>("traffic.json");
+            for (var h = 0; h < 24; h++)
+            {
+                config.vehicles.vehiclesPerKmByHour[h] = 130f; // ≈ 200 véhicules dans la zone active (écart minimal à l'apparition)
+                config.pedestrians.perKmBySideByHour[h] = 75f; // ≈ 150 piétons
+            }
+            config.vehicles.minSpawnGapMeters = 4f; // serrés : on veut du monde, pas du réalisme
+            config.vehicles.minSpawnDistanceMeters = 60f;
+            config.vehicles.maxSpawnsPerUpdate = 20;
+            var city = new CityLife(config, world, null, 7);
+            var route = new TrafficPath(world.route.xz);
+            route.Sample(route.Length / 2f, 1.7f, out var x, out var z, out var dx, out var dz);
+            var player = new PlayerCar { X = x, Z = z, DirX = dx, DirZ = dz, Speed = 0f, Length = 4.4f, Width = 1.72f };
+            const float dt = 1f / 30f;
+            city.Populate(12f, player);
+            for (var i = 0; i < 300; i++) city.Update(dt, 12f, player); // mise en place
+
+            var maxVehicles = 0;
+            var maxPeople = 0;
+            var watch = Stopwatch.StartNew();
+            const int steps = 10000;
+            for (var i = 0; i < steps; i++)
+            {
+                city.Update(dt, 12f, player);
+                maxVehicles = Math.Max(maxVehicles, city.Traffic.Vehicles.Count);
+                maxPeople = Math.Max(maxPeople, city.Pedestrians.People.Count);
+            }
+            watch.Stop();
+            var msPerStep = watch.Elapsed.TotalMilliseconds / steps;
+            TestContext.WriteLine($"{steps} pas : {msPerStep:F3} ms par pas, jusqu'à {maxVehicles} véhicules et {maxPeople} piétons");
+            Assert.GreaterOrEqual(maxVehicles, 150, "assez de véhicules pour l'essai");
+            Assert.GreaterOrEqual(maxPeople, 100, "assez de piétons pour l'essai");
+            Assert.Less(msPerStep, 6f, "Budget de calcul par pas dépassé : chercher ce qui a ralenti TrafficSim ou PedestrianSim.");
+        }
     }
 }
