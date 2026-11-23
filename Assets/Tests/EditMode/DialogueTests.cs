@@ -320,6 +320,47 @@ namespace TaxiKmer.Core.Tests
         }
 
         [Test]
+        public void TimeWindow_LineSaidOnlyInItsHours()
+        {
+            // Décision de Kevin (23/11) : « Bonsoir » seulement le soir, « Bonjour » le matin.
+            var bonsoir = new LineData { id = "bonsoir", trigger = TalkTriggers.Boarding, text = "Bonsoir chauffeur.", fromTime = "17:00", untilTime = "24:00" };
+            Assert.IsFalse(bonsoir.SaidAt(6 * 60));
+            Assert.IsFalse(bonsoir.SaidAt(16 * 60 + 59));
+            Assert.IsTrue(bonsoir.SaidAt(17 * 60));
+            Assert.IsTrue(bonsoir.SaidAt(-1), "Heure inconnue : pas de plage.");
+            var nuit = new LineData { fromTime = "22:00", untilTime = "05:00" };
+            Assert.IsTrue(nuit.SaidAt(23 * 60));
+            Assert.IsTrue(nuit.SaidAt(4 * 60));
+            Assert.IsFalse(nuit.SaidAt(12 * 60));
+            Assert.IsTrue(new LineData().SaidAt(3 * 60), "Sans plage : à toute heure.");
+            Assert.IsTrue(new LineData { untilTime = "12:00" }.SaidAt(6 * 60));
+            Assert.AreEqual(450, LineData.ParseTime("07:30"));
+            Assert.AreEqual(-1, LineData.ParseTime("7h30"));
+            Assert.AreEqual(-1, LineData.ParseTime("25:00"));
+
+            var config = new DialogueConfig
+            {
+                enabled = true,
+                noRepeatWithin = 0,
+                lines = new[]
+                {
+                    new LineData { id = "bonjour", trigger = TalkTriggers.Boarding, text = "Bonjour.", fromTime = "05:00", untilTime = "12:00" },
+                    bonsoir,
+                },
+            };
+            var d = new DialogueDirector(config, new Random(1));
+            for (var minute = 6 * 60; minute < 20 * 60; minute += 30)
+            {
+                d.MinuteOfDay = minute;
+                Wait(d, 10f);
+                var said = d.Trigger(TalkTriggers.Boarding, "c" + minute);
+                if (minute >= 12 * 60 && minute < 17 * 60) { Assert.IsFalse(said, $"{minute / 60} h : ni bonjour ni bonsoir"); continue; }
+                Assert.IsTrue(said, $"{minute / 60} h");
+                Assert.AreEqual(minute < 12 * 60 ? "bonjour" : "bonsoir", d.Current.Line.id, $"{minute / 60} h");
+            }
+        }
+
+        [Test]
         public void FollowUp_DestinationAfterBoarding_DroppedWhenLateOrPassengerGone()
         {
             // 22/11 : la situation « destination » n'était jamais déclenchée ; elle suit maintenant la montée.

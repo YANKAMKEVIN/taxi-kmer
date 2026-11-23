@@ -119,6 +119,8 @@
             "character": "commercante",
             "register": "fr",
             "text": "Bonjour chauffeur ! Mes paniers vont derrière, doucement : ce sont des tomates.",
+            "fromTime": "05:00",
+            "untilTime": "12:00",
             "replies": [
                 {
                     "id": "aider",
@@ -143,6 +145,8 @@
             "character": "ecolier",
             "register": "fr",
             "text": "Bonjour tonton ! Je vais à l'école, c'est sur ta route ?",
+            "fromTime": "05:00",
+            "untilTime": "12:00",
             "replies": [
                 {
                     "id": "monte",
@@ -167,6 +171,8 @@
             "character": "maman-bebe",
             "register": "fr",
             "text": "Bonjour. Je monte avec le bébé, roulez doucement s'il vous plaît.",
+            "fromTime": "05:00",
+            "untilTime": "12:00",
             "replies": [
                 {
                     "id": "promettre",
@@ -191,6 +197,8 @@
             "character": "fonctionnaire",
             "register": "fr",
             "text": "Bonjour. Je dois être au bureau avant huit heures, c'est possible ?",
+            "fromTime": "05:00",
+            "untilTime": "07:30",
             "replies": [
                 {
                     "id": "essayer",
@@ -215,6 +223,8 @@
             "character": "professeur",
             "register": "fr",
             "text": "Bonjour, mon fils. L'école publique, vers {destination}, tu vois où c'est ?",
+            "fromTime": "05:00",
+            "untilTime": "12:00",
             "replies": [
                 {
                     "id": "oui-maitre",
@@ -263,6 +273,8 @@
             "character": "etudiant",
             "register": "camfranglais",
             "text": "Mola, je go {a_destination}, j'ai cours à dix heures.",
+            "fromTime": "05:00",
+            "untilTime": "09:30",
             "replies": [
                 {
                     "id": "go",
@@ -608,6 +620,8 @@
             "character": "",
             "register": "fr",
             "text": "Encore un contrôle… À ce rythme, on arrive à midi.",
+            "fromTime": "05:00",
+            "untilTime": "11:00",
             "replies": [],
             "voice": "",
             "statut": "proposée",
@@ -856,6 +870,8 @@
             "character": "",
             "register": "fr",
             "text": "Bonsoir chauffeur. Je peux mettre mon sac sur mes genoux, il n'y a pas de place.",
+            "fromTime": "17:00",
+            "untilTime": "24:00",
             "replies": [
                 {
                     "id": "oui",
@@ -985,6 +1001,8 @@
             "character": "fonctionnaire",
             "register": "fr",
             "text": "{prix} pour {destination}. C'est cher, mais je suis pressé ce matin.",
+            "fromTime": "05:00",
+            "untilTime": "12:00",
             "replies": [
                 {
                     "id": "merci",
@@ -1406,6 +1424,8 @@
             "character": "",
             "register": "fr",
             "text": "Le marché était plein ce matin. Tout le monde a peur qu'il pleuve.",
+            "fromTime": "09:00",
+            "untilTime": "24:00",
             "replies": [],
             "voice": "",
             "statut": "proposée",
@@ -1532,6 +1552,8 @@
             "character": "fonctionnaire",
             "register": "fr",
             "text": "Bonjour. Allez-y doucement, j'ai un dossier important sur les genoux.",
+            "fromTime": "05:00",
+            "untilTime": "12:00",
             "replies": [
                 {
                     "id": "bien",
@@ -1586,6 +1608,8 @@
             "character": "professeur",
             "register": "fr",
             "text": "Bonjour, mon fils. Ton taxi est bien propre. {destination}, s'il te plaît.",
+            "fromTime": "05:00",
+            "untilTime": "12:00",
             "replies": [
                 {
                     "id": "merci",
@@ -1622,6 +1646,8 @@
             "character": "",
             "register": "camfranglais",
             "text": "Bonjour le mbom. Ma nga m'attend {a_destination}, on se dépêche ?",
+            "fromTime": "05:00",
+            "untilTime": "12:00",
             "replies": [
                 {
                     "id": "go",
@@ -1860,6 +1886,8 @@
             "character": "",
             "register": "fr",
             "text": "Mon téléphone est tombé dans une flaque ce matin. L'écran ne s'allume plus.",
+            "fromTime": "09:00",
+            "untilTime": "24:00",
             "replies": [],
             "voice": "aie",
             "statut": "proposée",
@@ -1882,6 +1910,8 @@
             "character": "",
             "register": "fr",
             "text": "Ce matin, les bouchons étaient terribles. Les piétons allaient plus vite que nous.",
+            "fromTime": "10:00",
+            "untilTime": "24:00",
             "replies": [],
             "voice": "",
             "statut": "proposée",
@@ -1893,6 +1923,8 @@
             "character": "",
             "register": "fr",
             "text": "Ma mère prépare le ndolè ce soir. Je ne vais pas traîner en route.",
+            "fromTime": "05:00",
+            "untilTime": "18:00",
             "replies": [],
             "voice": "",
             "statut": "proposée",
@@ -2102,6 +2134,8 @@
             "character": "commercante",
             "register": "fr",
             "text": "Je descends {a_destination}. Mes clientes m'attendent depuis le matin.",
+            "fromTime": "10:00",
+            "untilTime": "24:00",
             "replies": [],
             "voice": "",
             "statut": "proposée",
@@ -2969,6 +3003,8 @@
             "character": "commercante",
             "register": "fr",
             "text": "Je te paie quand j'aurai vendu mes tomates. Repasse ce soir.",
+            "fromTime": "05:00",
+            "untilTime": "17:00",
             "replies": [
                 {
                     "id": "maintenant",

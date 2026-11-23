@@ -346,6 +346,11 @@ namespace TaxiKmer.Core.DotnetTests
                 Assert.IsTrue(string.IsNullOrEmpty(l.voice) || voices.Contains(l.voice), $"{l.id} : son inconnu");
                 Assert.IsTrue(TaxiKmer.Core.Talk.TalkRegisters.All.Contains(l.register) || l.register == "", $"{l.id} : registre inconnu « {l.register} »");
                 StringAssert.DoesNotContain("exemple", l.text, $"{l.id} : plus d'exemple à remplacer");
+                // Plage horaire (décision de Kevin, 23/11) : « HH:MM » lisible, et toute salutation liée à l'heure en a une.
+                Assert.IsTrue(l.fromTime == "" || TaxiKmer.Core.Talk.LineData.ParseTime(l.fromTime) >= 0, $"{l.id} : fromTime « {l.fromTime} »");
+                Assert.IsTrue(l.untilTime == "" || TaxiKmer.Core.Talk.LineData.ParseTime(l.untilTime) >= 0, $"{l.id} : untilTime « {l.untilTime} »");
+                if (l.text.StartsWith("Bonjour") || l.text.StartsWith("Bonsoir") || l.text.Contains("ce matin") || l.text.Contains("ce soir"))
+                    Assert.IsFalse(l.fromTime == "" && l.untilTime == "", $"{l.id} : réplique liée à l'heure sans plage horaire");
                 foreach (var r in l.replies)
                 {
                     Assert.That(r.reputation, Is.InRange(-3, 3), $"{l.id}/{r.id} : effet modéré");

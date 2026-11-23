@@ -86,6 +86,7 @@ namespace TaxiKmer.Driving
             var ids = new List<string>();
             foreach (var p in cabin.Passengers) ids.Add(p.Id);
             Director.SetPassengers(ids);
+            Director.MinuteOfDay = street.Shift.Clock.GameMinutes; // répliques liées à l'heure (« Bonsoir » le soir)
 
             if (driving && !street.DayFinished)
             {

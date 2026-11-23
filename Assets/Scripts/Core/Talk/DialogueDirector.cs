@@ -115,6 +115,13 @@ namespace TaxiKmer.Core.Talk
 
         public bool Enabled => _config.enabled;
 
+        /// <summary>
+        /// Heure du jeu (minutes depuis minuit), mise à jour par la présentation : une réplique liée à l'heure n'est dite
+        /// que dans sa plage (<see cref="LineData.SaidAt"/>, décision de Kevin du 23/11). Négatif : heure inconnue, aucune
+        /// plage appliquée.
+        /// </summary>
+        public int MinuteOfDay { get; set; } = -1;
+
         /// <summary>Temps d'affichage d'un texte : de quoi le lire en conduisant.</summary>
         public static float ShowSecondsFor(DialogueConfig config, string text)
         {
@@ -291,6 +298,7 @@ namespace TaxiKmer.Core.Talk
             {
                 if (l.trigger != trigger || string.IsNullOrEmpty(l.text) || _recent.Contains(l.id)) continue;
                 if (!DialogueText.CanFill(l.text, values)) continue;
+                if (!l.SaidAt(MinuteOfDay)) continue;
                 if (!string.IsNullOrEmpty(register) && !string.IsNullOrEmpty(l.register) && l.register != register) continue;
                 if (!string.IsNullOrEmpty(l.character) && !string.IsNullOrEmpty(character) && l.character != character) continue;
                 if (!string.IsNullOrEmpty(l.character) && string.IsNullOrEmpty(character) && designated) continue;
