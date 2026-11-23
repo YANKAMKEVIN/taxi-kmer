@@ -52,6 +52,7 @@ tools/check_unity_compile.sh           # compile le code Unity hors Unity (réf�
 U=/Applications/Unity/Hub/Editor/6000.3.28f1/Unity.app/Contents/MacOS/Unity
 $U -batchmode -nographics -projectPath . -runTests -testPlatform EditMode -testResults Logs/editmode.xml -logFile Logs/tests.log
 $U -batchmode -nographics -projectPath . -buildTarget Android -executeMethod TaxiKmer.EditorTools.BuildAndroid.Run -quit -logFile Logs/build.log   # → build/android/TaxiKmer.apk
+$U -batchmode -nographics -projectPath . -buildTarget Android -executeMethod TaxiKmer.EditorTools.BuildAndroid.RunBundle -quit -logFile Logs/aab.log   # → build/android/TaxiKmer.aab (Play Store, textures ASTC)
 $U -batchmode -nographics -projectPath . -executeMethod TaxiKmer.EditorTools.ProjectSetup.Run -quit -logFile Logs/setup.log   # réapplique qualité, lecteur Android, scène Boot
 python3 -m unittest discover -s tools/osm -p "test_*.py"   # tests de l'import OSM
 # Monde OSM du jalon 1 (le Python de Xcode échoue en HTTPS avec Overpass : téléchargement par curl)
