@@ -32,6 +32,14 @@ namespace TaxiKmer.Core.Road
         /// <summary>Au-delà de ces dégâts, le taxi est limité à <see cref="damagedMaxKmh"/>.</summary>
         public float damagedThreshold = 60f;
         public float damagedMaxKmh = 40f;
+        /// <summary>
+        /// Dégâts visibles (idée n° 17, valeurs par défaut de Claude) : pare-chocs avant qui pend à partir de
+        /// bumperHangDamage, phare gauche cassé à partir de brokenHeadlightDamage, fumée sous le capot à partir de
+        /// smokeDamage (plus épaisse jusqu'à 100).
+        /// </summary>
+        public float bumperHangDamage = 30f;
+        public float brokenHeadlightDamage = 45f;
+        public float smokeDamage = 60f;
 
         // Nids-de-poule
         /// <summary>Nids-de-poule par km de route (placés au hasard, même graine pour toute la carrière).</summary>

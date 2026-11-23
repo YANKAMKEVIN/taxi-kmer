@@ -89,6 +89,8 @@ namespace TaxiKmer.Driving
         private PhoneView _phone;
         // Pluie visible (rain.json, idée n° 12), créée seulement avec la route (road.json).
         private RainView _rain;
+        // Dégâts visibles sur le taxi (idée n° 17).
+        private DamageView _damage;
         // Événement de ville du jour (city_events.json, idée n° 14) et barrières du tronçon fermé.
         private CityEventDay _cityEvent = new CityEventDay(null);
         private GameObject _closure;
@@ -251,6 +253,7 @@ namespace TaxiKmer.Driving
                     dayCfg.startHour * 60, dayCfg.endHour * 60, Today.Month, actualSeed + 61);
             var rainLook = Load("Data/rain", new Core.Road.RainLookConfig());
             if (_road != null && rainLook.enabled) _rain = new RainView(rainLook, world.transform, taxi.gameObject);
+            if (_road != null) _damage = new DamageView(road, taxi.gameObject);
             if (police.enabled)
                 _police = new PoliceView(controls.Overlay, controls.Font, police, Save.StartDayPapers(police, _paperNews), Save.Career.DayNumber, _cum[_cum.Length - 1],
                     dayCfg.startHour * 60, dayCfg.endHour * 60, actualSeed + 47);
@@ -418,6 +421,7 @@ namespace TaxiKmer.Driving
             // La radio se tait en pause et au bilan ; elle baisse quand un passager parle (jalon 5).
             _radio?.Update(dt, !Street.DayFinished && !_menu.Frozen && _summaryView == null, _talk != null && _talk.Speaking);
             _dayLight?.Update(Street.Shift.Clock.GameMinutes, _quality != null && _quality.Level >= 2);
+            _damage?.Update(_road.Road.Car.Damage);
             _rain?.Update(dt, _road.Raining, _quality != null ? _quality.Level : 1, !_menu.Frozen && !Street.DayFinished);
             _ambience?.Update(dt, Street, state.Along, taxi.transform.position, City.Traffic.Vehicles, Today.Market,
                 _talk != null && _talk.Speaking, !_menu.Frozen && _summaryView == null);
