@@ -144,7 +144,10 @@ namespace TaxiKmer.Core.Tests
         public void SaveFromNewerGame_IsNeverOverwritten()
         {
             var storage = new MemoryStorage();
-            var payload = Serializer.ToJson(Sample());
+            // Un jeu plus récent écrit sa version dans l'enveloppe et dans le contenu (SaveStore.Save).
+            var future = Sample();
+            future.version = SaveMigrations.CurrentVersion + 1;
+            var payload = Serializer.ToJson(future);
             var newer = new SaveEnvelope { version = SaveMigrations.CurrentVersion + 1, checksum = SaveStore.Checksum(payload), payload = payload };
             storage.Files[SaveStore.MainFile] = Serializer.ToJson(newer);
             var before = storage.Files[SaveStore.MainFile];

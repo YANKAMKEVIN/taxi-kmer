@@ -184,8 +184,17 @@ namespace TaxiKmer.Core.Save
             }
             if (envelope.version > SaveMigrations.CurrentVersion)
             {
-                detail = $"{name} : version {envelope.version}, plus récente que ce jeu ({SaveMigrations.CurrentVersion})";
-                return new LoadResult { Status = LoadStatus.TooNew, Detail = detail };
+                // Le numéro de l'enveloppe n'est pas couvert par l'empreinte (idée n° 34) : le contenu, lui, l'est. S'il
+                // se lit et porte une version connue, c'est l'enveloppe qui est abîmée ; on se fie au contenu.
+                SaveData inner = null;
+                try { inner = _serializer.FromJson<SaveData>(envelope.payload); }
+                catch (Exception) { inner = null; }
+                if (inner == null || inner.version < 1 || inner.version > SaveMigrations.CurrentVersion)
+                {
+                    detail = $"{name} : version {envelope.version}, plus récente que ce jeu ({SaveMigrations.CurrentVersion})";
+                    return new LoadResult { Status = LoadStatus.TooNew, Detail = detail };
+                }
+                envelope.version = inner.version;
             }
 
             SaveData data;
