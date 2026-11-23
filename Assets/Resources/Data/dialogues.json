@@ -262,7 +262,7 @@
             "trigger": "montee",
             "character": "etudiant",
             "register": "camfranglais",
-            "text": "Mola, je go à {destination}, j'ai cours à dix heures.",
+            "text": "Mola, je go {a_destination}, j'ai cours à dix heures.",
             "replies": [
                 {
                     "id": "go",
@@ -280,7 +280,7 @@
             "trigger": "montee",
             "character": "",
             "register": "pidgin",
-            "text": "Driver, how na? You di go for {destination}?",
+            "text": "Driver, how na? You di go for {destination_nue}?",
             "replies": [
                 {
                     "id": "oui",
@@ -298,7 +298,7 @@
             "trigger": "destination",
             "character": "commercante",
             "register": "fr",
-            "text": "Moi, je descends à {destination}. Devant les vendeuses de pagnes.",
+            "text": "Moi, je descends {a_destination}. Devant les vendeuses de pagnes.",
             "replies": [],
             "voice": "",
             "statut": "proposée",
@@ -309,7 +309,7 @@
             "trigger": "destination",
             "character": "fonctionnaire",
             "register": "fr",
-            "text": "Déposez-moi bien à {destination}, pas après. Je ne vais pas marcher au soleil.",
+            "text": "Déposez-moi bien {a_destination}, pas après. Je ne vais pas marcher au soleil.",
             "replies": [
                 {
                     "id": "bien",
@@ -333,7 +333,7 @@
             "trigger": "destination",
             "character": "etudiant",
             "register": "fr",
-            "text": "Je descends à {destination}. Je vous fais signe.",
+            "text": "Je descends {a_destination}. Je vous fais signe.",
             "replies": [],
             "voice": "",
             "statut": "proposée",
@@ -344,7 +344,7 @@
             "trigger": "destination",
             "character": "",
             "register": "pidgin",
-            "text": "Abeg, you go drop me for {destination}.",
+            "text": "Abeg, you go drop me for {destination_nue}.",
             "replies": [],
             "voice": "",
             "statut": "proposée",
@@ -897,7 +897,7 @@
             "trigger": "montee",
             "character": "",
             "register": "pidgin",
-            "text": "Massa, I di go for {destination}. Make we go.",
+            "text": "Massa, I di go for {destination_nue}. Make we go.",
             "replies": [
                 {
                     "id": "oui",
@@ -933,7 +933,7 @@
             "trigger": "destination",
             "character": "ecolier",
             "register": "fr",
-            "text": "Moi je descends à {destination}, tonton. Maman m'attend là-bas.",
+            "text": "Moi je descends {a_destination}, tonton. Maman m'attend là-bas.",
             "replies": [],
             "voice": "",
             "statut": "proposée",
@@ -944,7 +944,7 @@
             "trigger": "destination",
             "character": "maman-bebe",
             "register": "fr",
-            "text": "{destination}, s'il vous plaît. Arrêtez-vous bien, que je descende avec le bébé.",
+            "text": "{destination}, s'il vous plaît. Arrêtez-vous bien, je descends avec le bébé.",
             "replies": [
                 {
                     "id": "oui",
@@ -962,7 +962,7 @@
             "trigger": "destination",
             "character": "",
             "register": "camfranglais",
-            "text": "Je go à {destination}. Tu me largues juste devant, le mbom.",
+            "text": "Je go {a_destination}. Tu me largues juste devant, le mbom.",
             "replies": [],
             "voice": "",
             "statut": "proposée",
@@ -984,7 +984,7 @@
             "trigger": "prix",
             "character": "fonctionnaire",
             "register": "fr",
-            "text": "{prix} pour {destination}. C'est cher, mais je n'ai pas le choix ce matin.",
+            "text": "{prix} pour {destination}. C'est cher, mais je suis pressé ce matin.",
             "replies": [
                 {
                     "id": "merci",
@@ -1318,7 +1318,7 @@
             "trigger": "detour",
             "character": "commercante",
             "register": "fr",
-            "text": "Eh ! Tu me promènes ? Je descends à {destination}, pas au village.",
+            "text": "Eh ! Tu me promènes ? Je descends {a_destination}, pas au village.",
             "replies": [
                 {
                     "id": "pardon",
@@ -1336,7 +1336,7 @@
             "trigger": "detour",
             "character": "",
             "register": "camfranglais",
-            "text": "Le mbom, je wanda : c'est pas la route de {destination}, ça.",
+            "text": "Le mbom, je wanda : c'est pas la route {de_destination}, ça.",
             "replies": [
                 {
                     "id": "pardon",
@@ -1354,7 +1354,7 @@
             "trigger": "detour",
             "character": "",
             "register": "pidgin",
-            "text": "Driver, dis no be road for {destination}!",
+            "text": "Driver, dis no be road for {destination_nue}!",
             "replies": [
                 {
                     "id": "pardon",
@@ -1567,7 +1567,7 @@
             "trigger": "montee",
             "character": "ecolier",
             "register": "fr",
-            "text": "Tonton, maman a dit que je te donne l'argent à {destination}.",
+            "text": "Tonton, maman a dit que je te donne l'argent {a_destination}.",
             "replies": [
                 {
                     "id": "monte",
@@ -1603,7 +1603,7 @@
             "trigger": "montee",
             "character": "etudiant",
             "register": "camfranglais",
-            "text": "On dit quoi, le mbom ? Je go à {destination}, j'ai un exposé.",
+            "text": "On dit quoi, le mbom ? Je go {a_destination}, j'ai un exposé.",
             "replies": [
                 {
                     "id": "ca-va-aller",
@@ -1621,7 +1621,7 @@
             "trigger": "montee",
             "character": "",
             "register": "camfranglais",
-            "text": "Bonjour le mbom. Ma nga m'attend à {destination}, on se dépêche ?",
+            "text": "Bonjour le mbom. Ma nga m'attend {a_destination}, on se dépêche ?",
             "replies": [
                 {
                     "id": "go",
@@ -1645,7 +1645,7 @@
             "trigger": "montee",
             "character": "",
             "register": "camfranglais",
-            "text": "On dit quoi, le tara ? Dépose-moi à {destination}, j'ai un gombo.",
+            "text": "On dit quoi, le tara ? Dépose-moi {a_destination}, j'ai un gombo.",
             "replies": [
                 {
                     "id": "ensemble",
@@ -1663,7 +1663,7 @@
             "trigger": "montee",
             "character": "",
             "register": "pidgin",
-            "text": "Ma broda, how di day? Carry me for {destination}, abeg.",
+            "text": "Ma broda, how di day? Carry me for {destination_nue}, abeg.",
             "replies": [
                 {
                     "id": "monte",
@@ -2090,7 +2090,7 @@
             "trigger": "destination",
             "character": "professeur",
             "register": "fr",
-            "text": "Tu me laisses à {destination}, mon fils. Je marcherai un peu, ça fait du bien.",
+            "text": "Tu me laisses {a_destination}, mon fils. Je marcherai un peu, ça fait du bien.",
             "replies": [],
             "voice": "",
             "statut": "proposée",
@@ -2101,7 +2101,7 @@
             "trigger": "destination",
             "character": "commercante",
             "register": "fr",
-            "text": "Je descends à {destination}. Mes clientes m'attendent depuis le matin.",
+            "text": "Je descends {a_destination}. Mes clientes m'attendent depuis le matin.",
             "replies": [],
             "voice": "",
             "statut": "proposée",
@@ -2130,7 +2130,7 @@
             "trigger": "destination",
             "character": "etudiant",
             "register": "camfranglais",
-            "text": "Tu me largues à {destination}, le mbom. Les gars m'attendent pour réviser.",
+            "text": "Tu me largues {a_destination}, le mbom. Les gars m'attendent pour réviser.",
             "replies": [],
             "voice": "",
             "statut": "proposée",
@@ -2141,7 +2141,7 @@
             "trigger": "destination",
             "character": "",
             "register": "camfranglais",
-            "text": "À {destination}, tu gares juste devant. Je suis en retard, le tara.",
+            "text": "{a_destination}, tu gares juste devant. Je suis en retard, le tara.",
             "replies": [
                 {
                     "id": "ok",
@@ -2170,7 +2170,7 @@
             "trigger": "destination",
             "character": "",
             "register": "pidgin",
-            "text": "Na {destination} I di go. I go tell you where for stop.",
+            "text": "Na {destination_nue} I di go. I go tell you where for stop.",
             "replies": [],
             "voice": "",
             "statut": "proposée",
@@ -2181,7 +2181,7 @@
             "trigger": "destination",
             "character": "",
             "register": "pidgin",
-            "text": "Drop me for {destination}, ma broda. Small small, no hurry.",
+            "text": "Drop me for {destination_nue}, ma broda. Small small, no hurry.",
             "replies": [],
             "voice": "",
             "statut": "proposée",
@@ -2401,7 +2401,7 @@
             "trigger": "prix",
             "character": "",
             "register": "pidgin",
-            "text": "{prix} for {destination}? E too much, but I go pay.",
+            "text": "{prix} for {destination_nue}? E too much, but I go pay.",
             "replies": [],
             "voice": "",
             "statut": "proposée",
@@ -2448,7 +2448,7 @@
             "trigger": "detour",
             "character": "professeur",
             "register": "fr",
-            "text": "Mon fils, même mes élèves connaissent la route de {destination}.",
+            "text": "Mon fils, même mes élèves connaissent la route {de_destination}.",
             "replies": [
                 {
                     "id": "pardon",
@@ -2466,7 +2466,7 @@
             "trigger": "detour",
             "character": "",
             "register": "fr",
-            "text": "On s'éloigne de {destination}, là. Vous avez une autre course en route ?",
+            "text": "On s'éloigne {de_destination}, là. Vous avez une autre course en route ?",
             "replies": [
                 {
                     "id": "tourne",
@@ -2532,7 +2532,7 @@
             "trigger": "detour",
             "character": "",
             "register": "pidgin",
-            "text": "Wetin you di do? {destination} no dey dis side!",
+            "text": "Wetin you di do? {destination_nue} no dey dis side!",
             "replies": [
                 {
                     "id": "pardon",

@@ -293,6 +293,33 @@ namespace TaxiKmer.Core.Tests
             Assert.AreEqual(Math.Max(2.5f, d.Current.Text.Length / 14f), d.Current.ShowSeconds, 1e-4f, "Temps de lecture sur le texte rempli.");
         }
         [Test]
+        public void Places_SpokenForms_FromDataOrName_CapitalizedAtSentenceStart()
+        {
+            // Décision de Kevin (23/11) : « je descends au dispensaire de Messassi », jamais « à Dispensaire de Messassi ».
+            var dispensaire = new Rides.Stop
+            {
+                id = "dispensaire", name = "Dispensaire de Messassi",
+                spoken = new Rides.SpokenPlace { name = "le dispensaire de Messassi", at = "au dispensaire de Messassi", of = "du dispensaire de Messassi", bare = "Dispensaire Messassi" },
+            };
+            var v = TalkValues.ForRide(dispensaire, dispensaire.id, 600);
+            Assert.AreEqual("Je descends au dispensaire de Messassi.", DialogueText.Fill("Je descends {a_destination}.", v));
+            Assert.AreEqual("C'est pas la route du dispensaire de Messassi.", DialogueText.Fill("C'est pas la route {de_destination}.", v));
+            Assert.AreEqual("Le dispensaire de Messassi, s'il vous plaît.", DialogueText.Fill("{destination}, s'il vous plaît.", v));
+            Assert.AreEqual("Eh ! Au dispensaire de Messassi, vite.", DialogueText.Fill("Eh ! {a_destination}, vite.", v));
+            Assert.AreEqual("600 francs pour le dispensaire de Messassi ?", DialogueText.Fill("{prix} pour {destination} ?", v));
+            Assert.AreEqual("Drop me for Dispensaire Messassi.", DialogueText.Fill("Drop me for {destination_nue}.", v));
+            // Sans forme parlée dans les données : tirée du nom court, avec l'élision.
+            var etoudi = TalkValues.PlaceForms(new Rides.Stop { id = "etoudi", name = "Étoudi (devant le palais)" });
+            Assert.AreEqual("Étoudi", etoudi.name);
+            Assert.AreEqual("à Étoudi", etoudi.at);
+            Assert.AreEqual("d'Étoudi", etoudi.of);
+            Assert.AreEqual("de Borne Fontaine", TalkValues.PlaceForms(new Rides.Stop { name = "Borne Fontaine" }).of);
+            Assert.AreEqual("à Emana", TalkValues.PlaceForms(null, "Emana").at);
+            CollectionAssert.IsEmpty(TalkValues.ForRide(null, "", 0), "Lieu inconnu : aucune valeur, la réplique n'est pas dite.");
+            CollectionAssert.IsSupersetOf(DialogueText.ValuesFor(TalkTriggers.Detour), TalkValues.Place);
+        }
+
+        [Test]
         public void FollowUp_DestinationAfterBoarding_DroppedWhenLateOrPassengerGone()
         {
             // 22/11 : la situation « destination » n'était jamais déclenchée ; elle suit maintenant la montée.

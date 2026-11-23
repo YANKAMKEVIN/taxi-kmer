@@ -64,17 +64,12 @@ namespace TaxiKmer.Driving
         /// <param name="values">Valeurs que la réplique peut citer (destination, prix, offre : <see cref="TalkValues"/>).</param>
         public void Say(string trigger, string passengerId = "", IDictionary<string, string> values = null) => Director.Trigger(trigger, passengerId ?? "", "", values);
 
-        /// <summary>Valeurs d'une course pour les répliques : destination (nom court) et prix, plus la contre-offre si elle existe.</summary>
-        public static Dictionary<string, string> RideValues(Street street, string destinationStopId, int fare, int offer = 0)
-        {
-            var values = new Dictionary<string, string>();
-            var stop = street.FindStop(destinationStopId);
-            if (stop != null || !string.IsNullOrEmpty(destinationStopId))
-                values[TalkValues.Destination] = TaxiKmer.Core.Ux.StopNames.Short(stop?.name ?? destinationStopId);
-            if (fare > 0) values[TalkValues.Price] = TalkValues.Amount(fare);
-            if (offer > 0) values[TalkValues.Offer] = TalkValues.Amount(offer);
-            return values;
-        }
+        /// <summary>
+        /// Valeurs d'une course pour les répliques : destination sous ses formes parlées (« au dispensaire de Messassi »,
+        /// décision de Kevin du 23/11) et prix, plus la contre-offre si elle existe (<see cref="TalkValues.ForRide"/>).
+        /// </summary>
+        public static Dictionary<string, string> RideValues(Street street, string destinationStopId, int fare, int offer = 0) =>
+            TalkValues.ForRide(street.FindStop(destinationStopId), destinationStopId, fare, offer);
 
         /// <summary>Un passager à bord, n'importe lequel (pour panne, contrôle, pluie).</summary>
         public static string AnyPassenger(Street street)

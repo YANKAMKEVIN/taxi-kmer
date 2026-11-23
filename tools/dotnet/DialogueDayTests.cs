@@ -41,11 +41,8 @@ namespace TaxiKmer.Core.DotnetTests
                     var id = $"p{n++ / 3}";
                     d.SetPassengers(new[] { id, $"p{n}" });
                     // Valeurs fournies par le jeu (22/11) : destination et prix de la course.
-                    var values = new System.Collections.Generic.Dictionary<string, string>
-                    {
-                        [TalkValues.Destination] = "Emana",
-                        [TalkValues.Price] = TalkValues.Amount(800),
-                    };
+                    // Formes parlées du lieu (décision de Kevin du 23/11) : « à Emana », « d'Emana ».
+                    var values = TalkValues.ForRide(new TaxiKmer.Core.Rides.Stop { id = "emana", name = "Emana" }, "emana", 800);
                     if (d.Trigger(triggers[rng.Next(triggers.Length)], id, "", values))
                     {
                         last = d.Current;

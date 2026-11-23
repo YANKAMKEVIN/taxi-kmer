@@ -374,13 +374,23 @@ namespace TaxiKmer.Core.DotnetTests
             // Étoudi. Lieux et sommes passent par {destination}, {prix}, {offre}, fournis par la situation.
             var d = Load<TaxiKmer.Core.Talk.DialogueConfig>("dialogues.json");
             var stops = Load<StopsConfig>("stops_messassi_etoudi.json");
-            var longestPlace = stops.stops.Select(st => TaxiKmer.Core.Ux.StopNames.Short(st.name)).OrderByDescending(n => n.Length).First();
+            // Formes parlées les plus longues de tous les lieux (« au dispensaire de Messassi », décision de Kevin du 23/11).
             var longest = new Dictionary<string, string>
             {
-                [TaxiKmer.Core.Talk.TalkValues.Destination] = longestPlace,
                 [TaxiKmer.Core.Talk.TalkValues.Price] = TaxiKmer.Core.Talk.TalkValues.Amount(9999),
                 [TaxiKmer.Core.Talk.TalkValues.Offer] = TaxiKmer.Core.Talk.TalkValues.Amount(9999),
             };
+            foreach (var st in stops.stops)
+                foreach (var kv in TaxiKmer.Core.Talk.TalkValues.ForRide(st, st.id, 0))
+                    if (!longest.TryGetValue(kv.Key, out var cur) || kv.Value.Length > cur.Length) longest[kv.Key] = kv.Value;
+            foreach (var st in stops.stops)
+            {
+                var f = TaxiKmer.Core.Talk.TalkValues.PlaceForms(st);
+                Assert.IsFalse(string.IsNullOrEmpty(st.spoken?.name) || string.IsNullOrEmpty(st.spoken.at) || string.IsNullOrEmpty(st.spoken.of) || string.IsNullOrEmpty(st.spoken.bare),
+                    $"{st.id} : forme parlée complète dans les données (décision de Kevin du 23/11)");
+                Assert.IsTrue(f.at.StartsWith("à ") || f.at.StartsWith("au ") || f.at.StartsWith("aux "), $"{st.id} : « {f.at} »");
+                Assert.IsTrue(f.of.StartsWith("de ") || f.of.StartsWith("du ") || f.of.StartsWith("des ") || f.of.StartsWith("d'"), $"{st.id} : « {f.of} »");
+            }
             var numberWords = new[] { "cent", "mille", "hundred", "thousand", "fcfa", "francs" };
             var places = stops.stops.Select(st => TaxiKmer.Core.Ux.StopNames.Short(st.name)).Where(n => n.Length >= 4).Distinct().ToArray();
             foreach (var l in d.lines)
@@ -397,6 +407,46 @@ namespace TaxiKmer.Core.DotnetTests
                 Assert.LessOrEqual(TaxiKmer.Core.Talk.DialogueText.Fill(l.text, longest).Length, d.maxChars, $"{l.id} : trop long une fois rempli");
             }
         }
+
+        /// <summary>
+        /// Décision de Kevin (23/11, QA « à Dispensaire de Messassi ») : chaque lieu a une forme parlée dans les données
+        /// (« au dispensaire de Messassi », « du pont d'Emana », « d'Étoudi ») et les répliques l'utilisent. Aucune réplique
+        /// remplie, sur aucun lieu, ne donne « à Dispensaire », « de Le », « à Le », « for le », un article majuscule au
+        /// milieu d'une phrase, ni « de Emana » sans élision.
+        /// </summary>
+        [Test]
+        public void Dialogues_PlacesReadNaturally_OnEveryStop()
+        {
+            var d = Load<TaxiKmer.Core.Talk.DialogueConfig>("dialogues.json");
+            var stops = Load<StopsConfig>("stops_messassi_etoudi.json");
+            var bad = new[]
+            {
+                new System.Text.RegularExpressions.Regex(@"(?<![\p{L}'])[àÀ] (le|la|les|Le|La|Les|L')(?![\p{L}])"),
+                new System.Text.RegularExpressions.Regex(@"(?<![\p{L}'])[dD]e (le|les|Le|Les)(?![\p{L}])"),
+                new System.Text.RegularExpressions.Regex(@"(?<![\p{L}'])([àÀ]|[dD]e|pour|vers|que|Que) (Dispensaire|Carrefour|Pont|Marché|Le|La|Les|Au|Du)(?![\p{L}])"),
+                new System.Text.RegularExpressions.Regex(@"(?<![\p{L}'])(for|Na) (le|la|les|au|du|Le|La|Les|Au|Du)(?![\p{L}])"),
+                new System.Text.RegularExpressions.Regex(@"(?<![\p{L}'])([dD]e|que|Que) [AEIOUYÉÈaeiouyéè]"),
+                new System.Text.RegularExpressions.Regex(@"(?<![.!?…]) (Le|La|Les|Au|Aux|Du) [a-zé]"),
+                new System.Text.RegularExpressions.Regex(@"(^|[.!?…] )(le|la|les|au|aux|du) "),
+            };
+            var errors = new List<string>();
+            foreach (var stop in stops.stops)
+            {
+                var values = RideValues(stop);
+                foreach (var l in d.lines)
+                {
+                    if (!TaxiKmer.Core.Talk.DialogueText.Placeholders(l.text).Any(n => n.Contains("destination"))) continue;
+                    if (!TaxiKmer.Core.Talk.DialogueText.CanFill(l.text, values)) { errors.Add($"{l.id} / {stop.id} : valeur manquante"); continue; }
+                    var text = TaxiKmer.Core.Talk.DialogueText.Fill(l.text, values);
+                    foreach (var re in bad)
+                        if (re.IsMatch(text)) { errors.Add($"{l.id} / {stop.id} : « {text} »"); break; }
+                }
+            }
+            CollectionAssert.IsEmpty(errors, string.Join("\n", errors));
+        }
+
+        /// <summary>Valeurs d'une course vers ce lieu, comme les passe le jeu (TalkView.RideValues).</summary>
+        private static Dictionary<string, string> RideValues(Stop stop) => TaxiKmer.Core.Talk.TalkValues.ForRide(stop, stop.id, 600);
 
         [Test]
         public void Ambience_MatchesDefaults_MarketStopsExist()

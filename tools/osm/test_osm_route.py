@@ -43,6 +43,13 @@ class RouteTests(unittest.TestCase):
         self.assertEqual([s["distanceAlongRouteMeters"] for s in self.stops], [0, 500, 1000])
         self.assertEqual(self.world["route"]["lengthMeters"], 1000)
 
+    def test_spoken_form_copied_when_given(self):
+        lms = [landmark("a", 0), landmark("b", 500), landmark("c", 1000)]
+        lms[1]["spoken"] = {"name": "le pont", "at": "au pont", "of": "du pont", "bare": "Pont"}
+        stops, _ = osm_route.plan(world(), lms, 100)
+        self.assertEqual(stops[1]["spoken"]["at"], "au pont")
+        self.assertNotIn("spoken", stops[0])
+
     def test_corridor_keeps_only_nearby(self):
         self.assertEqual(sorted(r["id"] for r in self.world["roads"]), [10, 11])
         self.assertEqual([b["id"] for b in self.world["buildings"]], [20])
