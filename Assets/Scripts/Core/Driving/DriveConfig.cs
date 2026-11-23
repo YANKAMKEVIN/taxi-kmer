@@ -70,6 +70,10 @@ namespace TaxiKmer.Core.Driving
         /// <summary>Adhérence latérale (raideur de friction WheelCollider) : plus haut = plus collé à la route.</summary>
         public float sidewaysStiffness = 1.6f;
         public float forwardStiffness = 1.8f;
+        /// <summary>Frein à main (idée n° 26, valeurs par défaut de Claude à régler sur le S24) : couple sur les roues arrière (N·m)…</summary>
+        public float handbrakeTorqueNm = 3000f;
+        /// <summary>… et adhérence latérale arrière qui reste (part de sidewaysStiffness) : l'arrière glisse pour faire demi-tour.</summary>
+        public float handbrakeRearGrip = 0.5f;
         /// <summary>Après ce temps sur le toit ou sur le flanc, le taxi est remis sur la route (s).</summary>
         public float flippedResetSeconds = 3f;
     }

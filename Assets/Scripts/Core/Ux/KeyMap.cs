@@ -17,6 +17,8 @@ namespace TaxiKmer.Core.Ux
         /// <summary>Pause, et retour dans les menus (aussi le bouton Retour d'Android).</summary>
         Pause,
         Quality,
+        /// <summary>Frein à main (idée n° 26).</summary>
+        Handbrake,
         ResetCar,
         Radio,
         HaggleAccept,
@@ -67,6 +69,7 @@ namespace TaxiKmer.Core.Ux
             B(KeyAction.Action, "action, valider", "E / Entrée", "E", "Return"),
             B(KeyAction.Pause, "pause, retour", "Échap", "Escape"),
             B(KeyAction.Quality, "qualité", "G", "G"),
+            B(KeyAction.Handbrake, "frein à main", "C", "C"),
             B(KeyAction.ResetCar, "remettre sur la route", "R", "R"),
             B(KeyAction.Radio, "radio", "B", "B"),
             B(KeyAction.HaggleAccept, "accepter la contre-offre", "O", "O"),
@@ -115,7 +118,7 @@ namespace TaxiKmer.Core.Ux
                 if (sb.Length > 0) sb.Append('\n');
                 sb.Append(string.Join(" · ", parts));
             }
-            Line(KeyAction.Accelerate, KeyAction.Brake, KeyAction.Left, KeyAction.Right);
+            Line(KeyAction.Accelerate, KeyAction.Brake, KeyAction.Left, KeyAction.Right, KeyAction.Handbrake);
             Line(KeyAction.Action, KeyAction.Horn, KeyAction.Radio, KeyAction.Quality, KeyAction.ResetCar, KeyAction.Pause);
             Line(KeyAction.HaggleAccept, KeyAction.HaggleRefuse, KeyAction.RefusalLetGo, KeyAction.RefusalCallPolice);
             Line(KeyAction.PushTaxi, KeyAction.CallTechnician, KeyAction.SpareWheel, KeyAction.CallMechanic, KeyAction.CrashYes, KeyAction.CrashNo);

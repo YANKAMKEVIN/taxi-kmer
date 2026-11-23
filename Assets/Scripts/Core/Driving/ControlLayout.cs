@@ -16,6 +16,8 @@ namespace TaxiKmer.Core.Driving
         Pause,
         /// <summary>Bouton « Qualité : Moyen » (tâche 1.7) : chaque appui passe au niveau suivant (Bas → Moyen → Haut → Bas).</summary>
         Quality,
+        /// <summary>Frein à main (idée n° 26) : bloque les roues arrière, pour les demi-tours sur la double voie.</summary>
+        Handbrake,
     }
 
     public enum ScreenCorner
@@ -112,6 +114,7 @@ namespace TaxiKmer.Core.Driving
                     new ControlZone { control = DriveControl.Action, corner = ScreenCorner.TopCenter, side = 0f, edge = 0.12f, width = 0.5f, height = 0.16f, label = "" },
                     new ControlZone { control = DriveControl.Pause, corner = ScreenCorner.TopRight, side = 0.31f, edge = 0.05f, width = 0.1f, height = 0.1f, label = "II" },
                     new ControlZone { control = DriveControl.Quality, corner = ScreenCorner.TopLeft, side = 0.04f, edge = 0.555f, width = 0.42f, height = 0.065f, label = "Qualité" },
+                    new ControlZone { control = DriveControl.Handbrake, corner = ScreenCorner.BottomRight, side = 0.30f, edge = 0.36f, width = 0.22f, height = 0.11f, label = "Frein à main" },
                 },
             };
         }

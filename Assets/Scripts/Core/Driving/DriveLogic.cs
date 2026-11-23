@@ -15,6 +15,8 @@ namespace TaxiKmer.Core.Driving
         public bool Pause;
         /// <summary>Bouton de qualité graphique (passe au niveau suivant). Ignoré par la conduite.</summary>
         public bool Quality;
+        /// <summary>Frein à main (idée n° 26).</summary>
+        public bool Handbrake;
 
         public static DriveInput operator |(DriveInput a, DriveInput b) => new DriveInput
         {
@@ -26,6 +28,7 @@ namespace TaxiKmer.Core.Driving
             Action = a.Action || b.Action,
             Pause = a.Pause || b.Pause,
             Quality = a.Quality || b.Quality,
+            Handbrake = a.Handbrake || b.Handbrake,
         };
 
         public void Press(DriveControl control)
@@ -40,6 +43,7 @@ namespace TaxiKmer.Core.Driving
                 case DriveControl.Action: Action = true; break;
                 case DriveControl.Pause: Pause = true; break;
                 case DriveControl.Quality: Quality = true; break;
+                case DriveControl.Handbrake: Handbrake = true; break;
             }
         }
     }
@@ -62,6 +66,10 @@ namespace TaxiKmer.Core.Driving
         /// <summary>Freinage, de 0 à 1.</summary>
         public float Brake;
         public Gear Gear;
+        /// <summary>Frein à main serré (0 ou 1) : couple de freinage en plus sur les roues arrière.</summary>
+        public float Handbrake;
+        /// <summary>Adhérence latérale des roues arrière (1 = normale ; moins avec le frein à main : l'arrière glisse).</summary>
+        public float RearGrip;
     }
 
     /// <summary>
@@ -72,6 +80,7 @@ namespace TaxiKmer.Core.Driving
     {
         private readonly SteeringConfig _steering;
         private readonly PedalConfig _pedals;
+        private readonly CarConfig _car;
         private float _steer;
         private float _holdTimer;
 
@@ -85,6 +94,7 @@ namespace TaxiKmer.Core.Driving
             if (config == null) throw new ArgumentNullException(nameof(config));
             _steering = config.steering;
             _pedals = config.pedals;
+            _car = config.car ?? new CarConfig();
         }
 
         /// <param name="forwardSpeedMs">Vitesse le long de l'axe du taxi (m/s), négative en marche arrière.</param>
@@ -143,6 +153,15 @@ namespace TaxiKmer.Core.Driving
             {
                 _holdTimer = 0f;
                 if (stopped) cmd.Brake = _pedals.parkingBrake;
+            }
+
+            // Frein à main (idée n° 26) : coupe les gaz, bloque l'arrière qui décroche un peu pour pivoter.
+            cmd.RearGrip = 1f;
+            if (input.Handbrake)
+            {
+                cmd.Handbrake = 1f;
+                cmd.Throttle = 0f;
+                cmd.RearGrip = Math.Abs(speedKmh) > _pedals.stoppedKmh ? _car.handbrakeRearGrip : 1f;
             }
 
             cmd.Gear = Gear;

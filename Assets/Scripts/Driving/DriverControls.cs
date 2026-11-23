@@ -104,6 +104,7 @@ namespace TaxiKmer.Driving
                 Action = UiKit.KeyHeld(KeyAction.Action),
                 Pause = UiKit.KeyHeld(KeyAction.Pause), // aussi le bouton Retour d'Android
                 Quality = UiKit.KeyHeld(KeyAction.Quality),
+                Handbrake = UiKit.KeyHeld(KeyAction.Handbrake),
             };
         }
 
@@ -289,6 +290,7 @@ namespace TaxiKmer.Driving
                     DriveControl.Action => input.Action,
                     DriveControl.Pause => input.Pause,
                     DriveControl.Quality => input.Quality,
+                    DriveControl.Handbrake => input.Handbrake,
                     _ => false,
                 };
                 if (zone.control == DriveControl.Action)

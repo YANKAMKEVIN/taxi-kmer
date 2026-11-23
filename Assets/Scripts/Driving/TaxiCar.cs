@@ -108,6 +108,13 @@ namespace TaxiKmer.Driving
                 }
                 var brake = cmd.Brake * car.brakeTorqueNm * (w.front ? 0.6f : 0.4f);
                 if (cmd.Throttle == 0f && cmd.Brake == 0f) brake = car.coastBrakeTorqueNm;
+                if (!w.front)
+                {
+                    brake += cmd.Handbrake * car.handbrakeTorqueNm; // idée n° 26
+                    var side = wc.sidewaysFriction;
+                    side.stiffness = car.sidewaysStiffness * cmd.RearGrip;
+                    wc.sidewaysFriction = side;
+                }
                 wc.brakeTorque = brake;
             }
 

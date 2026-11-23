@@ -13,6 +13,32 @@ namespace TaxiKmer.Core.Tests
         private static DriveLogic NewLogic() => new DriveLogic(new DriveConfig());
 
         [Test]
+        public void Handbrake_CutsThrottle_LocksAndLoosensTheRear()
+        {
+            var logic = NewLogic();
+            var normal = logic.Step(Accel, 10f, Dt);
+            Assert.AreEqual(0f, normal.Handbrake);
+            Assert.AreEqual(1f, normal.RearGrip);
+            var cmd = logic.Step(new DriveInput { Accelerate = true, Left = true, Handbrake = true }, 10f, Dt);
+            Assert.AreEqual(1f, cmd.Handbrake);
+            Assert.AreEqual(0f, cmd.Throttle, "gaz coupés");
+            Assert.AreEqual(new DriveConfig().car.handbrakeRearGrip, cmd.RearGrip, "l'arrière glisse pour pivoter");
+            Assert.Less(cmd.Steer, 0f, "on tourne toujours");
+            var parked = logic.Step(new DriveInput { Handbrake = true }, 0f, Dt);
+            Assert.AreEqual(1f, parked.RearGrip, "à l'arrêt, rien ne glisse");
+            Assert.AreEqual(1f, parked.Handbrake);
+        }
+
+        [Test]
+        public void Handbrake_ButtonAndKey()
+        {
+            var input = new DriveInput();
+            input.Press(DriveControl.Handbrake);
+            Assert.IsTrue(input.Handbrake);
+            CollectionAssert.AreEqual(new[] { "C" }, TaxiKmer.Core.Ux.KeyMap.KeysFor(TaxiKmer.Core.Ux.KeyAction.Handbrake));
+        }
+
+        [Test]
         public void Accelerate_FromRest_FullThrottleForward()
         {
             var cmd = NewLogic().Step(Accel, 0f, Dt);
@@ -161,7 +187,7 @@ namespace TaxiKmer.Core.Tests
         public void Default_EachZoneCenter_MapsToItsControl()
         {
             var layout = ControlLayout.Default();
-            Assert.AreEqual(8, layout.zones.Length, "Six commandes de conduite, la pause et la qualité.");
+            Assert.AreEqual(9, layout.zones.Length, "Six commandes de conduite, la pause, la qualité et le frein à main.");
             foreach (var z in layout.zones)
             {
                 var (x, y) = Center(z);
