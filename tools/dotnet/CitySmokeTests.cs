@@ -136,6 +136,28 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void RealWorld_RouteObjectsSitOnTheGround()
+        {
+            // Le vrai relief : un véhicule posé n'importe où sur l'itinéraire a ses deux essieux à moins de 25 cm du sol.
+            var world = Load<WorldData>("world_messassi_etoudi.json");
+            var t = world.terrain;
+            Assert.IsTrue(t.HasData);
+            var xz = world.route.xz;
+            var cum = WorldGeometry.CumulativeLengths(xz);
+            var worst = 0f;
+            for (var d = 5f; d < cum[cum.Length - 1] - 5f; d += 10f)
+            {
+                WorldGeometry.SampleAlong(xz, cum, d, out var x, out var z, out var dx, out var dz);
+                var h = Ground.Vehicle(t, x, z, dx, dz, 4.3f, out var rise);
+                var front = t.HeightAt(x + dx * 2.15f, z + dz * 2.15f);
+                var back = t.HeightAt(x - dx * 2.15f, z - dz * 2.15f);
+                worst = Math.Max(worst, Math.Max(Math.Abs(h + rise / 2f - front), Math.Abs(h - rise / 2f - back)));
+                Assert.That(Ground.PitchDegrees(rise, 4.3f), Is.InRange(-15f, 15f), "pente carrossable");
+            }
+            Assert.Less(worst, 0.25f);
+        }
+
+        [Test]
         public void Terrain_RealWorld_HasYaoundeHills()
         {
             // Idée n° 8 : relief Copernicus GLO-30 (tools/osm/osm_elevation.py), altitudes relatives à l'origine.

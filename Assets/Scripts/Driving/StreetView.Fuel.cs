@@ -80,8 +80,8 @@ namespace TaxiKmer.Driving
             var right = new Vector3(dz, 0f, -dx);
             var root = new GameObject("Station " + station.name);
             root.transform.SetParent(transform, false);
-            root.transform.SetPositionAndRotation(new Vector3(x, 0f, z) + right * (sideOffset + 6f),
-                Quaternion.LookRotation(new Vector3(dx, 0f, dz), Vector3.up));
+            var at = new Vector3(x, 0f, z) + right * (sideOffset + 6f);
+            root.transform.SetPositionAndRotation(OnGround(at.x, at.z), Quaternion.LookRotation(new Vector3(dx, 0f, dz), Vector3.up));
             var white = new Color(0.92f, 0.92f, 0.9f);
             var red = new Color(0.8f, 0.12f, 0.1f);
             Part(root.transform, PrimitiveType.Cube, new Vector3(0f, 4.2f, 0f), new Vector3(9f, 0.4f, 6f), white);

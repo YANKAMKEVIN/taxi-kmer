@@ -41,7 +41,7 @@ namespace TaxiKmer.EditorTools
             foreach (var f in new[] { 0.1f, 0.5f, 0.9f })
             {
                 WorldGeometry.SampleAlong(xz, cum, total * f, out var px, out var pz, out _, out _);
-                cam.transform.SetPositionAndRotation(new Vector3(px, 150f, pz), Quaternion.Euler(90f, 0f, 0f));
+                cam.transform.SetPositionAndRotation(new Vector3(px, builder.HeightAt(px, pz) + 150f, pz), Quaternion.Euler(90f, 0f, 0f));
                 Capture(cam, $"00-dessus-{Mathf.RoundToInt(total * f)}m");
             }
             RenderSettings.fog = fog;
@@ -54,8 +54,9 @@ namespace TaxiKmer.EditorTools
                 var d = total * (0.05f + 0.9f * k / 4f);
                 WorldGeometry.SampleAlong(xz, cum, d - 12f, out var cx, out var cz, out _, out _);
                 WorldGeometry.SampleAlong(xz, cum, d + 25f, out var tx, out var tz, out _, out _);
-                var pos = new Vector3(cx, 5f, cz);
-                cam.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(new Vector3(tx, 1.5f, tz) - pos, Vector3.up));
+                // Au-dessus du relief (idée n° 8).
+                var pos = new Vector3(cx, builder.HeightAt(cx, cz) + 5f, cz);
+                cam.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(new Vector3(tx, builder.HeightAt(tx, tz) + 1.5f, tz) - pos, Vector3.up));
                 Capture(cam, $"{k + 1:00}-{Mathf.RoundToInt(d)}m");
             }
             // Taxi au départ (dispensaire de Messassi), vu de derrière comme en jeu.

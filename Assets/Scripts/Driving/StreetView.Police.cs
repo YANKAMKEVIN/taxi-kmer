@@ -37,8 +37,12 @@ namespace TaxiKmer.Driving
             _chaseCar.SetActive(true);
             WorldGeometry.SampleAlong(_xz, _cum, chase.PoliceAlong, out var x, out var z, out var dx, out var dz);
             var right = new Vector3(dz, 0f, -dx);
-            var forward = new Vector3(dx, 0f, dz) * state.Direction;
-            _chaseCar.transform.SetPositionAndRotation(new Vector3(x, 0f, z) + right * state.Lateral, Quaternion.LookRotation(forward, Vector3.up));
+            var at = new Vector3(x, 0f, z) + right * state.Lateral;
+            // Sur le relief (idée n° 8) : hauteur sous les essieux, tangage dans la pente.
+            var fx = dx * state.Direction;
+            var fz = dz * state.Direction;
+            at.y = Ground.Vehicle(world.Terrain, at.x, at.z, fx, fz, 4.4f, out var rise);
+            _chaseCar.transform.SetPositionAndRotation(at, Quaternion.LookRotation(new Vector3(fx * 4.4f, rise, fz * 4.4f), Vector3.up));
         }
 
         private (Core.Police.ControlPost, GameObject, Transform) MakePolicePost(Core.Police.ControlPost post)
@@ -48,8 +52,8 @@ namespace TaxiKmer.Driving
             var root = new GameObject(Core.Police.PoliceMarkers.Label(post) + " " + post.Id);
             root.transform.SetParent(transform, false);
             // Repère local : +x vers l'extérieur de la route, -x vers la chaussée, +z dans le sens de la marche.
-            root.transform.SetPositionAndRotation(new Vector3(x, 0f, z) + right * (sideOffset + 2.5f),
-                Quaternion.LookRotation(new Vector3(dx, 0f, dz), Vector3.up));
+            var at = new Vector3(x, 0f, z) + right * (sideOffset + 2.5f);
+            root.transform.SetPositionAndRotation(OnGround(at.x, at.z), Quaternion.LookRotation(new Vector3(dx, 0f, dz), Vector3.up));
             var blue = new Color(0.1f, 0.2f, 0.45f);
             var white = new Color(0.92f, 0.92f, 0.9f);
             var red = new Color(0.8f, 0.12f, 0.1f);

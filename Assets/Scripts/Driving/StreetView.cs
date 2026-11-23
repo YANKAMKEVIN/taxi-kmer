@@ -226,6 +226,7 @@ namespace TaxiKmer.Driving
             var trafficView = gameObject.AddComponent<TrafficView>();
             trafficView.baseMaterial = personMaterial;
             trafficView.City = City;
+            trafficView.Terrain = world.Terrain; // idée n° 8 : trafic et piétons sur le relief
             _trafficView = trafficView;
             // Le taxi du joueur prend les mêmes détails que ceux de Yaoundé (plaques, baguette, pastille).
             trafficView.Decorate(taxi.transform, TaxiFactory.Length, TaxiFactory.Width, true, 0);

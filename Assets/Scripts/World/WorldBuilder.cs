@@ -27,9 +27,9 @@ namespace TaxiKmer.World
         [Tooltip("Lampadaires doubles sur le muret, tous les … m.")]
         public float lampSpacing = 38f;
         public float lampHeight = 10f;
-        [Tooltip("Relief réel (idée n° 8, world.terrain) : routes, bâtiments et sol suivent les collines. Coupé tant que " +
-                 "le trafic, les piétons et les clients sont posés à y = 0 (à vérifier dans Unity avant de l'activer).")]
-        public bool applyTerrain;
+        [Tooltip("Relief réel (idée n° 8, world.terrain) : routes, bâtiments et sol suivent les collines ; le taxi, le trafic, " +
+                 "les piétons, les clients et tout ce qui est posé au sol suivent HeightAt (décision de Kevin du 23/11 : activé).")]
+        public bool applyTerrain = true;
         [Tooltip("Idée n° 21 : construire le monde sur plusieurs images (écran de chargement) au lieu de figer le lancement.")]
         public bool progressive = true;
         [Tooltip("Temps de construction par image (ms) en mode progressif.")]
@@ -42,8 +42,11 @@ namespace TaxiKmer.World
         public float Progress { get; private set; }
         private bool _building;
 
-        /// <summary>Altitude du sol au point x, z (0 si le relief est coupé ou absent).</summary>
-        public float HeightAt(float x, float z) => applyTerrain && Data != null && Data.terrain != null ? Data.terrain.HeightAt(x, z) : 0f;
+        /// <summary>Relief appliqué (null si coupé ou absent : monde plat à y = 0).</summary>
+        public TerrainGrid Terrain => applyTerrain && Data != null && Data.terrain != null && Data.terrain.HasData ? Data.terrain : null;
+
+        /// <summary>Altitude du sol au point x, z (0 si le relief est coupé ou absent), sur les mêmes triangles que le sol construit.</summary>
+        public float HeightAt(float x, float z) => Ground.Height(Terrain, x, z);
         /// <summary>Groupe des têtes de lampadaires (allumées la nuit par le cycle jour / nuit).</summary>
         public Transform LampHeads { get; private set; }
 
@@ -123,7 +126,9 @@ namespace TaxiKmer.World
                 var main = MainRoads.Contains(r.highway);
                 var target = Get(main ? mainRoads : roads, Cell(r.xz[0], r.xz[1]));
                 // Les grands axes un peu plus haut que les petites rues : pas de scintillement aux carrefours.
-                WorldGeometry.AddRoadStrip(target, r.xz, Mathf.Max(3f, r.width), main ? 0.04f : 0.03f);
+                // Sur le relief, la bande est redécoupée tous les 5 m pour suivre le sol (idée n° 8).
+                var line = terrain != null ? Ground.Densify(r.xz, Ground.RoadStepMeters) : r.xz;
+                WorldGeometry.AddRoadStrip(target, line, Mathf.Max(3f, r.width), main ? 0.04f : 0.03f);
                 for (var i = 0; i < r.xz.Length; i += 2)
                 {
                     minX = Mathf.Min(minX, r.xz[i]); maxX = Mathf.Max(maxX, r.xz[i]);
@@ -172,7 +177,8 @@ namespace TaxiKmer.World
                 foreach (var m in data.traffic.medians)
                 {
                     if (m.xz == null || m.xz.Length < 4) continue;
-                    WorldGeometry.AddWallStrip(Get(medians, Cell(m.xz[0], m.xz[1])), m.xz, medianWidth, medianHeight);
+                    WorldGeometry.AddWallStrip(Get(medians, Cell(m.xz[0], m.xz[1])),
+                        terrain != null ? Ground.Densify(m.xz, Ground.RoadStepMeters) : m.xz, medianWidth, medianHeight);
                     AddLamps(lamps, lampHeads, m.xz);
                 }
             yield return null;

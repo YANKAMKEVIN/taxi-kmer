@@ -55,7 +55,8 @@ mais **jamais exécuté**. Cocher au fur et à mesure.
 
 - [ ] **Idée 7** : passer la logique des courses (`Street`) des distances le long de l'itinéraire aux positions 2D
       (`RoadNetwork`, `StopPlacement`), élargir le couloir (`osm_route.py --corridor`), et décider des nouveaux lieux.
-- [ ] **Idée 8** : poser trafic, piétons, clients, postes et repères à `WorldBuilder.HeightAt` avant d'activer le relief.
+- [x] **Idée 8** : trafic, piétons, clients, postes, repères, vendeurs, station, barrières et taxi posés sur le relief,
+      `applyTerrain` activé (décision de Kevin du 23/11) ; reste la vérification en jeu (section 3).
 - [ ] **Idée 11** : messages de la famille (jalon 7), appli de courses (jalon 8), contacts à appeler au contrôle.
 - [ ] **Idée 17** : pièces détachables sur le vrai modèle.
 - [ ] **Idée 23** : atlas de façades CC0 (ambientCG), UV des murs, matériaux URP texturés.
@@ -69,7 +70,37 @@ mais **jamais exécuté**. Cocher au fur et à mesure.
 
 - [ ] Idée 3 (jour / nuit) : lancer une journée en accéléré (dayLengthRealSeconds bas) ; soleil qui monte à l'est et se couche à l'ouest, teinte orangée vers 18:00, nuit bleutée après 18:45, têtes de lampadaires allumées de 18:00 à 06:20, phares émissifs, faisceau des phares au niveau Haut seulement. Régler daylight.json à l'œil.
 - [ ] Idée 6 (mini-carte) : en conduisant, carte ronde en haut à droite sous le klaxon ; routes grises, itinéraire jaune, taxi au centre qui pointe vers le haut, la carte tourne avec le taxi ; pastilles des destinations des passagers (couleurs de la frise), postes de police en bleu, station en vert ; un repère lointain reste collé au bord. Vérifier que le masque rond coupe bien l'image et que rien ne chevauche le klaxon / la pause.
-- [ ] Idée 8 (relief) : sur l'objet WorldBuilder de la scène Monde, cocher « Apply Terrain » puis lancer : routes, bâtiments, murets et sol suivent les collines (Copernicus GLO-30, 30 m) ; le taxi roule sur le sol en relief. À faire ensuite (non codé) : poser trafic, piétons, clients, postes et marqueurs à WorldBuilder.HeightAt(x, z) au lieu de y = 0, puis vérifier que les WheelCollider tiennent dans les montées (pentes jusqu'à ~15 %). Les bâtiments suivent la pente (toits inclinés) : à corriger si gênant. Le MNT est un modèle de surface (arbres et toits compris) : bosses possibles.
+- [ ] Idée 8 (relief, **activé** le 23/11 au soir, décision de Kevin) : `WorldBuilder.applyTerrain` est maintenant vrai par
+      défaut (la scène Monde ne l'enregistre pas : la valeur du code s'applique ; vérifier la case « Apply Terrain »).
+      Tout ce qui est posé au sol prend la hauteur de `WorldBuilder.HeightAt` / `Core.World.Ground` (interpolée sur les
+      mêmes triangles que le sol, testée hors Unity) : taxi au départ et au repositionnement, voitures, taxis
+      concurrents et mototaxis du trafic (inclinés dans la pente), piétons, clients au bord de la route, clients
+      déposés, vendeurs aux feux, poteaux des feux, postes de police et voiture de poursuite, station-service,
+      barrières des cortèges, repères des arrêts. Routes et murets redécoupés tous les 5 m pour suivre le sol. À vérifier :
+  - [ ] **Pentes** : parcourir tout l'itinéraire (Messassi → Étoudi, pentes jusqu'à ~15 %) : le taxi monte les côtes
+        sans patiner ni reculer à l'arrêt (frein, frein à main), les WheelCollider ne traversent pas le sol, la vitesse
+        en montée reste jouable ; noter les endroits durs (distance affichée par la frise).
+  - [ ] **Véhicules qui flottent ou s'enfoncent** : à l'arrêt derrière une file au feu dans une montée, puis dans un
+        creux et sur une crête : roues des voitures du trafic et des mototaxis au ras de la route (tolérance testée :
+        < 25 cm sous chaque essieu), tangage cohérent ; piétons, clients, vendeurs, policiers les pieds au sol ; la
+        voiture de poursuite (idée 9) suit les côtes. Route : ne doit pas disparaître sous le sol (sinon baisser
+        `Ground.RoadStepMeters`, 5 m) ; la zone d'arrêt jaune devant un client accepté (8 m, à plat) peut s'enfoncer
+        dans une pente : la noter si elle se voit. Station-service et postes (9 m et 5 m de large) posés à plat à la
+        hauteur de leur centre : un coin peut flotter dans une pente.
+  - [ ] **Accrochages et contacts** : emboutir une voiture du trafic dans une côte → le choc est détecté
+        (`TaxiHitDetector`) ; renverser un piéton (zone de contact) en pente ; le taxi qui tombe sous le sol est remis
+        sur la route (seuil maintenant relatif au relief : 5 m sous le sol, au lieu de y < −5, sinon le taxi aurait été
+        remis en place sans arrêt dans les creux, le sol descendant jusqu'à −115 m).
+  - [ ] **Caméra** : la caméra de poursuite et le mode photo ne passent pas sous le sol dans les descentes ; la
+        mini-carte reste juste (elle est en 2D).
+  - [ ] **Perf sur le S24** : i/s (bouton Qualité) au niveau Moyen en heure de pointe, relief activé puis coupé
+        (case « Apply Terrain ») : le sol est une grille de 161 × 254 points avec MeshCollider, les routes ont plus de
+        sommets (pas de 5 m), et chaque véhicule fait deux lectures de hauteur par image. Noter les deux chiffres et la
+        durée du chargement (écran « Chargement de Yaoundé »). Si c'est trop lourd : niveau Bas avec relief coupé.
+  - [ ] Bâtiments : ils suivent la pente (toits inclinés), à corriger si gênant. Le MNT est un modèle de surface
+        (arbres et toits compris) : bosses possibles sur la route ; les noter avec leur distance.
+  - [ ] `WorldSnapshots` (éditeur) et `RouteFlyCamera` placent maintenant la caméra au-dessus du relief : relancer les
+        captures.
 - [ ] Idée 9 (poursuite) : à un contrôle, choisir « Fuir » ; le panneau disparaît, on peut rouler, une voiture de police bleue et blanche démarre 35 m derrière et suit le taxi sur sa voie ; bandeau « Poursuite ! Police à N m » qui clignote. S'arrêter → rattrapé (fourrière). Rouler vite (> 60 km/h) → échappé, bandeau « Recherché » jusqu'au prochain poste qui arrête le taxi. Régler police.json → chase (vitesse, écarts, durée) avec Kevin.
 - [ ] Idée 10 (écran titre) : premier lancement → « Commencer la journée » + « Réglages » ; après une journée terminée et l'appli relancée → « Continuer », ligne « Jour N · épargne … · réputation … », bouton rouge « Nouvelle partie » qui demande « Confirmer » puis repart au jour 1. Décider avec Kevin d'activer save.json → resumeOnStart (reprise de la journée interrompue).
 - [ ] Idée 11 (téléphone) : bouton « Téléphone » à gauche sous les jauges (clignote en vert s'il y a un message) ; après une journée au versement manqué, le matin suivant : message du propriétaire avec la somme et le nombre de manques restants ; un appui ouvre l'écran des messages, un second le ferme. Vérifier qu'il ne chevauche ni les jauges, ni le bouton Qualité, ni le bouton d'action. Kevin : textes du propriétaire, nom de l'appli (phone.json → appName), messages de la famille (jalon 7), contacts à appeler au contrôle.

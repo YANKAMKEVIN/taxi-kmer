@@ -77,7 +77,9 @@ namespace TaxiKmer.Driving
             if (!here) return;
             // À la fenêtre du chauffeur (côté gauche du taxi).
             var t = taxi.transform;
-            _vendor.transform.SetPositionAndRotation(t.position - t.right * 1.4f + t.forward * 0.3f, Quaternion.LookRotation(t.right, Vector3.up));
+            var side = Flat(t.right);
+            var at = t.position - side * 1.4f + Flat(t.forward) * 0.3f;
+            _vendor.transform.SetPositionAndRotation(OnGround(at.x, at.z), Quaternion.LookRotation(side, Vector3.up)); // sur le relief (idée n° 8)
         }
 
         /// <summary>Repères de la mini-carte : destinations des passagers, postes de police visibles, stations-service.</summary>
@@ -133,7 +135,7 @@ namespace TaxiKmer.Driving
                     WorldGeometry.SampleAlong(_xz, _cum, along, out var x, out var z, out var dx, out var dz);
                     var barrier = new GameObject("Barrière");
                     barrier.transform.SetParent(_closure.transform, false);
-                    barrier.transform.SetPositionAndRotation(new Vector3(x, 0f, z), Quaternion.LookRotation(new Vector3(dx, 0f, dz), Vector3.up));
+                    barrier.transform.SetPositionAndRotation(OnGround(x, z), Quaternion.LookRotation(new Vector3(dx, 0f, dz), Vector3.up));
                     for (var i = -4; i <= 4; i++)
                         Part(barrier.transform, PrimitiveType.Cube, new Vector3(i * 1.6f, 0.6f, 0f), new Vector3(1.5f, 0.25f, 0.2f),
                             i % 2 == 0 ? new Color(0.8f, 0.12f, 0.1f) : new Color(0.92f, 0.92f, 0.9f));

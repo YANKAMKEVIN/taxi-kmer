@@ -15,6 +15,16 @@ namespace TaxiKmer.Driving
     /// <summary>Repères des destinations au-dessus de la route. Partie de <see cref="StreetView"/> (idée n° 33 : fichier découpé).</summary>
     public sealed partial class StreetView
     {
+        /// <summary>Point au sol (relief du monde, idée n° 8 ; y = 0 si le relief est coupé).</summary>
+        private Vector3 OnGround(float x, float z) => new Vector3(x, world != null ? world.HeightAt(x, z) : 0f, z);
+
+        /// <summary>Direction ramenée à l'horizontale (le taxi penche dans les pentes et les virages).</summary>
+        private static Vector3 Flat(Vector3 d)
+        {
+            d.y = 0f;
+            return d.sqrMagnitude > 1e-6f ? d.normalized : Vector3.forward;
+        }
+
         private GameObject MakeStopMarker(Stop stop)
         {
             WorldGeometry.SampleAlong(_xz, _cum, stop.distanceAlongRouteMeters, out var x, out var z, out _, out _);
@@ -22,7 +32,7 @@ namespace TaxiKmer.Driving
             go.name = "Repère " + stop.name;
             Destroy(go.GetComponent<Collider>());
             go.transform.SetParent(transform, false);
-            go.transform.position = new Vector3(x, 6f, z);
+            go.transform.position = OnGround(x, z) + Vector3.up * 6f; // sur le relief (idée n° 8)
             go.transform.localScale = new Vector3(0.6f, 6f, 0.6f);
             if (markerMaterial != null) go.GetComponent<MeshRenderer>().sharedMaterial = markerMaterial;
             go.SetActive(false);

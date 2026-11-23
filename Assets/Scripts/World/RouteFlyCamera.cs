@@ -37,8 +37,9 @@ namespace TaxiKmer.World
 
             WorldGeometry.SampleAlong(_xz, _cum, _distance - _direction * behind, out var cx, out var cz, out _, out _);
             WorldGeometry.SampleAlong(_xz, _cum, _distance + _direction * lookAhead, out var tx, out var tz, out _, out _);
-            var target = new Vector3(tx, 1.5f, tz);
-            var pos = new Vector3(cx, height, cz);
+            // Au-dessus du relief (idée n° 8).
+            var target = new Vector3(tx, world.HeightAt(tx, tz) + 1.5f, tz);
+            var pos = new Vector3(cx, world.HeightAt(cx, cz) + height, cz);
             transform.position = Vector3.Lerp(transform.position, pos, 1f - Mathf.Exp(-4f * Time.deltaTime));
             var look = Quaternion.LookRotation(target - transform.position, Vector3.up);
             transform.rotation = Quaternion.Slerp(transform.rotation, look, 1f - Mathf.Exp(-4f * Time.deltaTime));

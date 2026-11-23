@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using TaxiKmer.Core.Traffic;
+using TaxiKmer.Core.World;
 using UnityEngine;
 
 namespace TaxiKmer.Driving
@@ -18,6 +19,9 @@ namespace TaxiKmer.Driving
         public Material baseMaterial;
 
         public CityLife City { get; set; }
+
+        /// <summary>Relief du monde (idée n° 8) : véhicules, piétons et feux posés dessus ; null = monde plat (y = 0).</summary>
+        public TerrainGrid Terrain { get; set; }
 
         private readonly Dictionary<int, Body> _vehicles = new Dictionary<int, Body>();
         private readonly Dictionary<int, Body> _people = new Dictionary<int, Body>();
@@ -99,7 +103,7 @@ namespace TaxiKmer.Driving
                     paths[p].Sample(along, 4.6f, out var x, out var z, out var dx, out var dz);
                     var root = new GameObject($"Feu {l.Id}");
                     root.transform.SetParent(transform, false);
-                    root.transform.SetPositionAndRotation(new Vector3(x, 0f, z), Quaternion.LookRotation(new Vector3(-dx, 0f, -dz), Vector3.up));
+                    root.transform.SetPositionAndRotation(new Vector3(x, Ground.Height(Terrain, x, z), z), Quaternion.LookRotation(new Vector3(-dx, 0f, -dz), Vector3.up));
                     Part(root.transform, PrimitiveType.Cylinder, new Vector3(0f, 1.6f, 0f), new Vector3(0.14f, 1.6f, 0.14f), new Color(0.2f, 0.2f, 0.2f));
                     Part(root.transform, PrimitiveType.Cube, new Vector3(0f, 3.6f, 0f), new Vector3(0.4f, 1.15f, 0.3f), new Color(0.05f, 0.05f, 0.05f));
                     var head = new LightHead
@@ -146,8 +150,10 @@ namespace TaxiKmer.Driving
                     if (body.Shirt != null) body.Shirt.sharedMaterial = MaterialFor(Shirts[v.Id % Shirts.Length]);
                 }
                 if (body.Passenger != null && body.Passenger.activeSelf != v.Passengers > 0) body.Passenger.SetActive(v.Passengers > 0);
-                var dir = new Vector3(v.DirX, 0f, v.DirZ);
-                body.Root.transform.SetPositionAndRotation(new Vector3(v.X, 0f, v.Z),
+                // Sur le relief : hauteur sous les essieux avant et arrière, tangage dans la pente (idée n° 8).
+                var y = Ground.Vehicle(Terrain, v.X, v.Z, v.DirX, v.DirZ, v.Length, out var rise);
+                var dir = new Vector3(v.DirX * v.Length, rise, v.DirZ * v.Length);
+                body.Root.transform.SetPositionAndRotation(new Vector3(v.X, y, v.Z),
                     dir.sqrMagnitude > 1e-6f ? Quaternion.LookRotation(dir, Vector3.up) : body.Root.transform.rotation);
             }
             _gone.Clear();
@@ -270,7 +276,7 @@ namespace TaxiKmer.Driving
                     body.Shirt.transform.localScale = new Vector3(width, 0.8f, width * 0.75f);
                 }
                 var face = new Vector3(p.FaceX, 0f, p.FaceZ);
-                body.Root.transform.SetPositionAndRotation(new Vector3(p.X, 0f, p.Z),
+                body.Root.transform.SetPositionAndRotation(new Vector3(p.X, Ground.Height(Terrain, p.X, p.Z), p.Z),
                     face.sqrMagnitude > 1e-6f ? Quaternion.LookRotation(face, Vector3.up) : body.Root.transform.rotation);
             }
             _gone.Clear();

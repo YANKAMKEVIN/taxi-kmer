@@ -139,7 +139,12 @@ namespace TaxiKmer.Core.World
 
         public bool HasData => width >= 2 && height >= 2 && heights != null && heights.Length == width * height;
 
-        /// <summary>Altitude (m, relative à l'origine) au point x, z, interpolée ; 0 sans relief, bornée au bord de la grille.</summary>
+        /// <summary>
+        /// Altitude (m, relative à l'origine) au point x, z ; 0 sans relief, bornée au bord de la grille. Interpolée sur les
+        /// <b>mêmes triangles que le sol construit</b> par WorldBuilder (diagonale de (i+1, j) à (i, j+1)) : ce qui est posé
+        /// à cette hauteur touche exactement le collider du sol (décision de Kevin du 23/11 : trafic, piétons et clients sur
+        /// le relief).
+        /// </summary>
         public float HeightAt(float x, float z)
         {
             if (!HasData) return 0f;
@@ -149,7 +154,10 @@ namespace TaxiKmer.Core.World
             float tx = fx - i, tz = fz - j;
             float a = heights[j * width + i], b = heights[j * width + i + 1];
             float c = heights[(j + 1) * width + i], d = heights[(j + 1) * width + i + 1];
-            return (a * (1 - tx) + b * tx) * (1 - tz) + (c * (1 - tx) + d * tx) * tz;
+            // Triangle (a, c, b) sous la diagonale, (b, c, d) au-dessus.
+            return tx + tz <= 1f
+                ? a + (b - a) * tx + (c - a) * tz
+                : d + (c - d) * (1f - tx) + (b - d) * (1f - tz);
         }
 
         /// <summary>Pente (en %, positive en montée) le long de la polyligne au point <paramref name="along"/>, mesurée sur ± <paramref name="span"/> m.</summary>

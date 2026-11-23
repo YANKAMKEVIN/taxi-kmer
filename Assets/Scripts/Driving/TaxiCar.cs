@@ -68,8 +68,10 @@ namespace TaxiKmer.Driving
             WorldGeometry.SampleAlong(xz, cum, d, out var x, out var z, out var dx, out var dz);
             if (direction < 0) { dx = -dx; dz = -dz; }
             var right = new Vector3(dz, 0f, -dx);
-            var pos = new Vector3(x, 0.15f, z) + right * laneOffset;
-            var rot = Quaternion.LookRotation(new Vector3(dx, 0f, dz), Vector3.up);
+            var pos = new Vector3(x, 0f, z) + right * laneOffset;
+            // Sur le relief (idée n° 8) : posé à la hauteur du sol sous ses essieux, incliné dans la pente.
+            pos.y = Ground.Vehicle(world.Terrain, pos.x, pos.z, dx, dz, TaxiFactory.Length, out var rise) + 0.15f;
+            var rot = Quaternion.LookRotation(new Vector3(dx * TaxiFactory.Length, rise, dz * TaxiFactory.Length), Vector3.up);
             if (_rb == null) _rb = GetComponent<Rigidbody>(); // aussi appelé hors jeu (captures de l'éditeur)
             _rb.linearVelocity = Vector3.zero;
             _rb.angularVelocity = Vector3.zero;
@@ -143,7 +145,9 @@ namespace TaxiKmer.Driving
         private void CheckFlipped(float dt)
         {
             var upsideDown = Vector3.Dot(transform.up, Vector3.up) < 0.3f && SpeedKmh < 5f;
-            var fell = transform.position.y < -5f;
+            // Tombé sous le sol : mesuré par rapport au relief (idée n° 8), le sol descend jusqu'à −115 m sous l'origine.
+            var p = transform.position;
+            var fell = p.y < (world != null ? world.HeightAt(p.x, p.z) : 0f) - 5f;
             _flippedFor = upsideDown ? _flippedFor + dt : 0f;
             if (fell || _flippedFor > Config.car.flippedResetSeconds) ResetToRoute();
         }

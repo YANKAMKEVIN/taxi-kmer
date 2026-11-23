@@ -57,7 +57,7 @@ namespace TaxiKmer.Driving
         {
             // Sur le trottoir de la chaussée de son sens (CityLife), tourné vers les taxis qui arrivent.
             var place = City.Place(c);
-            var pos = new Vector3(place.X, 0f, place.Z);
+            var pos = OnGround(place.X, place.Z); // sur le relief (idée n° 8)
             var root = new GameObject("Client " + c.Client.Id);
             root.transform.SetParent(transform, false);
             root.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(new Vector3(place.FaceX, 0f, place.FaceZ), Vector3.up));
@@ -95,7 +95,9 @@ namespace TaxiKmer.Driving
         {
             var t = taxi.transform;
             var go = new GameObject("Client déposé");
-            go.transform.SetPositionAndRotation(t.position + t.right * 2.5f, Quaternion.LookRotation(t.right, Vector3.up));
+            var side = Flat(t.right);
+            var at = t.position + side * 2.5f;
+            go.transform.SetPositionAndRotation(OnGround(at.x, at.z), Quaternion.LookRotation(side, Vector3.up));
             var shirt = Shirts[(c.Id.GetHashCode() & 0x7fffffff) % Shirts.Length];
             Part(go.transform, PrimitiveType.Capsule, new Vector3(0f, 0.8f, 0f), new Vector3(0.56f, 0.8f, 0.42f), shirt);
             Part(go.transform, PrimitiveType.Sphere, new Vector3(0f, 1.78f, 0f), Vector3.one * 0.26f, new Color(0.35f, 0.22f, 0.14f));
