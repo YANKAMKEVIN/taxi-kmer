@@ -366,9 +366,20 @@ namespace TaxiKmer.Core.DotnetTests
             // Pourboires rares (décision de Kevin, 23/11) : quelques réponses en donnent, sur des répliques dites pendant le
             // trajet (une réponse au paiement arrive quand le passager est déjà descendu : pourboire perdu).
             var replies = d.lines.SelectMany(l => l.replies).Count();
-            var tipped = d.lines.SelectMany(l => l.replies.Where(r => r.tip > 0).Select(r => l)).ToList();
+            // Les histoires de passagers réguliers (idée n° 13) donnent au plus un pourboire chacune, en fin d'histoire :
+            // rares par construction (une fois par carrière), comptés à part.
+            var tipped = d.lines.Where(l => string.IsNullOrEmpty(l.arc)).SelectMany(l => l.replies.Where(r => r.tip > 0).Select(r => l)).ToList();
             Assert.That(tipped.Count, Is.InRange(4, 10), "Quelques réponses à pourboire");
             Assert.LessOrEqual(tipped.Count * 20, replies, "Pourboires rares : au plus une réponse sur vingt");
+            foreach (var arc in d.arcs)
+            {
+                var arcLines = d.lines.Where(l => l.arc == arc.id).ToList();
+                CollectionAssert.AreEquivalent(Enumerable.Range(1, arc.steps), arcLines.Select(l => l.arcStep), $"{arc.id} : une réplique par rencontre");
+                Assert.That(arc.steps, Is.InRange(3, 5), arc.id);
+                Assert.IsTrue(characters.Contains(arc.character), arc.id);
+                Assert.IsTrue(arcLines.All(l => l.character == arc.character), $"{arc.id} : dites par son personnage");
+                Assert.LessOrEqual(arcLines.Count(l => l.replies.Any(r => r.tip > 0)), 1, $"{arc.id} : un pourboire au plus");
+            }
             foreach (var l in tipped)
                 Assert.IsFalse(l.trigger == "paiement" || l.trigger == "refus-paiement" || l.trigger == "discussion" || l.trigger == "negociation",
                     $"{l.id} : pourboire jamais payé dans cette situation");

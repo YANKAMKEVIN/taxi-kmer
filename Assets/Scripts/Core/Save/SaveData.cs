@@ -50,6 +50,11 @@ namespace TaxiKmer.Core.Save
         /// </summary>
         public PaperDayData[] papers = Array.Empty<PaperDayData>();
         public DayRecordData[] history = Array.Empty<DayRecordData>();
+        /// <summary>
+        /// Histoires des passagers réguliers (idée n° 13) : « arc:rencontres faites:dernier jour ». Champ ajouté sans
+        /// changer de version : absent d'une ancienne sauvegarde, il vaut vide (aucune histoire commencée).
+        /// </summary>
+        public string[] stories = Array.Empty<string>();
     }
 
     /// <summary>Bilan d'une journée terminée (copie de <see cref="Day.DaySummary"/>).</summary>

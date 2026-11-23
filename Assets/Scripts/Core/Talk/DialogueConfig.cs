@@ -97,6 +97,18 @@ namespace TaxiKmer.Core.Talk
         public int tip;
     }
 
+    /// <summary>Histoire d'un passager régulier : 3 à 5 rencontres, au moins minDaysBetween jours d'écart.</summary>
+    [Serializable]
+    public class StoryArcData
+    {
+        public string id = "";
+        public string character = "";
+        public string name = "";
+        public int steps = 3;
+        public int minDaysBetween = 1;
+        public string statut = "proposée";
+    }
+
     /// <summary>Une réplique : dite dans une situation, éventuellement par un personnage type, avec des réponses possibles.</summary>
     [Serializable]
     public class LineData
@@ -123,6 +135,12 @@ namespace TaxiKmer.Core.Talk
         /// </summary>
         public string fromTime = "";
         public string untilTime = "";
+        /// <summary>
+        /// Histoire d'un passager régulier (idée n° 13) : id de l'arc (<see cref="DialogueConfig.arcs"/>) et rang de la
+        /// rencontre (1, 2, 3…). La réplique n'est dite qu'à son tour dans l'histoire (<see cref="StoryArcs"/>).
+        /// </summary>
+        public string arc = "";
+        public int arcStep;
 
         /// <summary>La réplique peut être dite à cette heure (minutes depuis minuit ; négatif : heure inconnue, toujours vrai).</summary>
         public bool SaidAt(int minuteOfDay)
@@ -216,6 +234,8 @@ namespace TaxiKmer.Core.Talk
         public float characterShare = 0.6f;
         public CharacterData[] characters = Array.Empty<CharacterData>();
         public LineData[] lines = Array.Empty<LineData>();
+        /// <summary>Histoires de passagers réguliers (idée n° 13), à valider par Kevin.</summary>
+        public StoryArcData[] arcs = Array.Empty<StoryArcData>();
 
         /// <summary>Règles des disputes d'argent pour la rue (négociation, refus de payer).</summary>
         public Rides.FareDisputeRules FareRules() => new Rides.FareDisputeRules

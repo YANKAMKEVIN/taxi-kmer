@@ -1,5 +1,5 @@
 {
-    "_note": "Dialogues des passagers (jalon 5, docs/tech/jalon-05.md). ACTIVÉ le 21/11 (tranché par Kevin le 21/11). Texte + petits sons de voix (option B) : voiceSounds = emplacements « à fournir » (clip vide, aucun fichier audio) ; voice d'une réplique ou d'un personnage = id d'un son. Répliques écrites par Claude, à valider par Kevin (option B) : statut « proposée » (puis « validée ») ; traduction « à traduire » = écrite en français faute de tournure sûre dans le registre visé. trigger : montee, discussion, place, detour, paiement, negociation, refus-paiement, destination, prix, panne, controle, pluie, silence. character : id d'un personnage type (vide = n'importe quel passager). Valeurs entre accolades (22/11) : {destination} (lieu du passager), {prix} (prix annoncé), {offre} (contre-offre) — jamais de lieu ni de somme écrits en dur ; une réplique dont la valeur manque n'est pas dite (DialogueText, situations qui fournissent chaque valeur : DialogueText.ValuesFor). replies : réponses du chauffeur ; reputation = effet sur la réputation, tip = pourboire payé avec la course (décision de Kevin). Négociation option A : haggleChance (× effet de la réputation), le client propose haggleDiscountMin à haggleDiscountMax de moins (arrondi haggleRoundTo, plancher haggleFloor), le joueur accepte ou refuse. Refus de payer option C : refusesToPayChance ; le joueur laisse partir ou appelle la police (refusalPoliceMinutes perdues, il paie selon refusalPolicePayChance). silenceAfterSeconds : un passager rompt un long silence. Langues : français, camfranglais, pidgin ; registers = parts des passagers (choix de Claude, à régler) ; fallbackRegister = registre de secours. Lecture en conduisant : minShowSeconds, charsPerSecond, maxChars ; minGapSeconds ; noRepeatWithin ; replySeconds ; detourMeters. Valeurs de chance et de durée : défauts de Claude, à régler avec Kevin.",
+    "_note": "Dialogues des passagers (jalon 5, docs/tech/jalon-05.md). ACTIVÉ le 21/11 (tranché par Kevin le 21/11). Texte + petits sons de voix (option B) : voiceSounds = emplacements « à fournir » (clip vide, aucun fichier audio) ; voice d'une réplique ou d'un personnage = id d'un son. Répliques écrites par Claude, à valider par Kevin (option B) : statut « proposée » (puis « validée ») ; traduction « à traduire » = écrite en français faute de tournure sûre dans le registre visé. trigger : montee, discussion, place, detour, paiement, negociation, refus-paiement, destination, prix, panne, controle, pluie, silence. character : id d'un personnage type (vide = n'importe quel passager). Valeurs entre accolades (22/11) : {destination} (lieu du passager), {prix} (prix annoncé), {offre} (contre-offre) — jamais de lieu ni de somme écrits en dur ; une réplique dont la valeur manque n'est pas dite (DialogueText, situations qui fournissent chaque valeur : DialogueText.ValuesFor). replies : réponses du chauffeur ; reputation = effet sur la réputation, tip = pourboire payé avec la course (décision de Kevin). Négociation option A : haggleChance (× effet de la réputation), le client propose haggleDiscountMin à haggleDiscountMax de moins (arrondi haggleRoundTo, plancher haggleFloor), le joueur accepte ou refuse. Refus de payer option C : refusesToPayChance ; le joueur laisse partir ou appelle la police (refusalPoliceMinutes perdues, il paie selon refusalPolicePayChance). silenceAfterSeconds : un passager rompt un long silence. Langues : français, camfranglais, pidgin ; registers = parts des passagers (choix de Claude, à régler) ; fallbackRegister = registre de secours. Lecture en conduisant : minShowSeconds, charsPerSecond, maxChars ; minGapSeconds ; noRepeatWithin ; replySeconds ; detourMeters. Valeurs de chance et de durée : défauts de Claude, à régler avec Kevin. Histoires de passagers réguliers (idée n° 13, proposées par Claude, à valider par Kevin) : arcs = histoires de 3 à 5 rencontres ; une réplique avec arc et arcStep n'est dite qu'à son tour, une rencontre au plus par minDaysBetween jours ; l'avancement est gardé dans la sauvegarde.",
     "enabled": true,
     "minShowSeconds": 2.5,
     "charsPerSecond": 14,
@@ -3152,6 +3152,202 @@
             "voice": "",
             "statut": "proposée",
             "traduction": ""
+        },
+        {
+            "id": "histoire-etudiant-1",
+            "trigger": "montee",
+            "character": "etudiant",
+            "register": "fr",
+            "text": "Bonjour ! Mon examen de droit approche. Vous passez par ici chaque matin ?",
+            "fromTime": "06:00",
+            "untilTime": "10:00",
+            "replies": [
+                {
+                    "id": "oui",
+                    "text": "Chaque matin, monte !",
+                    "reputation": 1,
+                    "tip": 0
+                },
+                {
+                    "id": "courage",
+                    "text": "Courage pour l'examen.",
+                    "reputation": 1,
+                    "tip": 0
+                }
+            ],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": "",
+            "arc": "etudiant-examen",
+            "arcStep": 1
+        },
+        {
+            "id": "histoire-etudiant-2",
+            "trigger": "montee",
+            "character": "etudiant",
+            "register": "fr",
+            "text": "Encore vous ! J'ai révisé toute la nuit, l'examen c'est dans trois jours.",
+            "fromTime": "06:00",
+            "untilTime": "10:00",
+            "replies": [
+                {
+                    "id": "dormir",
+                    "text": "Dors un peu quand même.",
+                    "reputation": 1,
+                    "tip": 0
+                },
+                {
+                    "id": "silence",
+                    "text": "Hmm.",
+                    "reputation": 0,
+                    "tip": 0
+                }
+            ],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": "",
+            "arc": "etudiant-examen",
+            "arcStep": 2
+        },
+        {
+            "id": "histoire-etudiant-3",
+            "trigger": "montee",
+            "character": "etudiant",
+            "register": "fr",
+            "text": "C'est demain, l'examen. Priez pour moi, chauffeur !",
+            "fromTime": "06:00",
+            "untilTime": "10:00",
+            "replies": [
+                {
+                    "id": "reussir",
+                    "text": "Tu vas réussir, petit.",
+                    "reputation": 1,
+                    "tip": 0
+                },
+                {
+                    "id": "dieu",
+                    "text": "Dieu est grand.",
+                    "reputation": 1,
+                    "tip": 0
+                }
+            ],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": "",
+            "arc": "etudiant-examen",
+            "arcStep": 3
+        },
+        {
+            "id": "histoire-etudiant-4",
+            "trigger": "montee",
+            "character": "etudiant",
+            "register": "fr",
+            "text": "J'ai réussi mon examen ! Tenez, un petit quelque chose pour vous.",
+            "fromTime": "06:00",
+            "untilTime": "12:00",
+            "replies": [
+                {
+                    "id": "bravo",
+                    "text": "Bravo ! Merci beaucoup.",
+                    "reputation": 1,
+                    "tip": 200
+                }
+            ],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": "",
+            "arc": "etudiant-examen",
+            "arcStep": 4
+        },
+        {
+            "id": "histoire-commercante-1",
+            "trigger": "montee",
+            "character": "commercante",
+            "register": "fr",
+            "text": "Encore vous ? Je reconnais les chauffeurs sérieux. Doucement avec mes tomates.",
+            "fromTime": "05:00",
+            "untilTime": "12:00",
+            "replies": [
+                {
+                    "id": "attention",
+                    "text": "Je fais attention, maman.",
+                    "reputation": 1,
+                    "tip": 0
+                },
+                {
+                    "id": "presse",
+                    "text": "On est pressés, maman.",
+                    "reputation": 0,
+                    "tip": 0
+                }
+            ],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": "",
+            "arc": "commercante-fidele",
+            "arcStep": 1
+        },
+        {
+            "id": "histoire-commercante-2",
+            "trigger": "montee",
+            "character": "commercante",
+            "register": "fr",
+            "text": "Mon chauffeur ! L'autre jour, rien n'était cassé dans mon panier.",
+            "fromTime": "05:00",
+            "untilTime": "12:00",
+            "replies": [
+                {
+                    "id": "normal",
+                    "text": "C'est normal, maman.",
+                    "reputation": 1,
+                    "tip": 0
+                }
+            ],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": "",
+            "arc": "commercante-fidele",
+            "arcStep": 2
+        },
+        {
+            "id": "histoire-commercante-3",
+            "trigger": "montee",
+            "character": "commercante",
+            "register": "fr",
+            "text": "Vous êtes mon chauffeur maintenant. Gardez la monnaie, mon fils.",
+            "fromTime": "05:00",
+            "untilTime": "12:00",
+            "replies": [
+                {
+                    "id": "merci",
+                    "text": "Merci, maman !",
+                    "reputation": 1,
+                    "tip": 150
+                }
+            ],
+            "voice": "",
+            "statut": "proposée",
+            "traduction": "",
+            "arc": "commercante-fidele",
+            "arcStep": 3
+        }
+    ],
+    "arcs": [
+        {
+            "id": "etudiant-examen",
+            "character": "etudiant",
+            "name": "L'étudiant et son examen",
+            "steps": 4,
+            "minDaysBetween": 1,
+            "statut": "proposée"
+        },
+        {
+            "id": "commercante-fidele",
+            "character": "commercante",
+            "name": "La commerçante fidèle",
+            "steps": 3,
+            "minDaysBetween": 1,
+            "statut": "proposée"
         }
     ]
 }

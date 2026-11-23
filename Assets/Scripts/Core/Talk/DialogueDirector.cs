@@ -122,6 +122,9 @@ namespace TaxiKmer.Core.Talk
         /// </summary>
         public int MinuteOfDay { get; set; } = -1;
 
+        /// <summary>Histoires de passagers réguliers (idée n° 13) ; null : leurs répliques ne sont jamais dites.</summary>
+        public StoryArcs Stories { get; set; }
+
         /// <summary>Temps d'affichage d'un texte : de quoi le lire en conduisant.</summary>
         public static float ShowSecondsFor(DialogueConfig config, string text)
         {
@@ -196,6 +199,7 @@ namespace TaxiKmer.Core.Talk
             if (line == null && !string.IsNullOrEmpty(register) && !string.IsNullOrEmpty(_config.fallbackRegister) && register != _config.fallbackRegister)
                 line = Pick(trigger, character, _config.fallbackRegister, designated, values);
             if (line == null) return false;
+            Stories?.Said(line);
             var text = DialogueText.Fill(line.text, values);
             Current = new Bubble { Line = line, Text = text, Register = register, SpeakerId = speakerId ?? "", Character = character ?? "", ShowSeconds = ShowSecondsFor(_config, text), Voice = _config.VoiceFor(line, character) };
             Said++;
@@ -302,9 +306,13 @@ namespace TaxiKmer.Core.Talk
                 if (!string.IsNullOrEmpty(register) && !string.IsNullOrEmpty(l.register) && l.register != register) continue;
                 if (!string.IsNullOrEmpty(l.character) && !string.IsNullOrEmpty(character) && l.character != character) continue;
                 if (!string.IsNullOrEmpty(l.character) && string.IsNullOrEmpty(character) && designated) continue;
+                if (!string.IsNullOrEmpty(l.arc) && (Stories == null || !Stories.Eligible(l) || l.character != character)) continue;
                 candidates.Add(l);
             }
             if (candidates.Count == 0) return null;
+            // Une rencontre d'histoire passe devant les autres répliques : c'est le passager régulier qui revient.
+            var story = candidates.Find(l => !string.IsNullOrEmpty(l.arc));
+            if (story != null) return story;
             // Les répliques pas encore dites aujourd'hui d'abord.
             var fresh = candidates.FindAll(l => !_saidToday.Contains(l.id));
             var pool = fresh.Count > 0 ? fresh : candidates;

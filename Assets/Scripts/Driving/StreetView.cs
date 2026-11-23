@@ -234,6 +234,8 @@ namespace TaxiKmer.Driving
             if (dialogues.enabled)
             {
                 _talk = new TalkView(controls.Overlay, controls.Font, taxi.gameObject, dialogues, actualSeed + 53);
+                // Histoires des passagers réguliers (idée n° 13), suivies dans la sauvegarde.
+                _talk.Director.Stories = new Core.Talk.StoryArcs(dialogues.arcs, Save.Data.career.stories, Save.Career.DayNumber);
                 Street.FareDisputes = dialogues.FareRules();
                 Street.DisputeRandom = new System.Random(actualSeed + 59);
             }
@@ -442,6 +444,11 @@ namespace TaxiKmer.Driving
             UpdateHud();
             _strip.Update(Street, state.Along, !Street.DayFinished);
             if (_miniMap != null) UpdateMiniMap();
+            if (_talk?.Director.Stories != null && _talk.Director.Stories.Changed)
+            {
+                Save.Data.career.stories = _talk.Director.Stories.Save(); // écrit avec la prochaine sauvegarde
+                _talk.Director.Stories.Changed = false;
+            }
             _phone?.Update(!Street.DayFinished && !_menu.Frozen && (_police == null || !_police.Active));
             _cabinView.Update(Street.Shift.Cabin, !Street.DayFinished);
         }
