@@ -256,6 +256,9 @@ namespace TaxiKmer.Driving
             }
             _daylightConfig = Load("Data/daylight", new DayLightConfig());
             var police = Load("Data/police", new Core.Police.PoliceConfig());
+            _skills = new Core.Career.DriverSkills(Load("Data/skills", new Core.Career.SkillsConfig()), Save.Data.career.skills);
+            if (_skills.Enabled)
+                police.negotiateFailChance = _skills.PoliceNegotiateFail(police.negotiateFailChance); // idée n° 50
             var dayCfg = Load("Data/day", new DayConfig());
             var dialogues = Load("Data/dialogues", new Core.Talk.DialogueConfig());
             if (dialogues.enabled)
@@ -264,6 +267,11 @@ namespace TaxiKmer.Driving
                 // Histoires des passagers réguliers (idée n° 13), suivies dans la sauvegarde.
                 _talk.Director.Stories = new Core.Talk.StoryArcs(dialogues.arcs, Save.Data.career.stories, Save.Career.DayNumber);
                 Street.FareDisputes = dialogues.FareRules();
+                if (_skills.Enabled)
+                {
+                    Street.FareDisputes.HaggleDiscountMin = _skills.HaggleDiscount(Street.FareDisputes.HaggleDiscountMin);
+                    Street.FareDisputes.HaggleDiscountMax = _skills.HaggleDiscount(Street.FareDisputes.HaggleDiscountMax);
+                }
                 Street.DisputeRandom = new System.Random(actualSeed + 59);
             }
             var road = Load("Data/road", new Core.Road.RoadConfig());
@@ -373,6 +381,10 @@ namespace TaxiKmer.Driving
         }
 
         private int _crashes;
+        // Compétences du chauffeur (skills.json, idée n° 50 : proposition, coupées par défaut).
+        private Core.Career.DriverSkills _skills;
+        private int _haggles;
+        private bool _haggleWasPending;
 
         /// <summary>
         /// Journal de fin de journée (idée n° 38) : journal.json à côté de la sauvegarde, pour comparer les vraies parties
@@ -566,6 +578,9 @@ namespace TaxiKmer.Driving
             if (_miniMap != null) UpdateMiniMap();
             if (_vendors != null && !_menu.Frozen && !Street.DayFinished) UpdateVendor(dt, state);
             if (_goals != null && !Street.DayFinished) UpdateGoals();
+            var haggle = Street.PendingHaggle != null;
+            if (haggle && !_haggleWasPending) _haggles++; // une négociation de plus (idée n° 50)
+            _haggleWasPending = haggle;
             if (_talk?.Director.Stories != null && _talk.Director.Stories.Changed)
             {
                 Save.Data.career.stories = _talk.Director.Stories.Save(); // écrit avec la prochaine sauvegarde
@@ -869,6 +884,18 @@ namespace TaxiKmer.Driving
             _pops.Clear();
             if (_road != null) Save.Data.career.vehicleDamage = _road.Road.Car.Damage; // les dégâts passent d'un jour à l'autre
             _goals?.EndDay();
+            if (_skills != null && _skills.Enabled)
+            {
+                var s = Street.Summary;
+                foreach (var name in _skills.EndDay(new Core.Career.SkillDay
+                {
+                    Negotiations = _haggles + (_police != null ? _police.Police.Controls : 0),
+                    FullDay = !s.Arrested && !s.Impounded && !s.VehicleSeized,
+                    Kilometres = s.Kilometres,
+                }))
+                    Debug.Log($"[TaxiKmer] Compétence en hausse : {name}");
+                Save.Data.career.skills = _skills.Save(); // écrit avec le bilan
+            }
             if (_goals != null && _goals.Reward > 0) Save.Career.AddBonus(_goals.Reward); // prime, si Kevin l'active
             var closure = Save.CloseDay();
             WriteReplay();

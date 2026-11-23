@@ -1,0 +1,27 @@
+{
+    "_note": "Compétences du chauffeur (idée n° 50, PROPOSITION à soumettre à Kevin : coupées, enabled = false, aucun effet sur le jeu). pointsPerLevel : points pour chaque niveau ; effectPerLevel : effet par niveau (0,04 = 4 %). Négociation : +1 point par négociation (client ou police), réduit le rabais des clients qui marchandent et l'échec des négociations avec la police. Endurance : +1 point par journée complète, allonge la patience des clients acceptés. Raccourcis : +1 point par km, les passagers tolèrent un plus long détour.",
+    "enabled": false,
+    "skills": [
+        {
+            "id": "negociation",
+            "name": "Négociation",
+            "pointsPerLevel": 6,
+            "maxLevel": 10,
+            "effectPerLevel": 0.04
+        },
+        {
+            "id": "endurance",
+            "name": "Endurance",
+            "pointsPerLevel": 3,
+            "maxLevel": 10,
+            "effectPerLevel": 0.02
+        },
+        {
+            "id": "raccourcis",
+            "name": "Raccourcis",
+            "pointsPerLevel": 40,
+            "maxLevel": 10,
+            "effectPerLevel": 0.05
+        }
+    ]
+}

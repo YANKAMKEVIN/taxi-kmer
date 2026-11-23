@@ -156,6 +156,15 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void Skills_MatchDefaults_AndStayOffUntilKevinDecides()
+        {
+            var d = Load<TaxiKmer.Core.Career.SkillsConfig>("skills.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Career.SkillsConfig(), Opts), JsonSerializer.Serialize(d, Opts));
+            Assert.IsFalse(d.enabled, "Proposition : décision de design de Kevin");
+            foreach (var s in d.skills) Assert.LessOrEqual(s.maxLevel * s.effectPerLevel, 0.5f, $"{s.id} : effet borné à 50 %");
+        }
+
+        [Test]
         public void Quality_MatchesDefaults()
         {
             var q = Load<TaxiKmer.Core.Quality.QualityConfig>("quality.json");

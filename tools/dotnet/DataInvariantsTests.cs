@@ -74,6 +74,7 @@ namespace TaxiKmer.Core.DotnetTests
             ["goals.json"] = typeof(TaxiKmer.Core.Day.DailyGoalsConfig),
             ["ui_texts.json"] = typeof(TaxiKmer.Core.Ux.UiTextsConfig),
             ["credits.json"] = typeof(TaxiKmer.Core.Ux.CreditsConfig),
+            ["skills.json"] = typeof(TaxiKmer.Core.Career.SkillsConfig),
         };
 
         [Test]

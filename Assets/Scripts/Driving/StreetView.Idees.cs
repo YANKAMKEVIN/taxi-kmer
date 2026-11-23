@@ -33,7 +33,10 @@ namespace TaxiKmer.Driving
         {
             var papers = _police != null ? _police.Police.Papers.Summary(_police.Police.Day) : "";
             var goals = _goals != null ? _goals.Summary() : "";
-            return papers.Length > 0 && goals.Length > 0 ? papers + "\n" + goals : papers + goals;
+            var skills = _skills != null ? _skills.Summary() : ""; // idée n° 50 (vide tant que c'est coupé)
+            var parts = new List<string>();
+            foreach (var p in new[] { papers, goals, skills }) if (p.Length > 0) parts.Add(p);
+            return string.Join("\n", parts);
         }
 
         /// <summary>Objectifs du jour (idée n° 25) : suivis à chaque image depuis le grand livre de la journée.</summary>

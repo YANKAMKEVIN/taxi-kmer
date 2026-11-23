@@ -55,6 +55,8 @@ namespace TaxiKmer.Core.Save
         /// changer de version : absent d'une ancienne sauvegarde, il vaut vide (aucune histoire commencée).
         /// </summary>
         public string[] stories = Array.Empty<string>();
+        /// <summary>Compétences du chauffeur (idée n° 50) : « id:points ». Champ ajouté sans changer de version.</summary>
+        public string[] skills = Array.Empty<string>();
     }
 
     /// <summary>Bilan d'une journée terminée (copie de <see cref="Day.DaySummary"/>).</summary>
