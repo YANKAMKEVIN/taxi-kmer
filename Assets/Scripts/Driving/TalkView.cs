@@ -161,7 +161,7 @@ namespace TaxiKmer.Driving
             r.anchoredPosition = new Vector2(0f, h * 0.2f);
             r.sizeDelta = new Vector2(w, h * 0.2f);
             _text.text = b.Text;
-            _text.fontSize = Mathf.RoundToInt(h * 0.032f);
+            _text.fontSize = Mathf.RoundToInt(h * 0.032f * UiKit.TextScale);
             UiKit.PlaceTopCenter(_text.rectTransform, h * 0.015f, w * 0.94f, h * 0.08f);
             var open = b.RepliesOpen(_config.replySeconds);
             var replies = b.Line.replies ?? new ReplyData[0];
@@ -171,7 +171,7 @@ namespace TaxiKmer.Driving
                 _replies[i].gameObject.SetActive(show);
                 if (!show) continue;
                 _replyLabels[i].text = replies[i].text;
-                _replyLabels[i].fontSize = Mathf.RoundToInt(h * 0.026f);
+                _replyLabels[i].fontSize = Mathf.RoundToInt(h * 0.026f * UiKit.TextScale);
                 var bw = w * 0.31f;
                 UiKit.PlaceTopCenter(_replies[i].rectTransform, h * 0.1f, bw, h * 0.08f);
                 _replies[i].rectTransform.anchoredPosition = new Vector2((i - (replies.Length - 1) * 0.5f) * (bw + w * 0.02f), -h * 0.1f);

@@ -158,6 +158,13 @@ namespace TaxiKmer.Driving
             => rect != null && rect.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(rect, screenPoint);
 
         /// <summary>Pulsation entre 0 et 1 (temps réel, continue même en pause).</summary>
+        /// <summary>Taille du texte choisie dans les réglages (idée n° 29) : multiplie les bulles et les messages.</summary>
+        public static float TextScale { get; set; } = 1f;
+        /// <summary>Couleurs pour daltoniens (idée n° 29).</summary>
+        public static bool ColorBlind { get; set; }
+
+        public static Color Palette(float[] c) => new Color(c[0], c[1], c[2], c.Length > 3 ? c[3] : 1f);
+
         public static float Pulse(float speed = 6f) => 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * speed);
     }
 }

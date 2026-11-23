@@ -26,12 +26,12 @@ namespace TaxiKmer.Driving
         private readonly Text _fuel;
         private readonly Text _reputation;
         private static readonly Color FuelColor = new Color(1f, 1f, 1f, 0.85f);
-        private static readonly Color FuelLow = new Color(1f, 0.3f, 0.25f, 1f);
+        private static Color FuelLow => UiKit.Palette(HudPalette.Bad(UiKit.ColorBlind));
 
         private static readonly Color Track = new Color(0f, 0f, 0f, 0.45f);
         private static readonly Color DayColor = new Color(1f, 1f, 1f, 0.85f);
         private static readonly Color Filling = new Color(1f, 0.82f, 0.1f, 0.95f);
-        private static readonly Color Covered = new Color(0.3f, 0.85f, 0.4f, 0.95f);
+        private static Color Covered => UiKit.Palette(HudPalette.Good(UiKit.ColorBlind));
         private static readonly Color LateColor = new Color(1f, 0.6f, 0.15f, 1f);
 
         /// <summary>Bas du bloc (pixels depuis le haut de l'écran) : ce qui suit dans le HUD se place dessous.</summary>

@@ -151,9 +151,10 @@ namespace TaxiKmer.Driving
 
         private const int RingSegments = 16;
 
-        private static readonly Color BubbleFits = new Color(0.3f, 0.85f, 0.4f);
-        private static readonly Color BubbleNeedsMove = new Color(1f, 0.6f, 0.15f);
-        private static readonly Color BubbleNoRoom = new Color(1f, 0.3f, 0.25f);
+        // Couleurs des bulles : vert / orange / rouge, ou bleu / jaune / orange pour les daltoniens (idée n° 29).
+        private static Color BubbleFits => UiKit.Palette(HudPalette.Good(UiKit.ColorBlind));
+        private static Color BubbleNeedsMove => UiKit.Palette(HudPalette.Warning(UiKit.ColorBlind));
+        private static Color BubbleNoRoom => UiKit.Palette(HudPalette.Bad(UiKit.ColorBlind));
 
         private sealed class Person
         {
@@ -272,10 +273,10 @@ namespace TaxiKmer.Driving
             _menu = new GameMenu(!TitleDone);
             _menuView = new GameMenuView(transform, controls.Font) { Career = Save.Data };
             _photo = new PhotoModeView(transform, controls.Font);
-            _settings.Volume = PlayerPrefs.GetFloat(VolumeKey, GameSettings.DefaultVolume);
+            _settings.Load(PrefsStore.Instance); // mêmes clés qu'avant pour le volume et les vibrations
             AudioListener.volume = _settings.Volume;
-            _settings.Vibration = PlayerPrefs.GetInt(VibrationKey, 1) == 1;
             Haptics.Enabled = _settings.Vibration;
+            ApplyAccessibility();
             _strip = new RouteStripView(controls.Overlay, controls.Font, stops.stops, _cum[_cum.Length - 1]);
             _cabinView = new CabinPlanView(controls.Overlay, controls.Font, stops.stops);
             if (!world.Ready)
@@ -557,6 +558,14 @@ namespace TaxiKmer.Driving
                 case MenuChoice.EndDay:
                     if (_menu.EndDay(pending)) Street.EndDayNow(); // refusé tant qu'un choix attend (le bouton dit lequel)
                     break;
+                case MenuChoice.SettingRow:
+                    _settings.Cycle(_menuView.RowId);
+                    Haptics.Enabled = _settings.Vibration;
+                    if (_menuView.RowId == SettingIds.Vibration && _settings.Vibration) Haptics.Play(HapticEvent.Board);
+                    _settings.Save(PrefsStore.Instance);
+                    PlayerPrefs.Save();
+                    ApplyAccessibility();
+                    break;
                 case MenuChoice.ToggleVibration:
                     _settings.Vibration = !_settings.Vibration;
                     Haptics.Enabled = _settings.Vibration;
@@ -777,6 +786,13 @@ namespace TaxiKmer.Driving
         }
 
         /// <summary>Flashs d'information : pluie, contrôles volants, heures de pointe, jour de marché (radio.json → flashes).</summary>
+        /// <summary>Taille du texte et couleurs lisibles (idée n° 29), partagées par les vues.</summary>
+        private void ApplyAccessibility()
+        {
+            UiKit.TextScale = _settings.TextScale;
+            UiKit.ColorBlind = _settings.ColorBlind;
+        }
+
         /// <summary>Ligne sous le titre de la pause : papiers (jalon 4) et objectifs du jour (idée n° 25).</summary>
         private string PauseNote()
         {
@@ -1402,7 +1418,7 @@ namespace TaxiKmer.Driving
                 line.enabled = i < lines.Count;
                 if (!line.enabled) continue;
                 line.text = lines[i];
-                line.fontSize = Mathf.RoundToInt(h * (i == 0 ? 0.045f : 0.036f));
+                line.fontSize = Mathf.RoundToInt(h * (i == 0 ? 0.045f : 0.036f) * UiKit.TextScale);
                 line.color = i == 0 ? Color.white : new Color(1f, 1f, 1f, 0.75f);
                 line.rectTransform.anchoredPosition = new Vector2(0f, -(top + i * h * 0.06f));
                 line.rectTransform.sizeDelta = new Vector2(h * 1.4f, h * 0.06f);

@@ -22,6 +22,8 @@ namespace TaxiKmer.Driving
         OpenPhoto,
         /// <summary>Retour du mode photo à la pause.</summary>
         ClosePhoto,
+        /// <summary>Une ligne des réglages (idées n° 29 à 31) : <see cref="GameMenuView.RowId"/> dit laquelle.</summary>
+        SettingRow,
     }
 
     /// <summary>
@@ -36,6 +38,12 @@ namespace TaxiKmer.Driving
         private readonly Image _primary, _secondary, _tertiary, _minus, _plus, _toggle;
         private readonly Text _primaryText, _secondaryText, _tertiaryText, _toggleText;
         private readonly Image _photo;
+        private readonly Font _font;
+        private readonly System.Collections.Generic.List<(Image button, Text text)> _rows = new System.Collections.Generic.List<(Image, Text)>();
+        private System.Collections.Generic.List<SettingRow> _rowData = new System.Collections.Generic.List<SettingRow>();
+
+        /// <summary>Ligne des réglages touchée (avec <see cref="MenuChoice.SettingRow"/>).</summary>
+        public string RowId { get; private set; } = "";
 
         private static readonly Color Green = new Color(0.1f, 0.45f, 0.2f, 0.95f);
         private static readonly Color Grey = new Color(0.22f, 0.22f, 0.26f, 0.95f);
@@ -63,6 +71,8 @@ namespace TaxiKmer.Driving
             _plus = UiKit.NewButton(_root, font, "+", Grey, out _);
             _toggle = UiKit.NewButton(_root, font, "", Grey, out _toggleText);
             _photo = UiKit.NewButton(_root, font, "Mode photo", Grey, out _);
+            _font = font;
+            _toggle.gameObject.SetActive(false); // remplacé par les lignes des réglages
         }
 
         /// <param name="pauseNote">Ligne sous le titre de la pause (état des papiers, jalon 4) ; vide : rien.</param>
@@ -97,7 +107,12 @@ namespace TaxiKmer.Driving
                     if (UiKit.Tapped(_primary.rectTransform) || back) return MenuChoice.CloseSettings;
                     if (UiKit.Tapped(_minus.rectTransform)) return MenuChoice.VolumeDown;
                     if (UiKit.Tapped(_plus.rectTransform)) return MenuChoice.VolumeUp;
-                    if (UiKit.Tapped(_toggle.rectTransform)) return MenuChoice.ToggleVibration;
+                    for (var i = 0; i < _rowData.Count && i < _rows.Count; i++)
+                        if (UiKit.Tapped(_rows[i].button.rectTransform))
+                        {
+                            RowId = _rowData[i].Id;
+                            return MenuChoice.SettingRow;
+                        }
                     break;
             }
             return MenuChoice.None;
@@ -124,7 +139,14 @@ namespace TaxiKmer.Driving
             _plus.gameObject.SetActive(screen == MenuScreen.Settings);
             // Aide du clavier dans la pause, hors téléphone (éditeur, démo web) : table KeyMap, une touche par action.
             _info.gameObject.SetActive(screen == MenuScreen.Settings || (screen == MenuScreen.Pause && !Application.isMobilePlatform));
-            _toggle.gameObject.SetActive(screen == MenuScreen.Settings);
+            _toggle.gameObject.SetActive(false);
+            _rowData = screen == MenuScreen.Settings ? settings.Rows() : new System.Collections.Generic.List<SettingRow>();
+            while (_rows.Count < _rowData.Count)
+            {
+                var b = UiKit.NewButton(_root, _font, "", Grey, out var t);
+                _rows.Add((b, t));
+            }
+            for (var i = 0; i < _rows.Count; i++) _rows[i].button.gameObject.SetActive(i < _rowData.Count);
             _photo.gameObject.SetActive(screen == MenuScreen.Pause);
             if (screen == MenuScreen.Pause)
             {
@@ -174,12 +196,20 @@ namespace TaxiKmer.Driving
                     UiKit.PlaceTopCenter(_plus.rectTransform, h * 0.34f, bh, bh);
                     _plus.rectTransform.anchoredPosition += new Vector2(side, 0f);
                     foreach (var t in new[] { _minus, _plus }) t.GetComponentInChildren<Text>().fontSize = Mathf.RoundToInt(h * 0.07f);
-                    _toggleText.text = settings.VibrationLabel;
-                    UiKit.PlaceTopCenter(_toggle.rectTransform, h * 0.49f, bw, bh);
-                    _info.text = "Qualité graphique : bouton « Qualité » à gauche pendant la conduite (touche G)";
-                    UiKit.PlaceTopCenter(_info.rectTransform, h * 0.63f, Screen.width, h * 0.06f);
+                    // Lignes des réglages sur deux colonnes (idées n° 29 à 31) : un appui fait défiler la valeur.
+                    var cw = Mathf.Min(h * 0.75f, Screen.width * 0.46f);
+                    var rh = h * 0.08f;
+                    for (var i = 0; i < _rowData.Count; i++)
+                    {
+                        var (button, text) = _rows[i];
+                        text.text = _rowData[i].Label;
+                        text.fontSize = Mathf.RoundToInt(h * 0.03f);
+                        UiKit.PlaceTopCenter(button.rectTransform, h * 0.47f + (i / 2) * (rh + h * 0.015f), cw, rh);
+                        button.rectTransform.anchoredPosition += new Vector2((i % 2 == 0 ? -1f : 1f) * (cw / 2f + h * 0.01f), 0f);
+                    }
+                    _info.gameObject.SetActive(false);
                     _primaryText.text = "Retour";
-                    UiKit.PlaceTopCenter(_primary.rectTransform, h * 0.72f, bw, bh);
+                    UiKit.PlaceTopCenter(_primary.rectTransform, h * 0.47f + ((_rowData.Count + 1) / 2) * (rh + h * 0.015f) + h * 0.01f, bw, bh * 0.8f);
                     break;
             }
         }
