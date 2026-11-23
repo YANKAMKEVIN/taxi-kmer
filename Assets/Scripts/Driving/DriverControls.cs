@@ -85,7 +85,7 @@ namespace TaxiKmer.Driving
             if (taxi != null)
             {
                 taxi.Controls = input;
-                if (!Locked && UnityEngine.Input.GetKeyDown(KeyCode.R)) taxi.ResetToRoute();
+                if (!Locked && UiKit.KeyDown(KeyAction.ResetCar)) taxi.ResetToRoute();
             }
             if (horn != null) horn.SetPressed(input.Horn);
             UpdateView(input);
@@ -95,18 +95,17 @@ namespace TaxiKmer.Driving
         {
             return new DriveInput
             {
-                Left = Key(KeyCode.LeftArrow) || Key(KeyCode.Q) || Key(KeyCode.A),
-                Right = Key(KeyCode.RightArrow) || Key(KeyCode.D),
-                Accelerate = Key(KeyCode.UpArrow) || Key(KeyCode.Z) || Key(KeyCode.W),
-                Brake = Key(KeyCode.DownArrow) || Key(KeyCode.S) || Key(KeyCode.Space),
-                Horn = Key(KeyCode.H),
-                Action = Key(KeyCode.E) || Key(KeyCode.Return),
-                Pause = Key(KeyCode.Escape), // aussi le bouton Retour d'Android
-                Quality = Key(KeyCode.G),
+                // Table du clavier (KeyMap, une touche par action : décision de Kevin du 23/11).
+                Left = UiKit.KeyHeld(KeyAction.Left),
+                Right = UiKit.KeyHeld(KeyAction.Right),
+                Accelerate = UiKit.KeyHeld(KeyAction.Accelerate),
+                Brake = UiKit.KeyHeld(KeyAction.Brake),
+                Horn = UiKit.KeyHeld(KeyAction.Horn),
+                Action = UiKit.KeyHeld(KeyAction.Action),
+                Pause = UiKit.KeyHeld(KeyAction.Pause), // aussi le bouton Retour d'Android
+                Quality = UiKit.KeyHeld(KeyAction.Quality),
             };
         }
-
-        private static bool Key(KeyCode k) => UnityEngine.Input.GetKey(k);
 
         private DriveInput ReadPointers()
         {

@@ -682,7 +682,7 @@ namespace TaxiKmer.Driving
 
         /// <summary>
         /// Panne sèche hors de la station : deux boutons au milieu de l'écran (le taxi est arrêté), « Pousser le taxi »
-        /// (au pas) ou « Appeler un technicien (prix, délai) » ; touches P et T au clavier. Toute la règle est dans Core.
+        /// (au pas) ou « Appeler un technicien (prix, délai) » ; touches U et T au clavier (KeyMap). Toute la règle est dans Core.
         /// </summary>
         private void UpdateDryTank(TaxiOnRoute state)
         {
@@ -703,11 +703,11 @@ namespace TaxiKmer.Driving
             _pushText.fontSize = _technicianText.fontSize = Mathf.RoundToInt(h * 0.032f);
             _technicianText.text = FuelGauge.TechnicianLabel(Street.TechnicianQuote());
 
-            if (UiKit.Tapped(_pushButton.rectTransform) || UnityEngine.Input.GetKeyDown(KeyCode.P))
+            if (UiKit.Tapped(_pushButton.rectTransform) || UiKit.KeyDown(KeyAction.PushTaxi))
             {
                 if (Street.PushTaxi()) Toast(FuelGauge.PushingMessage, 5f);
             }
-            else if (UiKit.Tapped(_technicianButton.rectTransform) || UnityEngine.Input.GetKeyDown(KeyCode.T))
+            else if (UiKit.Tapped(_technicianButton.rectTransform) || UiKit.KeyDown(KeyAction.CallTechnician))
             {
                 if (Street.CallTechnician(out var call))
                 {

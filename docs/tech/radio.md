@@ -10,7 +10,7 @@
 | Changement de station | **fait** (`Core/Radio/CarRadio.cs`) : un bouton fait défiler coupée → station 1 → station 2 → … → coupée ; `startsOn` allume la première station au début de la journée |
 | Stations en direct | **fait** : la grille de chaque station tourne en boucle et avance même quand on ne l'écoute pas ; en changeant de station, on retombe au milieu d'une piste (`ProgrammeOffset`) |
 | Silence | **fait** : hors du taxi (pause, bilan), pendant qu'un passager parle (`DialogueActive`, branché quand les bulles du jalon 5 seront affichées), radio coupée ou `enabled: false` ; une piste sans son (emplacement vide) reste muette |
-| Bouton dans Unity | **écrit, non exécuté** (`Driving/RadioView.cs`, créé par `StreetView` seulement si `enabled`) : bouton en haut à droite sous les jauges (« Station 1 · FM ? » et le titre en cours ; touche N au clavier), source audio sur le taxi qui charge le son de la piste en cours (`Resources.Load<AudioClip>`) et le reprend au bon endroit |
+| Bouton dans Unity | **écrit, non exécuté** (`Driving/RadioView.cs`, créé par `StreetView` seulement si `enabled`) : bouton en haut à droite sous les jauges (« Station 1 · FM ? » et le titre en cours ; touche B au clavier depuis le 23/11, N avant), source audio sur le taxi qui charge le son de la piste en cours (`Resources.Load<AudioClip>`) et le reprend au bon endroit |
 | Tests | `Assets/Tests/EditMode/RadioTests.cs` (5 tests) ; `DataInvariantsTests.Radio_Off_EmptySlots_ToBeProvidedByKevin` (coupée, noms et titres « à fournir par Kevin », aucun son dans les données ni dans le dépôt) |
 
 ## Décisions de Kevin du 21/11 (tranché par Kevin le 21/11)

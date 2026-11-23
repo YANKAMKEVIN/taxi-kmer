@@ -120,7 +120,7 @@ namespace TaxiKmer.Driving
             if (!Visible) return;
             _reveal.Advance(Time.unscaledDeltaTime);
             Layout();
-            var pressed = UnityEngine.Input.GetKeyDown(KeyCode.Return) || UnityEngine.Input.GetKeyDown(KeyCode.E);
+            var pressed = UiKit.KeyDown(KeyAction.Action);
             var tappedAnywhere = false;
             for (var i = 0; i < UnityEngine.Input.touchCount; i++)
             {

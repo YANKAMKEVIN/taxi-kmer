@@ -14,6 +14,31 @@ namespace TaxiKmer.Driving
         private const int RoundSize = 64;
         private const float RoundRadius = 22f;
         private static readonly Dictionary<string, Sprite> Sprites = new Dictionary<string, Sprite>();
+        private static readonly Dictionary<KeyAction, KeyCode[]> KeyCodes = new Dictionary<KeyAction, KeyCode[]>();
+
+        /// <summary>Touches d'une action, lues dans la table du clavier (<see cref="KeyMap"/> : une touche par action, Kevin 23/11).</summary>
+        public static KeyCode[] Keys(KeyAction action)
+        {
+            if (KeyCodes.TryGetValue(action, out var codes)) return codes;
+            var names = KeyMap.KeysFor(action);
+            codes = new KeyCode[names.Length];
+            for (var i = 0; i < names.Length; i++) codes[i] = (KeyCode)System.Enum.Parse(typeof(KeyCode), names[i]);
+            return KeyCodes[action] = codes;
+        }
+
+        /// <summary>Une touche de l'action vient d'être enfoncée (cette image).</summary>
+        public static bool KeyDown(KeyAction action)
+        {
+            foreach (var k in Keys(action)) if (UnityEngine.Input.GetKeyDown(k)) return true;
+            return false;
+        }
+
+        /// <summary>Une touche de l'action est tenue.</summary>
+        public static bool KeyHeld(KeyAction action)
+        {
+            foreach (var k in Keys(action)) if (UnityEngine.Input.GetKey(k)) return true;
+            return false;
+        }
 
         /// <summary>Rectangle arrondi découpé en 9 (à utiliser avec Image.Type.Sliced).</summary>
         public static Sprite Rounded => Cached("arrondi", () =>

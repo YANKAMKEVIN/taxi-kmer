@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using TaxiKmer.Core.Police;
 using TaxiKmer.Core.Rides;
+using TaxiKmer.Core.Ux;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -76,7 +77,7 @@ namespace TaxiKmer.Driving
                     _buttons[i].gameObject.SetActive(visible);
                     if (!visible) continue;
                     _labels[i].text = PoliceTexts.Choice(_choices[i]);
-                    if (UiKit.Tapped(_buttons[i].rectTransform) || UnityEngine.Input.GetKeyDown(KeyCode.Alpha1 + i))
+                    if (UiKit.Tapped(_buttons[i].rectTransform) || UiKit.KeyDown(KeyAction.Police1 + i))
                     {
                         control.Choose(_choices[i]);
                         break;

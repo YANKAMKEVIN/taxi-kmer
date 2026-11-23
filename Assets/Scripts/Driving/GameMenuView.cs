@@ -66,11 +66,11 @@ namespace TaxiKmer.Driving
             if (!open) return MenuChoice.None;
             Layout(screen, settings, passengersOnBoard, pauseNote, pending);
 
-            var back = UnityEngine.Input.GetKeyDown(KeyCode.Escape);
+            var back = UiKit.KeyDown(KeyAction.Pause);
             switch (screen)
             {
                 case MenuScreen.Title:
-                    if (UiKit.Tapped(_primary.rectTransform) || UnityEngine.Input.GetKeyDown(KeyCode.Return)) return MenuChoice.StartDay;
+                    if (UiKit.Tapped(_primary.rectTransform) || UiKit.KeyDown(KeyAction.Action)) return MenuChoice.StartDay;
                     if (UiKit.Tapped(_secondary.rectTransform)) return MenuChoice.OpenSettings;
                     break;
                 case MenuScreen.Pause:
@@ -107,7 +107,8 @@ namespace TaxiKmer.Driving
             _tertiary.gameObject.SetActive(screen == MenuScreen.Pause);
             _minus.gameObject.SetActive(screen == MenuScreen.Settings);
             _plus.gameObject.SetActive(screen == MenuScreen.Settings);
-            _info.gameObject.SetActive(screen == MenuScreen.Settings);
+            // Aide du clavier dans la pause, hors téléphone (éditeur, démo web) : table KeyMap, une touche par action.
+            _info.gameObject.SetActive(screen == MenuScreen.Settings || (screen == MenuScreen.Pause && !Application.isMobilePlatform));
             _toggle.gameObject.SetActive(screen == MenuScreen.Settings);
             _toggleText.fontSize = font;
 
@@ -133,6 +134,9 @@ namespace TaxiKmer.Driving
                     UiKit.PlaceTopCenter(_primary.rectTransform, h * 0.3f, bw, bh);
                     UiKit.PlaceTopCenter(_secondary.rectTransform, h * 0.46f, bw, bh);
                     UiKit.PlaceTopCenter(_tertiary.rectTransform, h * 0.66f, bw, bh);
+                    _info.text = "Clavier : " + KeyMap.Help();
+                    _info.fontSize = Mathf.RoundToInt(h * 0.022f);
+                    UiKit.PlaceTopCenter(_info.rectTransform, h * 0.8f, Screen.width * 0.96f, h * 0.18f);
                     break;
                 case MenuScreen.Settings:
                     _title.text = "Réglages";
