@@ -16,6 +16,8 @@ namespace TaxiKmer.Driving
         VolumeDown,
         VolumeUp,
         ToggleVibration,
+        /// <summary>« Nouvelle partie » sur l'écran titre (idée n° 10) : premier appui = demande de confirmation.</summary>
+        NewCareer,
     }
 
     /// <summary>
@@ -59,6 +61,11 @@ namespace TaxiKmer.Driving
 
         /// <param name="pauseNote">Ligne sous le titre de la pause (état des papiers, jalon 4) ; vide : rien.</param>
         /// <param name="pending">Choix en attente : « Terminer la journée » dit quoi régler d'abord et ne fait rien (Kevin, 23/11).</param>
+        /// <summary>Carrière lue dans la sauvegarde, pour l'écran titre (idée n° 10) ; null : première partie.</summary>
+        public Core.Save.SaveData Career { get; set; }
+        /// <summary>« Nouvelle partie » attend sa confirmation.</summary>
+        public bool ConfirmingNewCareer { get; set; }
+
         public MenuChoice Update(MenuScreen screen, GameSettings settings, int passengersOnBoard, string pauseNote = "", PendingChoices pending = default)
         {
             var open = screen != MenuScreen.None;
@@ -72,6 +79,7 @@ namespace TaxiKmer.Driving
                 case MenuScreen.Title:
                     if (UiKit.Tapped(_primary.rectTransform) || UiKit.KeyDown(KeyAction.Action)) return MenuChoice.StartDay;
                     if (UiKit.Tapped(_secondary.rectTransform)) return MenuChoice.OpenSettings;
+                    if (TitleScreen.HasCareer(Career) && UiKit.Tapped(_tertiary.rectTransform)) return MenuChoice.NewCareer;
                     break;
                 case MenuScreen.Pause:
                     if (UiKit.Tapped(_primary.rectTransform) || back) return MenuChoice.Resume;
@@ -104,7 +112,7 @@ namespace TaxiKmer.Driving
 
             _subtitle.gameObject.SetActive(screen != MenuScreen.Pause || !string.IsNullOrEmpty(pauseNote));
             _secondary.gameObject.SetActive(screen != MenuScreen.Settings);
-            _tertiary.gameObject.SetActive(screen == MenuScreen.Pause);
+            _tertiary.gameObject.SetActive(screen == MenuScreen.Pause || (screen == MenuScreen.Title && TitleScreen.HasCareer(Career)));
             _minus.gameObject.SetActive(screen == MenuScreen.Settings);
             _plus.gameObject.SetActive(screen == MenuScreen.Settings);
             // Aide du clavier dans la pause, hors téléphone (éditeur, démo web) : table KeyMap, une touche par action.
@@ -116,11 +124,15 @@ namespace TaxiKmer.Driving
             {
                 case MenuScreen.Title:
                     _title.text = "Taxi Kmer";
-                    _subtitle.text = "Une journée de taxi, de Messassi à Étoudi";
-                    _primaryText.text = "Commencer la journée";
+                    _subtitle.text = TitleScreen.Subtitle(Career);
+                    _primaryText.text = TitleScreen.PrimaryLabel(Career);
                     _secondaryText.text = "Réglages";
-                    UiKit.PlaceTopCenter(_primary.rectTransform, h * 0.42f, bw, bh);
-                    UiKit.PlaceTopCenter(_secondary.rectTransform, h * 0.58f, bw, bh);
+                    _tertiaryText.text = TitleScreen.NewCareerLabel(ConfirmingNewCareer);
+                    _tertiaryText.fontSize = Mathf.RoundToInt(h * (ConfirmingNewCareer ? 0.03f : 0.04f));
+                    _tertiary.color = Red;
+                    UiKit.PlaceTopCenter(_primary.rectTransform, h * 0.4f, bw, bh);
+                    UiKit.PlaceTopCenter(_secondary.rectTransform, h * 0.55f, bw, bh);
+                    UiKit.PlaceTopCenter(_tertiary.rectTransform, h * 0.72f, bw, bh * 0.8f);
                     break;
                 case MenuScreen.Pause:
                     _title.text = "Pause";

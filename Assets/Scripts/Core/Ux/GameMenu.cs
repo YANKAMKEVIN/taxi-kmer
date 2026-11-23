@@ -80,10 +80,30 @@ namespace TaxiKmer.Core.Ux
         /// <param name="showTitle">Ouvrir sur l'écran titre (premier lancement) plutôt que directement au volant.</param>
         public GameMenu(bool showTitle) => Screen = showTitle ? MenuScreen.Title : MenuScreen.None;
 
-        /// <summary>« Commencer la journée » sur l'écran titre.</summary>
+        /// <summary>« Commencer la journée » (ou « Continuer ») sur l'écran titre.</summary>
         public void StartDay()
         {
             if (Screen == MenuScreen.Title) Screen = MenuScreen.None;
+            ConfirmingNewCareer = false;
+        }
+
+        /// <summary>« Nouvelle partie » attend sa confirmation (second appui) sur l'écran titre (idée n° 10).</summary>
+        public bool ConfirmingNewCareer { get; private set; }
+
+        /// <summary>
+        /// « Nouvelle partie » : le premier appui demande confirmation, le second rend true (la présentation remet la
+        /// carrière à zéro) et lance la journée.
+        /// </summary>
+        public bool RequestNewCareer()
+        {
+            if (Screen != MenuScreen.Title) return false;
+            if (!ConfirmingNewCareer)
+            {
+                ConfirmingNewCareer = true;
+                return false;
+            }
+            StartDay();
+            return true;
         }
 
         /// <summary>Bouton pause, Échap ou retour Android, ou l'appli passe en arrière-plan : seulement en jeu.</summary>
@@ -109,6 +129,7 @@ namespace TaxiKmer.Core.Ux
         public void OpenSettings()
         {
             if (Screen != MenuScreen.Title && Screen != MenuScreen.Pause) return;
+            ConfirmingNewCareer = false;
             _settingsReturn = Screen;
             Screen = MenuScreen.Settings;
         }

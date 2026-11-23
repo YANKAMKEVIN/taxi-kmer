@@ -242,7 +242,7 @@ namespace TaxiKmer.Driving
                     dayCfg.startHour * 60, dayCfg.endHour * 60, actualSeed + 47);
             if (_police != null) foreach (var post in _police.Police.Schedule.Posts) _postViews.Add(MakePolicePost(post));
             _menu = new GameMenu(!TitleDone);
-            _menuView = new GameMenuView(transform, controls.Font);
+            _menuView = new GameMenuView(transform, controls.Font) { Career = Save.Data };
             _settings.Volume = PlayerPrefs.GetFloat(VolumeKey, GameSettings.DefaultVolume);
             AudioListener.volume = _settings.Volume;
             _settings.Vibration = PlayerPrefs.GetInt(VibrationKey, 1) == 1;
@@ -445,10 +445,23 @@ namespace TaxiKmer.Driving
             {
                 case MenuChoice.StartDay:
                     _menu.StartDay();
+                    _menuView.ConfirmingNewCareer = false;
                     TitleDone = true;
                     break;
+                case MenuChoice.NewCareer:
+                    // Idée n° 10 : second appui = carrière remise à zéro, puis la scène repart au volant (comme « Nouvelle journée »).
+                    if (_menu.RequestNewCareer())
+                    {
+                        Save.StartNewCareer();
+                        TitleDone = true;
+                        SetTimeStopped(false);
+                        UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex);
+                        return;
+                    }
+                    _menuView.ConfirmingNewCareer = _menu.ConfirmingNewCareer;
+                    break;
                 case MenuChoice.Resume: _menu.Resume(); break;
-                case MenuChoice.OpenSettings: _menu.OpenSettings(); break;
+                case MenuChoice.OpenSettings: _menu.OpenSettings(); _menuView.ConfirmingNewCareer = false; break;
                 case MenuChoice.CloseSettings: _menu.CloseSettings(); break;
                 case MenuChoice.EndDay:
                     if (_menu.EndDay(pending)) Street.EndDayNow(); // refusé tant qu'un choix attend (le bouton dit lequel)
