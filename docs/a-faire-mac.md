@@ -64,7 +64,8 @@ mais **jamais exécuté**. Cocher au fur et à mesure.
 - [ ] **Idée 37** : rejouer aussi la physique dans Unity (mode rejeu avec la graine et les commandes enregistrées) ;
       enregistrer les choix de police et les réponses aux passagers.
 - [ ] **Idée 41** : signature de l'AAB avec la clé de Kevin.
-- [ ] **Idée 50** : brancher endurance (patience) et raccourcis (détour) si Kevin garde la proposition.
+- [x] **Idée 50** : compétences activées telles quelles (décision de Kevin du 23/11 au soir), endurance (patience) et
+      raccourcis (détour) branchés ; reste la vérification en jeu (section 3).
 
 ## 3. Vérifications de ce qui a été codé sans être lancé
 
@@ -126,7 +127,7 @@ mais **jamais exécuté**. Cocher au fur et à mesure.
 - [ ] Idée 41 (AAB et ASTC) : menu « Taxi Kmer > Build Android (AAB, Play Store) » (ou RunBundle en ligne de commande) → build/android/TaxiKmer.aab ; vérifier que BuildAndroid.cs compile dans Unity 6 (non compilé en session cloud : dossier Editor), noter la taille de l'APK avant / après ASTC (log « [TaxiKmer] Build Android … Mo »), régler la signature dans Player Settings avec la clé de Kevin, essayer l'AAB avec bundletool ou un test interne Play Console.
 - [ ] Idée 42 (crédits) : bouton « Crédits » en haut à gauche de l'écran titre et de la pause ; l'écran liste OpenStreetMap (ODbL), le relief Copernicus, Unity, puis chaque morceau de radio crédité (quand il y en aura) ; Retour / Échap revient d'où l'on vient. Vérifier que le texte tient à l'écran. Kevin : la ligne d'introduction (nom affiché).
 - [ ] Idée 43 (crédit OSM en uGUI) : « © contributeurs OpenStreetMap » toujours visible en bas au centre, même taille qu'avant, sous les boutons et les menus ; vérifier dans le Profiler que plus aucun appel OnGUI ne tourne par image. L'assembly TaxiKmer.World référence maintenant UnityEngine.UI.
-- [ ] Idée 50 (compétences) : proposition coupée (skills.json → enabled false). Si Kevin l'active : après quelques journées, la pause affiche « Négociation niv. N · Endurance niv. N · Raccourcis niv. N », les clients marchandent moins fort et les négociations avec la police échouent moins. Endurance (patience) et raccourcis (détour) sont calculés mais pas encore branchés dans la rue.
+- [ ] Idée 50 (compétences, **activées** le 23/11 au soir, décision de Kevin) : après quelques journées, la pause affiche « Négociation niv. N · Endurance niv. N · Raccourcis niv. N » (vérifier que la ligne tient avec les papiers et les objectifs), un message en console à chaque niveau gagné ; les clients qui marchandent demandent moins de rabais, les négociations avec la police échouent moins ; un client accepté attend plus longtemps (endurance, +2 % par niveau, en plus de la pluie et de la réputation) ; un passager se plaint plus tard d'un détour (raccourcis, +5 % par niveau sur les 150 m de dialogues.json). Relancer l'appli : les niveaux sont gardés (career.skills). Pour aller vite : modifier career.skills dans la sauvegarde (« negociation:60 »).
 - [ ] Idée 2 (page de validation) : `python3 tools/texts/textes_validation.py page`, ouvrir `build/validation/textes.html`, cocher quelques textes, « Exporter decisions.json », puis `python3 tools/texts/textes_validation.py apply ~/Downloads/decisions.json` ; `git diff` ne montre que les textes touchés.
 - [ ] Idée 32 (textes de l'interface) : les messages de la rue (début de journée, klaxon, montée, piéton renversé…) s'affichent comme avant, sans « {lieu} » ni « {prix} » visibles.
 - [ ] Idée 34 / 35 / 36 / 38 : rien à voir à l'écran ; les tests dotnet les couvrent (sauvegardes abîmées, sauvegardes de référence v1 à v6, budget de temps du trafic, journal de fin de journée).

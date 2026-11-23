@@ -262,6 +262,12 @@ namespace TaxiKmer.Driving
                 police.negotiateFailChance = _skills.PoliceNegotiateFail(police.negotiateFailChance); // idée n° 50
             var dayCfg = Load("Data/day", new DayConfig());
             var dialogues = Load("Data/dialogues", new Core.Talk.DialogueConfig());
+            if (_skills.Enabled)
+            {
+                // Idée n° 50 (activée par Kevin le 23/11) : raccourcis → détour toléré plus long ; endurance → clients plus patients.
+                dialogues.detourMeters *= _skills.DetourFactor;
+                Street.SkillPatienceFactor = _skills.PatienceFactor;
+            }
             if (dialogues.enabled)
             {
                 _talk = new TalkView(controls.Overlay, controls.Font, taxi.gameObject, dialogues, actualSeed + 53);
@@ -382,7 +388,7 @@ namespace TaxiKmer.Driving
         }
 
         private int _crashes;
-        // Compétences du chauffeur (skills.json, idée n° 50 : proposition, coupées par défaut).
+        // Compétences du chauffeur (skills.json, idée n° 50 : activées par Kevin le 23/11 au soir).
         private Core.Career.DriverSkills _skills;
         private int _haggles;
         private bool _haggleWasPending;
@@ -897,7 +903,7 @@ namespace TaxiKmer.Driving
                     Debug.Log($"[TaxiKmer] Compétence en hausse : {name}");
                 Save.Data.career.skills = _skills.Save(); // écrit avec le bilan
             }
-            if (_goals != null && _goals.Reward > 0) Save.Career.AddBonus(_goals.Reward); // prime, si Kevin l'active
+            if (_goals != null && _goals.Reward > 0) Save.Career.AddBonus(_goals.Reward); // prime des objectifs (activée par Kevin le 23/11 au soir)
             var closure = Save.CloseDay();
             WriteReplay();
             WriteJournal(closure);

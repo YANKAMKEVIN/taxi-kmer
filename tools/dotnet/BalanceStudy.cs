@@ -214,6 +214,7 @@ namespace TaxiKmer.Core.DotnetTests
             var today = new TaxiKmer.Core.Day.Calendar(data.Calendar).For(carry.DayNumber);
             street.SpawnRateScale = today.ClientsFactor;
             street.Reputation = new DriverReputation(data.Reputation, carry.Reputation >= 0 ? carry.Reputation : (int?)null);
+            street.SkillPatienceFactor = skills.PatienceFactor; // endurance (1 si coupée)
             if (data.Dialogues.enabled)
             {
                 street.FareDisputes = data.Dialogues.FareRules();

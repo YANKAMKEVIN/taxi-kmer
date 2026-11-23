@@ -17,8 +17,8 @@ namespace TaxiKmer.Core.Career
     }
 
     /// <summary>
-    /// Compétences du chauffeur qui progressent avec les journées (idée n° 50, proposition à soumettre à Kevin ; données :
-    /// Assets/Resources/Data/skills.json). <b>Coupées par défaut</b> (enabled = false) : décision de design de Kevin.
+    /// Compétences du chauffeur qui progressent avec les journées (idée n° 50 ; données : Assets/Resources/Data/skills.json).
+    /// <b>Activées telles quelles par Kevin le 23/11 au soir</b> (skills.json → enabled true).
     /// Négociation : gagnée en négociant (clients, police) ; réduit le rabais demandé par les clients qui marchandent et
     /// la chance qu'une négociation avec la police échoue. Endurance : gagnée par journée complète ; allonge la patience
     /// des clients acceptés. Raccourcis : gagnée au kilomètre ; les passagers se plaignent plus tard d'un détour.
@@ -26,7 +26,7 @@ namespace TaxiKmer.Core.Career
     [Serializable]
     public class SkillsConfig
     {
-        public bool enabled;
+        public bool enabled = true;
         public SkillData[] skills =
         {
             new SkillData { id = DriverSkills.Negotiation, name = "Négociation", pointsPerLevel = 6, maxLevel = 10, effectPerLevel = 0.04f },

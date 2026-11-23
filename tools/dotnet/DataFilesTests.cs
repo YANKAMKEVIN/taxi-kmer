@@ -157,11 +157,11 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
-        public void Skills_MatchDefaults_AndStayOffUntilKevinDecides()
+        public void Skills_MatchDefaults_AndAreOn()
         {
             var d = Load<TaxiKmer.Core.Career.SkillsConfig>("skills.json");
             Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Career.SkillsConfig(), Opts), JsonSerializer.Serialize(d, Opts));
-            Assert.IsFalse(d.enabled, "Proposition : décision de design de Kevin");
+            Assert.IsTrue(d.enabled, "Activées telles quelles par Kevin le 23/11 au soir");
             foreach (var s in d.skills) Assert.LessOrEqual(s.maxLevel * s.effectPerLevel, 0.5f, $"{s.id} : effet borné à 50 %");
         }
 

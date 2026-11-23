@@ -8,9 +8,9 @@ namespace TaxiKmer.Core.Tests
         private static SkillsConfig On() => new SkillsConfig { enabled = true };
 
         [Test]
-        public void Off_ByDefault_NoEffectNoProgress()
+        public void Off_NoEffectNoProgress()
         {
-            var s = new DriverSkills(new SkillsConfig());
+            var s = new DriverSkills(new SkillsConfig { enabled = false });
             CollectionAssert.IsEmpty(s.EndDay(new SkillDay { Negotiations = 50, FullDay = true, Kilometres = 500f }));
             Assert.AreEqual(0.3f, s.HaggleDiscount(0.3f));
             Assert.AreEqual(1f, s.PatienceFactor);

@@ -204,6 +204,22 @@ namespace TaxiKmer.Core.Tests
         }
 
         [Test]
+        public void DriverEndurance_LengthensPatience_OnTopOfReputationAndRain()
+        {
+            // Idée n° 50 (compétences activées par Kevin le 23/11) : l'endurance multiplie la patience, la pluie
+            // (PatienceScale, réécrite à chaque image) ne l'efface pas.
+            var street = NewStreet(out var cfg);
+            street.Reputation.Restore(50, 50);
+            var before = street.AcceptedPatienceSeconds;
+            var skills = new DriverSkills(new SkillsConfig { enabled = true });
+            for (var d = 0; d < 6; d++) skills.EndDay(new SkillDay { FullDay = true });
+            street.SkillPatienceFactor = skills.PatienceFactor;
+            Assert.AreEqual(before * 1.04f, street.AcceptedPatienceSeconds, 1e-3, "endurance niv. 2 : +4 %");
+            street.PatienceScale = 0.5f;
+            Assert.AreEqual(before * 0.5f * 1.04f, street.AcceptedPatienceSeconds, 1e-3);
+        }
+
+        [Test]
         public void OwnerAttitude_DependsOnReputation()
         {
             var effects = new ReputationEffectsConfig();

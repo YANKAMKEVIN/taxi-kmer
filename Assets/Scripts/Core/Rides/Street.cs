@@ -189,10 +189,17 @@ namespace TaxiKmer.Core.Rides
 
         /// <summary>
         /// Patience d'un client accepté (s réelles) : celle des données, multipliée par l'effet de la réputation
-        /// (décision de Kevin du 2026-11-21 : clients plus ou moins patients) et par <see cref="PatienceScale"/>.
+        /// (décision de Kevin du 2026-11-21 : clients plus ou moins patients), par <see cref="PatienceScale"/> (pluie) et
+        /// par <see cref="SkillPatienceFactor"/> (endurance du chauffeur).
         /// </summary>
         public float AcceptedPatienceSeconds =>
-            _config.acceptedPatienceSeconds * (Reputation?.PatienceFactor ?? 1f) * Math.Max(0f, PatienceScale);
+            _config.acceptedPatienceSeconds * (Reputation?.PatienceFactor ?? 1f) * Math.Max(0f, PatienceScale) * Math.Max(0f, SkillPatienceFactor);
+
+        /// <summary>
+        /// Patience des clients acceptés allongée par l'endurance du chauffeur (idée n° 50, DriverSkills.PatienceFactor ;
+        /// 1 = sans effet). À part de <see cref="PatienceScale"/>, que la pluie réécrit à chaque image.
+        /// </summary>
+        public float SkillPatienceFactor { get; set; } = 1f;
 
         /// <summary>
         /// Disputes d'argent (jalon 5, décisions de Kevin du 21/11) : négociation et refus de payer. Null : aucune (les

@@ -136,6 +136,31 @@ Constats et choix :
    prime), **61 %** avec la concurrence ; renvoyé en 14 jours 7 % au lieu de 9 % sans prime. Garde-fou :
    `GameData_KeepsTheChosenBalance` vérifie maintenant les deux taux (journée seule et avec la prime) dans 60-80 %.
 
+### Compétences du chauffeur (décision de Kevin du 23/11 au soir) : activées telles quelles
+
+`skills.json` → `enabled` vrai, valeurs inchangées (négociation 6 points par niveau, 4 % par niveau ; endurance 3
+points, 2 % ; raccourcis 40 km, 5 % ; 10 niveaux au plus). L'outil les applique comme le jeu : la négociation réduit le
+rabais des clients qui marchandent et l'échec des négociations avec la police, l'endurance allonge la patience des
+clients acceptés (raccourcis : plaintes de détour, sans effet sur l'argent, non simulées) ; les points passent d'un jour
+à l'autre. Rapport `tools/test_core.sh "Name=Decisions2311_Report"` (données du jeu, primes comprises) :
+
+| Données | Cas | Horizon | Prime / jour | Versement atteint (journée seule) | Avec la prime | Renvoyé | Épargne à 7 j (moy. / méd.) |
+|---|---|---|---|---|---|---|---|
+| primes | sans trafic, 200 carrières | 14 j | 205 | 71 % | 71 % | 7 % | 20 908 / 22 700 |
+| primes | sans trafic, 200 carrières | 45 j | 211 | 70 % | 71 % | 19 % | 20 908 / 22 700 |
+| primes | avec trafic, 15 carrières | 14 j | 177 | 61 % | 61 % | 27 % | 10 337 / 13 650 |
+| **primes + compétences** | **sans trafic, 200 carrières** | **14 j** | 205 | **71 %** | **71 %** | 7 % | 21 286 / 22 900 |
+| **primes + compétences** | sans trafic, 200 carrières | 45 j | 212 | **72 %** | 72 % | 16 % | 21 286 / 22 900 |
+| **primes + compétences** | **avec trafic, 15 carrières** | **14 j** | 177 | **62 %** | **62 %** | 27 % | 10 743 / 13 650 |
+
+Niveaux moyens du joueur moyen (sans trafic, 20 carrières) : après 14 jours négociation 9, endurance 4, raccourcis
+5,8 ; après 45 jours, tout au niveau 10 (plafond). **L'équilibrage reste dans la cible** : +0 à +2 points (71 → 71 %
+sur 14 jours, 70 → 72 % sur 45 jours, 61 → 62 % avec la concurrence), renvoi à 45 jours 19 → 16 %. L'effet est faible
+parce que la négociation ne touche que les clients qui marchandent (≈ 2 par jour) et les contrôles où le joueur
+négocie. Garde-fou `GameData_KeepsTheChosenBalance` (40 carrières, primes et compétences) : **69 %**, 70 % avec la prime.
+Remarque : la négociation atteint le niveau 9 en deux semaines (≈ 4 négociations par jour) ; si Kevin veut une
+progression plus lente, monter `pointsPerLevel` (valeur proposée, gardée telle quelle).
+
 Depuis cette décision, `fares.json` vaut ×2 des prix de Yaoundé : dans l'outil, le multiplicateur de prix est relatif à
 `fares.json`, donc « prix ×2 » des tableaux ci-dessous (calculés sur les anciens prix, 300 à 800) correspond à « ×1 »
 aujourd'hui. `Decision_Report` et `DayContents_Report` prennent directement les réglages des données.
