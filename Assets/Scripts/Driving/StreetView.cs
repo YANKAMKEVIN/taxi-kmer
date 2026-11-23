@@ -371,6 +371,32 @@ namespace TaxiKmer.Driving
             };
         }
 
+        private int _crashes;
+
+        /// <summary>
+        /// Journal de fin de journée (idée n° 38) : journal.json à côté de la sauvegarde, pour comparer les vraies parties
+        /// à l'étude d'équilibrage. Une erreur n'arrête pas le bilan.
+        /// </summary>
+        private void WriteJournal(Core.Career.DayClosure closure)
+        {
+            try
+            {
+                var path = System.IO.Path.Combine(Application.persistentDataPath, "journal.json");
+                var journal = System.IO.File.Exists(path) ? JsonUtility.FromJson<JournalData>(System.IO.File.ReadAllText(path)) : new JournalData();
+                var policePaid = 0;
+                foreach (var e in Street.Shift.Ledger.Expenses) if (e.Label == Street.PoliceExpenseLabel) policePaid += e.Amount;
+                var entry = DayJournal.Entry(Street.Summary, closure.DayNumber, Today.Name, _police != null ? _police.Police.Controls : 0,
+                    policePaid, _crashes, Street.Shift.Ledger.Tips, closure.SavingsAfter, Application.version);
+                journal = DayJournal.Append(journal, entry);
+                System.IO.File.WriteAllText(path, JsonUtility.ToJson(journal, true));
+                Debug.Log("[TaxiKmer] " + DayJournal.Verdict(journal));
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[TaxiKmer] Journal non écrit : {e.Message}");
+            }
+        }
+
         /// <summary>Écrit la journée enregistrée (idée n° 37) à côté de la sauvegarde ; une erreur n'arrête pas le bilan.</summary>
         private void WriteReplay()
         {
@@ -718,6 +744,7 @@ namespace TaxiKmer.Driving
 
         private void OnVehicleHit(int vehicleId)
         {
+            _crashes++; // journal de fin de journée (idée n° 38)
             _goals?.Crash();
             ChaseCam()?.CrashShake(); // idée n° 16
             if (_road == null || Street == null || Street.DayFinished || City == null) return;
@@ -842,6 +869,7 @@ namespace TaxiKmer.Driving
             if (_goals != null && _goals.Reward > 0) Save.Career.AddBonus(_goals.Reward); // prime, si Kevin l'active
             var closure = Save.CloseDay();
             WriteReplay();
+            WriteJournal(closure);
             _summaryView = gameObject.AddComponent<DaySummaryView>();
             var reputation = Street.Reputation != null && Street.Reputation.Visible
                 ? Core.Career.DriverReputation.SummaryLine(Street.Reputation.Config, Street.Summary.Reputation, Street.Summary.ReputationChange) : "";
