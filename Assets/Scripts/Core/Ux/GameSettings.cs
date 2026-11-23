@@ -40,6 +40,20 @@ namespace TaxiKmer.Core.Ux
         public bool ColorBlind { get; set; }
         public string ColorBlindLabel => ColorBlind ? "Couleurs daltoniens : oui" : "Couleurs daltoniens : non";
 
+        // ---------- Commandes (idée n° 30) ----------
+
+        /// <summary>Commandes pour gaucher : flèches à droite, pédales à gauche.</summary>
+        public bool LeftHanded { get; set; }
+        public string LeftHandedLabel => LeftHanded ? "Commandes : gaucher" : "Commandes : droitier";
+        public static readonly float[] ButtonScales = { 1f, 1.15f, 0.85f };
+        public int ButtonScaleIndex { get; set; }
+        public float ButtonScale => ButtonScales[Math.Max(0, Math.Min(ButtonScales.Length - 1, ButtonScaleIndex))];
+        public string ButtonScaleLabel => $"Boutons : {(int)Math.Round(ButtonScale * 100f)} %";
+        public static readonly float[] ButtonOpacities = { 1f, 0.75f, 0.5f };
+        public int ButtonOpacityIndex { get; set; }
+        public float ButtonOpacity => ButtonOpacities[Math.Max(0, Math.Min(ButtonOpacities.Length - 1, ButtonOpacityIndex))];
+        public string ButtonOpacityLabel => $"Opacité des boutons : {(int)Math.Round(ButtonOpacity * 100f)} %";
+
         /// <summary>Réglages qui défilent d'un appui, dans l'ordre de l'écran des réglages (sauf le volume et ses boutons – / +).</summary>
         public List<SettingRow> Rows()
         {
@@ -48,6 +62,9 @@ namespace TaxiKmer.Core.Ux
                 new SettingRow(SettingIds.Vibration, VibrationLabel),
                 new SettingRow(SettingIds.TextScale, TextScaleLabel),
                 new SettingRow(SettingIds.ColorBlind, ColorBlindLabel),
+                new SettingRow(SettingIds.LeftHanded, LeftHandedLabel),
+                new SettingRow(SettingIds.ButtonScale, ButtonScaleLabel),
+                new SettingRow(SettingIds.ButtonOpacity, ButtonOpacityLabel),
             };
             return rows;
         }
@@ -60,6 +77,9 @@ namespace TaxiKmer.Core.Ux
                 case SettingIds.Vibration: Vibration = !Vibration; break;
                 case SettingIds.TextScale: TextScaleIndex = (TextScaleIndex + 1) % TextScales.Length; break;
                 case SettingIds.ColorBlind: ColorBlind = !ColorBlind; break;
+                case SettingIds.LeftHanded: LeftHanded = !LeftHanded; break;
+                case SettingIds.ButtonScale: ButtonScaleIndex = (ButtonScaleIndex + 1) % ButtonScales.Length; break;
+                case SettingIds.ButtonOpacity: ButtonOpacityIndex = (ButtonOpacityIndex + 1) % ButtonOpacities.Length; break;
             }
         }
 
@@ -71,6 +91,9 @@ namespace TaxiKmer.Core.Ux
             Vibration = store.GetInt(SettingIds.Vibration, 1) == 1;
             TextScaleIndex = Math.Max(0, Math.Min(TextScales.Length - 1, store.GetInt(SettingIds.TextScale, 0)));
             ColorBlind = store.GetInt(SettingIds.ColorBlind, 0) == 1;
+            LeftHanded = store.GetInt(SettingIds.LeftHanded, 0) == 1;
+            ButtonScaleIndex = Math.Max(0, Math.Min(ButtonScales.Length - 1, store.GetInt(SettingIds.ButtonScale, 0)));
+            ButtonOpacityIndex = Math.Max(0, Math.Min(ButtonOpacities.Length - 1, store.GetInt(SettingIds.ButtonOpacity, 0)));
         }
 
         public void Save(ISettingsStore store)
@@ -80,6 +103,9 @@ namespace TaxiKmer.Core.Ux
             store.SetInt(SettingIds.Vibration, Vibration ? 1 : 0);
             store.SetInt(SettingIds.TextScale, TextScaleIndex);
             store.SetInt(SettingIds.ColorBlind, ColorBlind ? 1 : 0);
+            store.SetInt(SettingIds.LeftHanded, LeftHanded ? 1 : 0);
+            store.SetInt(SettingIds.ButtonScale, ButtonScaleIndex);
+            store.SetInt(SettingIds.ButtonOpacity, ButtonOpacityIndex);
         }
     }
 
@@ -98,6 +124,9 @@ namespace TaxiKmer.Core.Ux
         public const string Vibration = "reglages.vibrations";
         public const string TextScale = "reglages.texte";
         public const string ColorBlind = "reglages.daltoniens";
+        public const string LeftHanded = "reglages.gaucher";
+        public const string ButtonScale = "reglages.taille-boutons";
+        public const string ButtonOpacity = "reglages.opacite-boutons";
     }
 
     /// <summary>Où sont gardés les réglages (PlayerPrefs dans Unity ; un dictionnaire dans les tests).</summary>

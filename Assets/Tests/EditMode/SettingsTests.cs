@@ -71,5 +71,63 @@ namespace TaxiKmer.Core.Tests
             CollectionAssert.IsSubsetOf(new[] { SettingIds.Vibration, SettingIds.TextScale, SettingIds.ColorBlind }, rows.Select(r => r.Id).ToList());
             Assert.AreEqual(rows.Count, rows.Select(r => r.Id).Distinct().Count());
         }
+
+        [Test]
+        public void LeftHanded_ArrowsGoRight_PedalsLeft_TopStays()
+        {
+            const float W = 2340f, H = 1080f;
+            var layout = TaxiKmer.Core.Driving.ControlLayout.Adjusted(TaxiKmer.Core.Driving.ControlLayout.Default(), true, 1f);
+            var left = layout.zones.First(z => z.control == TaxiKmer.Core.Driving.DriveControl.SteerLeft).Resolve(W, H);
+            var right = layout.zones.First(z => z.control == TaxiKmer.Core.Driving.DriveControl.SteerRight).Resolve(W, H);
+            var accel = layout.zones.First(z => z.control == TaxiKmer.Core.Driving.DriveControl.Accelerate).Resolve(W, H);
+            var horn = layout.zones.First(z => z.control == TaxiKmer.Core.Driving.DriveControl.Horn).Resolve(W, H);
+            Assert.Greater(left.X, W / 2f, "flèches à droite");
+            Assert.Less(left.X, right.X, "◄ à gauche de ►");
+            Assert.Less(accel.X, W / 2f, "pédales à gauche");
+            Assert.Greater(horn.X, W / 2f, "le klaxon reste en haut à droite");
+        }
+
+        [Test]
+        public void AdjustedLayouts_NeverOverlap_OnCommonScreens()
+        {
+            foreach (var lefty in new[] { false, true })
+            foreach (var scale in GameSettings.ButtonScales)
+            foreach (var (w, h) in new[] { (2340f, 1080f), (1920f, 1080f), (1280f, 800f) })
+            {
+                var zones = TaxiKmer.Core.Driving.ControlLayout.Adjusted(TaxiKmer.Core.Driving.ControlLayout.Default(), lefty, scale).zones;
+                for (var i = 0; i < zones.Length; i++)
+                {
+                    var a = zones[i].Resolve(w, h);
+                    Assert.GreaterOrEqual(a.X, 0f); Assert.LessOrEqual(a.X + a.Width, w);
+                    Assert.GreaterOrEqual(a.Y, 0f); Assert.LessOrEqual(a.Y + a.Height, h);
+                    for (var j = i + 1; j < zones.Length; j++)
+                    {
+                        var b = zones[j].Resolve(w, h);
+                        var overlap = a.X < b.X + b.Width && b.X < a.X + a.Width && a.Y < b.Y + b.Height && b.Y < a.Y + a.Height;
+                        Assert.IsFalse(overlap, $"{zones[i].control} / {zones[j].control} à {w}×{h}, gaucher {lefty}, taille {scale}");
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void ButtonSizeAndOpacity_Cycle_AndPersist()
+        {
+            var s = new GameSettings();
+            Assert.AreEqual("Boutons : 100 %", s.ButtonScaleLabel);
+            s.Cycle(SettingIds.ButtonScale);
+            Assert.AreEqual(1.15f, s.ButtonScale);
+            s.Cycle(SettingIds.ButtonOpacity);
+            s.Cycle(SettingIds.ButtonOpacity);
+            Assert.AreEqual("Opacité des boutons : 50 %", s.ButtonOpacityLabel);
+            s.Cycle(SettingIds.LeftHanded);
+            var store = new MemoryStore();
+            s.Save(store);
+            var back = new GameSettings();
+            back.Load(store);
+            Assert.IsTrue(back.LeftHanded);
+            Assert.AreEqual(1.15f, back.ButtonScale);
+            Assert.AreEqual(0.5f, back.ButtonOpacity);
+        }
     }
 }

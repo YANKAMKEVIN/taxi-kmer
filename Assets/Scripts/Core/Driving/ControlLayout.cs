@@ -100,6 +100,56 @@ namespace TaxiKmer.Core.Driving
             return DriveControl.None;
         }
 
+        /// <summary>
+        /// Disposition réglée par le joueur (idée n° 30) : pour gaucher, les commandes du bas passent de l'autre côté
+        /// (les flèches à droite, les pédales et le frein à main à gauche, ◄ restant à gauche de ►) ; le haut de l'écran
+        /// (klaxon, pause, jauges) ne bouge pas, sauf le bouton Qualité qui suit les flèches ; les boutons du bas sont élargis ou réduits de
+        /// <paramref name="scale"/> depuis leur coin. Les zones centrées ne bougent pas de côté.
+        /// </summary>
+        public static ControlLayout Adjusted(ControlLayout source, bool leftHanded, float scale)
+        {
+            scale = Math.Max(0.5f, Math.Min(1.5f, scale));
+            var zones = new ControlZone[source.zones.Length];
+            for (var i = 0; i < zones.Length; i++)
+            {
+                var z = source.zones[i];
+                var bottom = z.corner == ScreenCorner.BottomLeft || z.corner == ScreenCorner.BottomRight || z.corner == ScreenCorner.BottomCenter;
+                // Les commandes du bas grandissent en largeur (la hauteur ne monte pas vers le bouton Qualité et le
+                // plan des places) et rétrécissent dans les deux sens ; celles du haut ne changent pas.
+                zones[i] = new ControlZone
+                {
+                    control = z.control,
+                    // Le bouton Qualité suit les flèches (il est posé au-dessus d'elles).
+                    corner = leftHanded && (bottom || z.control == DriveControl.Quality) ? Flip(z.corner) : z.corner,
+                    side = bottom ? z.side * scale : z.side,
+                    edge = z.edge,
+                    width = bottom ? z.width * scale : z.width,
+                    height = bottom ? z.height * Math.Min(1f, scale) : z.height,
+                    label = z.label,
+                };
+            }
+            if (leftHanded)
+            {
+                // ◄ doit rester à gauche de ► : on échange leurs distances au bord.
+                var left = Array.Find(zones, z => z.control == DriveControl.SteerLeft);
+                var right = Array.Find(zones, z => z.control == DriveControl.SteerRight);
+                if (left != null && right != null) (left.side, right.side) = (right.side, left.side);
+            }
+            return new ControlLayout { zones = zones };
+        }
+
+        private static ScreenCorner Flip(ScreenCorner c)
+        {
+            switch (c)
+            {
+                case ScreenCorner.BottomLeft: return ScreenCorner.BottomRight;
+                case ScreenCorner.BottomRight: return ScreenCorner.BottomLeft;
+                case ScreenCorner.TopLeft: return ScreenCorner.TopRight;
+                case ScreenCorner.TopRight: return ScreenCorner.TopLeft;
+                default: return c;
+            }
+        }
+
         public static ControlLayout Default()
         {
             return new ControlLayout

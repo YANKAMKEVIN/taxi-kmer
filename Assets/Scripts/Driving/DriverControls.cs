@@ -21,6 +21,29 @@ namespace TaxiKmer.Driving
         public ChaseCamera chaseCamera;
 
         private ControlLayout _layout;
+        private ControlLayout _dataLayout;
+        private float _opacity = 1f;
+
+        /// <summary>
+        /// Commandes réglées par le joueur (idée n° 30) : gaucher, taille et opacité des boutons. Les zones gardent leur
+        /// ordre : on recopie les nouvelles valeurs dans celles des boutons, puis on refait la mise en page.
+        /// </summary>
+        public void ApplyLayoutOptions(bool leftHanded, float scale, float opacity)
+        {
+            if (_layout == null) return;
+            if (_dataLayout == null) _dataLayout = ControlLayout.Adjusted(_layout, false, 1f); // copie des données d'origine
+            var adjusted = ControlLayout.Adjusted(_dataLayout, leftHanded, scale);
+            for (var i = 0; i < _layout.zones.Length && i < adjusted.zones.Length; i++)
+            {
+                var z = _layout.zones[i];
+                var a = adjusted.zones[i];
+                z.corner = a.corner; z.side = a.side; z.edge = a.edge; z.width = a.width; z.height = a.height;
+            }
+            _opacity = Mathf.Clamp01(opacity);
+            _laidOutFor = Vector2Int.zero;
+        }
+
+        private Color Fade(Color c) => new Color(c.r, c.g, c.b, c.a * _opacity);
         private readonly Dictionary<int, DriveControl> _fingerStart = new Dictionary<int, DriveControl>();
         private DriveControl _mouseStart;
         private Vector3 _lastMouse;
@@ -298,11 +321,11 @@ namespace TaxiKmer.Driving
                     image.enabled = ActionVisible;
                     _actionLabel.enabled = ActionVisible;
                     _actionLabel.text = ActionLabel;
-                    image.color = on ? Pressed : Highlighted(zone.control, ActionColor);
+                    image.color = Fade(on ? Pressed : Highlighted(zone.control, ActionColor));
                     continue;
                 }
                 if (zone.control == DriveControl.Quality && _qualityLabel != null) _qualityLabel.text = QualityLabel;
-                image.color = on ? Pressed : Highlighted(zone.control, Idle);
+                image.color = Fade(on ? Pressed : Highlighted(zone.control, Idle));
             }
 
             _speed.enabled = !Locked;
