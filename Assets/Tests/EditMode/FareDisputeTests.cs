@@ -142,6 +142,39 @@ namespace TaxiKmer.Core.Tests
             }
         }
 
+        /// <summary>
+        /// QA (22/11) : le dernier passager déposé après l'heure de fin refuse de payer. La journée ne doit pas se clore à
+        /// l'image suivante avant la réponse du joueur (sinon le panneau disparaît, la police ne peut plus être appelée
+        /// et le bilan oublie la course impayée) ; terminer depuis la pause compte la course comme impayée.
+        /// </summary>
+        [Test]
+        public void RefusesToPay_AfterEndOfDay_DayWaitsForTheAnswer()
+        {
+            var street = NewStreet(new FareDisputeRules { RefusesToPayChance = 1f, PolicePayChance = 1f, PoliceMinutes = 30 });
+            var c = AcceptOne(street, out var stopped);
+            street.Perform(stopped);
+            var fare = c.Client.ProposedFare;
+            street.Shift.Clock.Advance(1e6f); // l'heure de fin est passée, le passager est encore à bord
+            var dest = new TaxiOnRoute { Along = street.FindStop(c.Client.DestinationStopId).distanceAlongRouteMeters, Direction = 1, Lateral = 2f };
+            Assert.IsNotNull(street.Perform(dest).Refusal);
+            street.Update(0.1f, dest);
+            Assert.IsFalse(street.DayFinished, "La journée attend la réponse au refus de payer.");
+            Assert.IsNotNull(street.PendingRefusal);
+            var r = street.ResolveRefusal(true);
+            Assert.IsTrue(r.Paid);
+            Assert.IsTrue(street.DayFinished, "Réponse donnée, taxi vide : la journée se termine.");
+            Assert.AreEqual(fare, street.Summary.Revenue, "La course payée grâce à la police est dans le bilan.");
+
+            var other = NewStreet(new FareDisputeRules { RefusesToPayChance = 1f });
+            var c2 = AcceptOne(other, out var stopped2);
+            other.Perform(stopped2);
+            other.Perform(new TaxiOnRoute { Along = other.FindStop(c2.Client.DestinationStopId).distanceAlongRouteMeters, Direction = 1, Lateral = 2f });
+            other.EndDayNow();
+            Assert.IsNull(other.PendingRefusal, "Journée terminée : plus de refus en attente.");
+            Assert.AreEqual(1, other.Summary.UnpaidPassengers, "Le passager qui refusait compte comme impayé.");
+            Assert.AreEqual(c2.Client.ProposedFare, other.Summary.UnpaidFares);
+        }
+
         [Test]
         public void Replies_ChangeReputation_AndPromiseATipPaidWithTheFare()
         {

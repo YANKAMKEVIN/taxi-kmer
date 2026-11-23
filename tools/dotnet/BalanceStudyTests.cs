@@ -83,6 +83,24 @@ namespace TaxiKmer.Core.DotnetTests
             Assert.That(days.Any(d => d.Reputation != data.Reputation.start), "La réputation bouge et passe d'un jour à l'autre.");
         }
 
+        /// <summary>
+        /// Garde-fou de l'équilibrage (QA du 22/11) : avec les données du jeu (décisions de Kevin du 21-22/11 : carburant ×1,
+        /// prix 600 à 1 600, versement 6 000, papiers 500 / 1 000 / 2 000), le versement reste atteint dans 60 à 80 % des
+        /// journées sans trafic (étude : 70 %, equilibrage.md) et peu de chauffeurs sont renvoyés en 14 jours (étude : 10 %).
+        /// Une donnée changée sans relancer l'étude fait échouer ce test au lieu de casser l'équilibre en silence.
+        /// 40 carrières de 14 jours, graines fixes.
+        /// </summary>
+        [Test]
+        public void GameData_KeepsTheChosenBalance()
+        {
+            var data = GameData.Load();
+            var s = Current(data);
+            var r = BalanceStudy.RunCareers(data, s.ConsumptionScale, 1f, new[] { s.Versement }, 40, Horizon, new AveragePlayer())[0];
+            TestContext.WriteLine($"Versement atteint {BalanceStudy.Pct(r.ReachedShare)}, renvoyés en {Horizon} j {BalanceStudy.Pct(r.FiredByHorizon)}");
+            Assert.That(r.ReachedShare, Is.InRange(0.6, 0.8), "Versement atteint hors de la cible de Kevin (60 à 70 %, equilibrage.md).");
+            Assert.That(r.FiredByHorizon, Is.LessThanOrEqualTo(0.3));
+        }
+
         [Test]
         public void LessFuel_HigherPrices_LowerVersement_AreEasier()
         {

@@ -75,6 +75,9 @@ namespace TaxiKmer.Core.Road
         }
 
         /// <summary>Prix du mécanicien de quartier pour tout remettre en état (déplacement compris, part du chauffeur).</summary>
+        /// <summary>Bouton de la crevaison : « Changer la roue (20 min) », durée de road.json (spareWheelMinutes).</summary>
+        public string SpareWheelButton => $"Changer la roue ({TrafficCrash.Minutes(_config.spareWheelMinutes)})";
+
         public int MechanicQuote()
         {
             Car.Quote(out var cost, out _);

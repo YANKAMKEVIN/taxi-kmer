@@ -83,7 +83,7 @@ namespace TaxiKmer.Driving
             {
                 UiKit.PlaceTopCenter(_spare.rectTransform, h * 0.42f, h * 0.6f, h * 0.1f);
                 _spareText.fontSize = Mathf.RoundToInt(h * 0.03f);
-                _spareText.text = "Changer la roue (20 min)";
+                _spareText.text = Road.SpareWheelButton;
                 if (UiKit.Tapped(_spare.rectTransform) || UnityEngine.Input.GetKeyDown(KeyCode.W))
                     if (Road.FitSpareWheel(shift)) message = "Roue changée : on repart";
             }
