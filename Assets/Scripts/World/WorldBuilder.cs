@@ -28,6 +28,8 @@ namespace TaxiKmer.World
         public float lampHeight = 10f;
 
         public WorldData Data { get; private set; }
+        /// <summary>Groupe des têtes de lampadaires (allumées la nuit par le cycle jour / nuit).</summary>
+        public Transform LampHeads { get; private set; }
 
         private static readonly HashSet<string> MainRoads = new HashSet<string>
         {
@@ -81,18 +83,21 @@ namespace TaxiKmer.World
             // Murets centraux et lampadaires doubles (références photo de Kevin : RN1 en 2 × 2 voies).
             var medians = new Dictionary<Vector2Int, MeshData>();
             var lamps = new Dictionary<Vector2Int, MeshData>();
+            var lampHeads = new Dictionary<Vector2Int, MeshData>();
             if (data.traffic?.medians != null)
                 foreach (var m in data.traffic.medians)
                 {
                     if (m.xz == null || m.xz.Length < 4) continue;
                     WorldGeometry.AddWallStrip(Get(medians, Cell(m.xz[0], m.xz[1])), m.xz, medianWidth, medianHeight);
-                    AddLamps(lamps, m.xz);
+                    AddLamps(lamps, lampHeads, m.xz);
                 }
 
             var root = transform;
             Emit(root, "Routes", roads, roadMaterial, false);
             Emit(root, "Murets centraux", medians, buildingMaterial, true);
             Emit(root, "Lampadaires", lamps, buildingMaterial, false);
+            // Têtes de lampe à part : le cycle jour / nuit les allume (idée n° 3, DayLightView).
+            LampHeads = Emit(root, "Têtes de lampadaires", lampHeads, buildingMaterial, false);
             Emit(root, "Grands axes", mainRoads, mainRoadMaterial != null ? mainRoadMaterial : roadMaterial, false);
             Emit(root, "Bâtiments", buildings, buildingMaterial, buildingColliders);
 
@@ -110,7 +115,7 @@ namespace TaxiKmer.World
         }
 
         /// <summary>Lampadaire double tous les <see cref="lampSpacing"/> m : mât au milieu du muret, deux bras vers les chaussées.</summary>
-        private void AddLamps(Dictionary<Vector2Int, MeshData> lamps, float[] xz)
+        private void AddLamps(Dictionary<Vector2Int, MeshData> lamps, Dictionary<Vector2Int, MeshData> heads, float[] xz)
         {
             var cum = WorldGeometry.CumulativeLengths(xz);
             var length = cum[cum.Length - 1];
@@ -125,7 +130,7 @@ namespace TaxiKmer.World
                 {
                     // Bras de 2,4 m vers chaque chaussée, légèrement plus bas que le haut du mât, et la tête de lampe au bout.
                     WorldGeometry.AddBox(mesh, x + rx * side * 1.2f, lampHeight - 0.3f, z + rz * side * 1.2f, 0.1f, 0.1f, 2.4f, rx, rz);
-                    WorldGeometry.AddBox(mesh, x + rx * side * 2.4f, lampHeight - 0.45f, z + rz * side * 2.4f, 0.25f, 0.15f, 0.6f, rx, rz);
+                    WorldGeometry.AddBox(Get(heads, Cell(x, z)), x + rx * side * 2.4f, lampHeight - 0.45f, z + rz * side * 2.4f, 0.25f, 0.15f, 0.6f, rx, rz);
                 }
             }
         }
@@ -139,7 +144,7 @@ namespace TaxiKmer.World
             return m;
         }
 
-        private static void Emit(Transform root, string name, Dictionary<Vector2Int, MeshData> chunks, Material material, bool collider)
+        private static Transform Emit(Transform root, string name, Dictionary<Vector2Int, MeshData> chunks, Material material, bool collider)
         {
             var group = new GameObject(name).transform;
             group.SetParent(root, false);
@@ -170,6 +175,7 @@ namespace TaxiKmer.World
                 go.AddComponent<MeshRenderer>().sharedMaterial = material;
                 if (collider) go.AddComponent<MeshCollider>().sharedMesh = mesh;
             }
+            return group;
         }
     }
 }

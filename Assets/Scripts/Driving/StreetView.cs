@@ -69,6 +69,8 @@ namespace TaxiKmer.Driving
         private TalkView _talk;
         // Ambiance sonore de la rue (ambience.json, jalon 5) : rumeur, marché, klaxons, appels des clients.
         private AmbienceView _ambience;
+        // Cycle jour / nuit (daylight.json, idée n° 3).
+        private DayLightView _dayLight;
         // La route est dure (road.json ; créée seulement si enabled, jalon 6 activé le 21/11).
         private RoadView _road;
         // Rédaction de la radio : événements du jeu → flashs d'information (décision de Kevin du 21/11).
@@ -215,6 +217,8 @@ namespace TaxiKmer.Driving
                 }
                 _ambience = new AmbienceView(taxi.gameObject, ambience, markets.ToArray(), actualSeed + 67);
             }
+            var daylight = Load("Data/daylight", new DayLightConfig());
+            if (daylight.enabled) _dayLight = new DayLightView(daylight, world.LampHeads, taxi.gameObject);
             var police = Load("Data/police", new Core.Police.PoliceConfig());
             var dayCfg = Load("Data/day", new DayConfig());
             var dialogues = Load("Data/dialogues", new Core.Talk.DialogueConfig());
@@ -381,6 +385,7 @@ namespace TaxiKmer.Driving
             UpdateDryTank(state);
             // La radio se tait en pause et au bilan ; elle baisse quand un passager parle (jalon 5).
             _radio?.Update(dt, !Street.DayFinished && !_menu.Frozen && _summaryView == null, _talk != null && _talk.Speaking);
+            _dayLight?.Update(Street.Shift.Clock.GameMinutes, _quality != null && _quality.Level >= 2);
             _ambience?.Update(dt, Street, state.Along, taxi.transform.position, City.Traffic.Vehicles, Today.Market,
                 _talk != null && _talk.Speaking, !_menu.Frozen && _summaryView == null);
             var action = Street.AvailableAction(state);

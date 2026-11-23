@@ -59,6 +59,13 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void DayLight_MatchesDefaults()
+        {
+            var d = Load<TaxiKmer.Core.Ux.DayLightConfig>("daylight.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Ux.DayLightConfig(), Opts), JsonSerializer.Serialize(d, Opts));
+        }
+
+        [Test]
         public void Quality_MatchesDefaults()
         {
             var q = Load<TaxiKmer.Core.Quality.QualityConfig>("quality.json");
