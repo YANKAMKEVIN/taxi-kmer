@@ -126,7 +126,7 @@
                     "id": "aider",
                     "text": "Je vous aide, maman.",
                     "reputation": 1,
-                    "tip": 0
+                    "tip": 150
                 },
                 {
                     "id": "presser",
@@ -724,7 +724,7 @@
                     "id": "oui",
                     "text": "Depuis six heures, maître.",
                     "reputation": 1,
-                    "tip": 50
+                    "tip": 100
                 },
                 {
                     "id": "rien",
@@ -937,7 +937,7 @@
                     "id": "aider",
                     "text": "Prenez votre temps, maman.",
                     "reputation": 1,
-                    "tip": 0
+                    "tip": 100
                 }
             ],
             "voice": "hmm",
@@ -1533,7 +1533,7 @@
                     "id": "aider",
                     "text": "Je vous aide, maman.",
                     "reputation": 1,
-                    "tip": 0
+                    "tip": 200
                 },
                 {
                     "id": "serrer",
@@ -1713,7 +1713,7 @@
                     "id": "aider",
                     "text": "Je vous aide, maman.",
                     "reputation": 1,
-                    "tip": 0
+                    "tip": 150
                 },
                 {
                     "id": "vite",
@@ -2181,7 +2181,7 @@
                     "id": "ok",
                     "text": "Pas de souci.",
                     "reputation": 1,
-                    "tip": 0
+                    "tip": 100
                 }
             ],
             "voice": "",

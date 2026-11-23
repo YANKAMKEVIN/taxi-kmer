@@ -61,6 +61,13 @@ namespace TaxiKmer.Core.DotnetTests
         public bool AcceptHaggle = true;
         /// <summary>Contrôle : négocie au plus ce nombre de fois, puis paie (ne conteste pas, ne fuit pas).</summary>
         public int PoliceNegotiations = 1;
+        /// <summary>
+        /// Pourboires (décision de Kevin du 23/11) : chaque passager qui monte dit une réplique à réponses (tirée parmi
+        /// celles dites pendant le trajet) et le joueur répond au hasard ; une réponse à pourboire le fait payer avec la
+        /// course. Hypothèse plutôt généreuse (une bulle à réponses par passager, toujours répondue). La réputation des
+        /// réponses n'est pas simulée.
+        /// </summary>
+        public bool AnswersPassengers = true;
         /// <summary>Joue avec le trafic simulé (taxis concurrents et mototaxis qui prennent des clients) : ≈ 50 fois plus lent.</summary>
         public bool WithCity;
     }
@@ -93,6 +100,8 @@ namespace TaxiKmer.Core.DotnetTests
         public int Crashes;
         public int Haggles;
         public int Refusals;
+        /// <summary>Pourboires promis par les réponses aux passagers (FCFA), payés avec la course.</summary>
+        public int TipsPromised;
         public int ClientsLostToOthers;
         public int Reputation;
         /// <summary>Papiers renouvelés au début de la journée et leur coût (payé sur l'épargne, avant la journée).</summary>
@@ -166,6 +175,13 @@ namespace TaxiKmer.Core.DotnetTests
     /// <summary>Le joueur moyen joue une journée, branchée comme dans StreetView (mêmes objets, même ordre).</summary>
     public static class StudyDayPlayer
     {
+        /// <summary>Situations où un passager à bord parle pendant le trajet (ses réponses à pourboire comptent).</summary>
+        private static readonly HashSet<string> RideTriggers = new HashSet<string>
+        {
+            TalkTriggers.Boarding, TalkTriggers.Destination, TalkTriggers.Price, TalkTriggers.Detour, TalkTriggers.Silence,
+            TalkTriggers.Rain, TalkTriggers.Breakdown, TalkTriggers.Control,
+        };
+
         public static StudyDay Play(GameData data, BalanceSetting setting, AveragePlayer player, CareerCarry carry, int seed)
         {
             var day = data.DayFor(setting);
@@ -200,6 +216,10 @@ namespace TaxiKmer.Core.DotnetTests
             }
             var police = new PoliceDay(data.Police, carry.Papers, new PoliceContacts(data.Police), carry.DayNumber, routeLength, start, end, new Random(seed + 47));
             var luck = new Random(seed + 71); // accrochages (physique d'Unity remplacée par un tirage)
+            var talk = new Random(seed + 73); // réponses aux passagers (pourboires), tirage à part
+            var rideLines = data.Dialogues.enabled && player.AnswersPassengers
+                ? data.Dialogues.lines.Where(l => l.replies != null && l.replies.Length > 0 && RideTriggers.Contains(l.trigger)).ToArray()
+                : new LineData[0];
 
             CityLife city = null;
             TrafficPath routePath = null;
@@ -269,7 +289,19 @@ namespace TaxiKmer.Core.DotnetTests
                     if (wantsFuel)
                         while (shift.Tank.Fraction < player.RefuelUpTo && street.AvailableAction(here).Kind == StreetActionKind.Refuel)
                             street.Perform(here);
-                    else street.Perform(here);
+                    else
+                    {
+                        var aboard = new HashSet<string>(shift.Cabin.Passengers.Select(p => p.Id));
+                        street.Perform(here);
+                        if (rideLines.Length > 0)
+                            foreach (var p in shift.Cabin.Passengers)
+                                if (!aboard.Contains(p.Id))
+                                {
+                                    var line = rideLines[talk.Next(rideLines.Length)];
+                                    var reply = line.replies[talk.Next(line.replies.Length)];
+                                    if (reply.tip > 0) { street.ApplyReply(p.Id, 0, reply.tip); result.TipsPromised += reply.tip; }
+                                }
+                    }
                     wait = player.StopSeconds;
                     continue;
                 }

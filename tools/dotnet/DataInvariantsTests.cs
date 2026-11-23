@@ -354,10 +354,20 @@ namespace TaxiKmer.Core.DotnetTests
                 foreach (var r in l.replies)
                 {
                     Assert.That(r.reputation, Is.InRange(-3, 3), $"{l.id}/{r.id} : effet modéré");
-                    Assert.That(r.tip, Is.InRange(0, 500), $"{l.id}/{r.id}");
+                    // Pourboires rares et petits (décision de Kevin, 23/11) : 100 à 200 FCFA.
+                    Assert.IsTrue(r.tip == 0 || (r.tip >= 100 && r.tip <= 200), $"{l.id}/{r.id} : pourboire {r.tip} hors de 100 à 200 FCFA");
                     Assert.LessOrEqual(r.text.Length, 40, $"{l.id}/{r.id} : bouton lisible");
                 }
             }
+            // Pourboires rares (décision de Kevin, 23/11) : quelques réponses en donnent, sur des répliques dites pendant le
+            // trajet (une réponse au paiement arrive quand le passager est déjà descendu : pourboire perdu).
+            var replies = d.lines.SelectMany(l => l.replies).Count();
+            var tipped = d.lines.SelectMany(l => l.replies.Where(r => r.tip > 0).Select(r => l)).ToList();
+            Assert.That(tipped.Count, Is.InRange(4, 10), "Quelques réponses à pourboire");
+            Assert.LessOrEqual(tipped.Count * 20, replies, "Pourboires rares : au plus une réponse sur vingt");
+            foreach (var l in tipped)
+                Assert.IsFalse(l.trigger == "paiement" || l.trigger == "refus-paiement" || l.trigger == "discussion" || l.trigger == "negociation",
+                    $"{l.id} : pourboire jamais payé dans cette situation");
             foreach (var t in new[] { "montee", "destination", "prix", "negociation", "refus-paiement", "panne", "controle", "pluie", "silence" })
                 Assert.IsTrue(d.lines.Any(l => l.trigger == t), $"Situation « {t} » couverte.");
             foreach (var c in characters)
