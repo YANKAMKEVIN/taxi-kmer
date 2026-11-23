@@ -40,7 +40,14 @@
         "dragDegreesPerScreen": 270,
         "recenterDelaySeconds": 2,
         "recenterRateDeg": 120,
-        "followSharpness": 6
+        "followSharpness": 6,
+        "fovDeg": 60,
+        "fovFastDeg": 70,
+        "fovFullKmh": 80,
+        "fovSharpness": 3,
+        "potholeShake": 0.12,
+        "crashShake": 0.35,
+        "shakeSeconds": 0.4
     },
     "layout": {
         "zones": [

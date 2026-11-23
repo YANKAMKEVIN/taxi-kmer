@@ -92,5 +92,17 @@ namespace TaxiKmer.Core.Driving
         public float recenterRateDeg = 120f;
         /// <summary>Raideur du suivi (1/s) : plus haut = caméra plus collée au taxi.</summary>
         public float followSharpness = 6f;
+        /// <summary>
+        /// Champ de vision selon la vitesse (idée n° 16, valeurs par défaut de Claude, à régler sur le téléphone) :
+        /// fovDeg à l'arrêt, fovFastDeg à fovFullKmh et au-delà, suivi avec la raideur fovSharpness (1/s).
+        /// </summary>
+        public float fovDeg = 60f;
+        public float fovFastDeg = 70f;
+        public float fovFullKmh = 80f;
+        public float fovSharpness = 3f;
+        /// <summary>Secousses (m) d'un nid-de-poule et d'un accrochage, amorties en shakeSeconds ; 0 : aucune.</summary>
+        public float potholeShake = 0.12f;
+        public float crashShake = 0.35f;
+        public float shakeSeconds = 0.4f;
     }
 }

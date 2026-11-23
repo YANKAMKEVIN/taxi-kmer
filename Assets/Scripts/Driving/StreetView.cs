@@ -401,6 +401,7 @@ namespace TaxiKmer.Driving
             if (_road != null)
             {
                 var roadSays = _road.Update(Street, state, !_menu.Frozen && _summaryView == null);
+                if (_road.PotholeHit) ChaseCam()?.PotholeShake();
                 if (roadSays.Length > 0) Toast(roadSays, 6f);
                 if (_road.RainStarted) _talk?.Say(Core.Talk.TalkTriggers.Rain, TalkView.AnyPassenger(Street));
                 if (_road.IncidentStarted) _talk?.Say(Core.Talk.TalkTriggers.Breakdown, TalkView.AnyPassenger(Street));
@@ -612,8 +613,11 @@ namespace TaxiKmer.Driving
         /// Le taxi a heurté un véhicule du trafic (jalon 6) : vitesse au choc et fautif d'après la simulation, puis la règle
         /// de Kevin (fuite option B si le joueur est fautif, poursuite si l'autre fuit) dans <see cref="RoadView"/>.
         /// </summary>
+        private ChaseCamera ChaseCam() => _camera != null ? _camera.GetComponent<ChaseCamera>() : null;
+
         private void OnVehicleHit(int vehicleId)
         {
+            ChaseCam()?.CrashShake(); // idée n° 16
             if (_road == null || Street == null || Street.DayFinished || City == null) return;
             foreach (var v in City.Traffic.Vehicles)
             {

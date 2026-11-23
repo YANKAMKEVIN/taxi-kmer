@@ -217,6 +217,43 @@ namespace TaxiKmer.Core.Tests
     public class ChaseCameraLogicTests
     {
         [Test]
+        public void Fov_WidensWithSpeed_Smoothly_AndCaps()
+        {
+            var cfg = new ChaseCameraConfig();
+            var cam = new ChaseCameraLogic(cfg);
+            Assert.AreEqual(60f, cam.FovDeg);
+            Assert.AreEqual(65f, cam.TargetFov(40f), 1e-4f);
+            Assert.AreEqual(70f, cam.TargetFov(150f), 1e-4f, "plafonné");
+            Assert.AreEqual(65f, cam.TargetFov(-40f), 1e-4f, "en marche arrière aussi");
+            cam.UpdateMotion(0.1f, 80f);
+            Assert.That(cam.FovDeg, Is.InRange(60.5f, 69f), "lissé, pas d'un coup");
+            for (var i = 0; i < 100; i++) cam.UpdateMotion(0.1f, 80f);
+            Assert.AreEqual(70f, cam.FovDeg, 0.01f);
+        }
+
+        [Test]
+        public void Shake_IsBriefAndBounded()
+        {
+            var cfg = new ChaseCameraConfig();
+            var cam = new ChaseCameraLogic(cfg);
+            cam.PotholeShake();
+            cam.CrashShake();
+            Assert.AreEqual(0.35f, cam.ShakeAmplitude, 1e-4f, "la plus forte l'emporte");
+            for (var i = 0; i < 3; i++)
+            {
+                cam.UpdateMotion(0.05f, 30f);
+                cam.ShakeOffset(out var r, out var u);
+                Assert.LessOrEqual(System.Math.Abs(r), 0.35f + 1e-4f);
+                Assert.LessOrEqual(System.Math.Abs(u), 0.35f + 1e-4f);
+            }
+            for (var i = 0; i < 20; i++) cam.UpdateMotion(0.05f, 30f);
+            Assert.AreEqual(0f, cam.ShakeAmplitude, "éteinte après moins d'une seconde");
+            cam.ShakeOffset(out var r0, out var u0);
+            Assert.AreEqual(0f, r0);
+            Assert.AreEqual(0f, u0);
+        }
+
+        [Test]
         public void Drag_RotatesYawAndPitch_PitchClamped()
         {
             var cfg = new ChaseCameraConfig();

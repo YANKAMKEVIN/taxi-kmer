@@ -15,6 +15,12 @@ namespace TaxiKmer.Driving
         private ChaseCameraConfig _config;
         private float _heading;
         private bool _dragging;
+        private Camera _camera;
+
+        /// <summary>Nid-de-poule (idée n° 16) : petite secousse.</summary>
+        public void PotholeShake() => _logic?.PotholeShake();
+        /// <summary>Accrochage : forte secousse.</summary>
+        public void CrashShake() => _logic?.CrashShake();
 
         private void Awake()
         {
@@ -40,6 +46,7 @@ namespace TaxiKmer.Driving
             if (target == null) return;
             var dt = Time.deltaTime;
             _logic.Update(dt, _dragging);
+            _logic.UpdateMotion(dt, target.SpeedKmh); // idée n° 16 : champ de vision selon la vitesse, secousses
             _dragging = false;
             _heading = Mathf.LerpAngle(_heading, target.transform.eulerAngles.y, 1f - Mathf.Exp(-_config.followSharpness * dt));
             Place();
@@ -67,6 +74,10 @@ namespace TaxiKmer.Driving
             }
             transform.position = pivot + dir * distance;
             transform.rotation = Quaternion.LookRotation(pivot - transform.position, Vector3.up);
+            _logic.ShakeOffset(out var right, out var up);
+            transform.position += transform.right * right + transform.up * up;
+            if (_camera == null) _camera = GetComponent<Camera>();
+            if (_camera != null) _camera.fieldOfView = _logic.FovDeg;
         }
     }
 }

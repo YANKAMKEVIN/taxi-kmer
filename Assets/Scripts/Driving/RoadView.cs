@@ -21,6 +21,8 @@ namespace TaxiKmer.Driving
         public RoadDay Road { get; }
         /// <summary>Il pleut en ce moment.</summary>
         public bool Raining { get; private set; }
+        /// <summary>Le taxi a pris un nid-de-poule à cette image (secousse de la caméra, idée n° 16).</summary>
+        public bool PotholeHit { get; private set; }
         /// <summary>La pluie vient de commencer (cette image).</summary>
         public bool RainStarted { get; private set; }
         /// <summary>Le taxi vient de crever ou de tomber en panne (cette image).</summary>
@@ -54,6 +56,7 @@ namespace TaxiKmer.Driving
         /// <summary>À chaque image. Rend un message pour l'écran (vide sinon).</summary>
         public string Update(Street street, TaxiOnRoute state, bool driving)
         {
+            PotholeHit = false;
             RainStarted = false;
             IncidentStarted = false;
             var message = "";
@@ -69,6 +72,7 @@ namespace TaxiKmer.Driving
             if (driving && !street.DayFinished && _lastAlong >= 0f)
             {
                 var e = Road.Drive(_lastAlong, state.Along, state.SpeedKmh);
+                PotholeHit = e.Potholes != null && e.Potholes.Count > 0;
                 if (e.Punctured) { message = "Crevaison ! Change la roue (roue de secours)"; IncidentStarted = true; }
                 if (e.BrokeDown) { message = "Panne : appelle un mécanicien du quartier"; IncidentStarted = true; }
             }
