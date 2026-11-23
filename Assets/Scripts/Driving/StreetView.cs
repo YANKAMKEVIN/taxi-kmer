@@ -87,6 +87,8 @@ namespace TaxiKmer.Driving
         private MiniMapView _miniMap;
         // Téléphone du chauffeur (phone.json, idée n° 11).
         private PhoneView _phone;
+        // Pluie visible (rain.json, idée n° 12), créée seulement avec la route (road.json).
+        private RainView _rain;
         private readonly List<(float x, float z, Color color)> _mapMarkers = new List<(float, float, Color)>();
         private CabinPlanView _cabinView;
         private ShiftGaugesView _gauges;
@@ -239,6 +241,8 @@ namespace TaxiKmer.Driving
             if (road.enabled)
                 _road = new RoadView(controls.Overlay, controls.Font, road, _cum[_cum.Length - 1], Save.Data.career.vehicleDamage,
                     dayCfg.startHour * 60, dayCfg.endHour * 60, Today.Month, actualSeed + 61);
+            var rainLook = Load("Data/rain", new Core.Road.RainLookConfig());
+            if (_road != null && rainLook.enabled) _rain = new RainView(rainLook, world.transform, taxi.gameObject);
             if (police.enabled)
                 _police = new PoliceView(controls.Overlay, controls.Font, police, Save.StartDayPapers(police, _paperNews), Save.Career.DayNumber, _cum[_cum.Length - 1],
                     dayCfg.startHour * 60, dayCfg.endHour * 60, actualSeed + 47);
@@ -403,6 +407,7 @@ namespace TaxiKmer.Driving
             // La radio se tait en pause et au bilan ; elle baisse quand un passager parle (jalon 5).
             _radio?.Update(dt, !Street.DayFinished && !_menu.Frozen && _summaryView == null, _talk != null && _talk.Speaking);
             _dayLight?.Update(Street.Shift.Clock.GameMinutes, _quality != null && _quality.Level >= 2);
+            _rain?.Update(dt, _road.Raining, _quality != null ? _quality.Level : 1, !_menu.Frozen && !Street.DayFinished);
             _ambience?.Update(dt, Street, state.Along, taxi.transform.position, City.Traffic.Vehicles, Today.Market,
                 _talk != null && _talk.Speaking, !_menu.Frozen && _summaryView == null);
             var action = Street.AvailableAction(state);

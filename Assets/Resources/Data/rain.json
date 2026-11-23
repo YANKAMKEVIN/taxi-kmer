@@ -1,0 +1,16 @@
+{
+    "_note": "Pluie visible (idée n° 12, valeurs par défaut de Claude à régler sur le Mac) : montée et retombée de l'averse (s), chaussée trempée puis sèche (s), gouttes par seconde par niveau de qualité (Bas, Moyen, Haut ; 0 au Bas), brillance de la chaussée sèche / trempée (Smoothness URP), essuie-glaces (allers-retours par s), volume de la pluie sur la tôle. L'averse elle-même vient de road.json (saisons des pluies).",
+    "enabled": true,
+    "fadeSeconds": 6,
+    "soakSeconds": 20,
+    "dryingSeconds": 90,
+    "dropsPerSecondByLevel": [
+        0,
+        600,
+        1500
+    ],
+    "drySmoothness": 0.15,
+    "wetSmoothness": 0.75,
+    "wiperCyclesPerSecond": 1.2,
+    "roofVolume": 0.5
+}

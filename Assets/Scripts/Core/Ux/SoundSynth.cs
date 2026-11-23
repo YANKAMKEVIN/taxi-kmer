@@ -116,6 +116,19 @@ namespace TaxiKmer.Core.Ux
         });
 
         /// <summary>
+        /// Pluie sur la tôle du taxi bouclable (2 s, idée n° 12) : bruit aigu filtré, crépitement de gouttes au hasard.
+        /// Raccord sans clic.
+        /// </summary>
+        public static float[] RainOnRoof() => Loop(2f, 41, (t, noise, state) =>
+        {
+            state[0] += 0.6 * (noise - state[0]);
+            state[1] += 0.05 * (state[0] - state[1]);
+            var hiss = state[0] - state[1];
+            state[2] = noise > 0.985 ? 1.0 : state[2] * 0.9; // une goutte qui claque, puis s'éteint
+            return 0.35 * hiss + 0.4 * state[2] * Math.Sin(2 * Math.PI * 2400 * t);
+        });
+
+        /// <summary>
         /// Rumeur du marché bouclable (4 s) : bruit dans la bande de la voix, haché en syllabes par plusieurs « voix » qui
         /// ne parlent pas au même rythme, avec quelques appels plus hauts. Raccord sans clic.
         /// </summary>

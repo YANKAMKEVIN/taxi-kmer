@@ -67,6 +67,7 @@ namespace TaxiKmer.Core.DotnetTests
             ["daylight.json"] = typeof(TaxiKmer.Core.Ux.DayLightConfig),
             ["minimap.json"] = typeof(TaxiKmer.Core.Ux.MiniMapConfig),
             ["phone.json"] = typeof(TaxiKmer.Core.Phone.PhoneConfig),
+            ["rain.json"] = typeof(TaxiKmer.Core.Road.RainLookConfig),
         };
 
         [Test]

@@ -80,6 +80,14 @@ namespace TaxiKmer.Core.DotnetTests
         }
 
         [Test]
+        public void Rain_MatchesDefaults()
+        {
+            var d = Load<TaxiKmer.Core.Road.RainLookConfig>("rain.json");
+            Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Road.RainLookConfig(), Opts), JsonSerializer.Serialize(d, Opts));
+            Assert.AreEqual(0, d.dropsPerSecondByLevel[0], "pas de gouttes au niveau Bas");
+        }
+
+        [Test]
         public void Quality_MatchesDefaults()
         {
             var q = Load<TaxiKmer.Core.Quality.QualityConfig>("quality.json");
