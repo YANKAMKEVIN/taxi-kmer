@@ -11,6 +11,14 @@ namespace TaxiKmer.Core.Rides
         public int distanceAlongRouteMeters;
         /// <summary>Le lieu tel qu'un passager le dit dans une phrase (« au dispensaire de Messassi ») ; vide : tiré du nom.</summary>
         public SpokenPlace spoken = new SpokenPlace();
+        /// <summary>
+        /// Position du lieu dans le monde (m, idée n° 7) quand il est dans une rue latérale ; laissée à 0, 0 le lieu est
+        /// sur l'itinéraire, à <see cref="distanceAlongRouteMeters"/>. Voir <see cref="World.StopPlacement"/>.
+        /// </summary>
+        public float x;
+        public float z;
+
+        public bool HasPosition => x != 0f || z != 0f;
     }
 
     /// <summary>

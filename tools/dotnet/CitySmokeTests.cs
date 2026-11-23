@@ -120,5 +120,19 @@ namespace TaxiKmer.Core.DotnetTests
                 }
             }
         }
+
+        [Test]
+        public void RoadNetwork_RealWorld_LinksTheRouteEnds_NoLongerThanTheRoute()
+        {
+            // Idée n° 7 : les rues OSM forment un réseau ; de Messassi à Étoudi, le plus court chemin ne dépasse pas l'itinéraire.
+            var world = Load<WorldData>("world_messassi_etoudi.json");
+            var net = RoadNetwork.Build(world);
+            var xz = world.route.xz;
+            var p = net.ShortestPath(xz[0], xz[1], xz[xz.Length - 2], xz[xz.Length - 1]);
+            Assert.IsTrue(p.Found, "Réseau connexe entre les deux bouts de l'itinéraire");
+            var length = WorldGeometry.CumulativeLengths(xz)[xz.Length / 2 - 1];
+            Assert.LessOrEqual(p.LengthMeters, length * 1.05f);
+            Assert.Greater(p.LengthMeters, length * 0.5f);
+        }
     }
 }
