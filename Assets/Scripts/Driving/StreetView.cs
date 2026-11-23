@@ -90,6 +90,7 @@ namespace TaxiKmer.Driving
         // Pluie visible (rain.json, idée n° 12), créée seulement avec la route (road.json).
         private RainView _rain;
         private TrafficView _trafficView;
+        private PhotoModeView _photo;
         // Petits objectifs du jour (goals.json, idée n° 25).
         private DailyGoals _goals;
         // Vendeurs ambulants aux feux (vendors.json, idée n° 24).
@@ -270,6 +271,7 @@ namespace TaxiKmer.Driving
             if (_police != null) foreach (var post in _police.Police.Schedule.Posts) _postViews.Add(MakePolicePost(post));
             _menu = new GameMenu(!TitleDone);
             _menuView = new GameMenuView(transform, controls.Font) { Career = Save.Data };
+            _photo = new PhotoModeView(transform, controls.Font);
             _settings.Volume = PlayerPrefs.GetFloat(VolumeKey, GameSettings.DefaultVolume);
             AudioListener.volume = _settings.Volume;
             _settings.Vibration = PlayerPrefs.GetInt(VibrationKey, 1) == 1;
@@ -392,6 +394,9 @@ namespace TaxiKmer.Driving
             ApplyMenu(_menuView.Update(Street.DayFinished ? MenuScreen.None : _menu.Screen, _settings, shift.Cabin.PassengerCount,
                 PauseNote(), pending), pending);
             if (controls.PauseTriggered && !Street.DayFinished && _menu.Pause()) SetTimeStopped(true);
+            // Mode photo (idée n° 27) : HUD masqué, caméra libre ; « Retour » revient à la pause.
+            if (_photo.Update(_menu.Screen == MenuScreen.Photo, taxi.transform, controls.Overlay.gameObject, Save.Career.DayNumber, Street.Shift.Clock.Display))
+                ApplyMenu(MenuChoice.ClosePhoto);
             controls.Locked = _menu.Frozen || _summaryView != null || (_police != null && _police.Active);
 
             if (!Street.DayFinished && !_menu.Frozen)
@@ -544,6 +549,8 @@ namespace TaxiKmer.Driving
                     }
                     _menuView.ConfirmingNewCareer = _menu.ConfirmingNewCareer;
                     break;
+                case MenuChoice.OpenPhoto: _menu.OpenPhoto(); break;
+                case MenuChoice.ClosePhoto: _menu.Back(); break;
                 case MenuChoice.Resume: _menu.Resume(); break;
                 case MenuChoice.OpenSettings: _menu.OpenSettings(); _menuView.ConfirmingNewCareer = false; break;
                 case MenuChoice.CloseSettings: _menu.CloseSettings(); break;

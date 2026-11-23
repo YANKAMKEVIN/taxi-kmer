@@ -18,6 +18,10 @@ namespace TaxiKmer.Driving
         ToggleVibration,
         /// <summary>« Nouvelle partie » sur l'écran titre (idée n° 10) : premier appui = demande de confirmation.</summary>
         NewCareer,
+        /// <summary>« Mode photo » dans la pause (idée n° 27).</summary>
+        OpenPhoto,
+        /// <summary>Retour du mode photo à la pause.</summary>
+        ClosePhoto,
     }
 
     /// <summary>
@@ -31,6 +35,7 @@ namespace TaxiKmer.Driving
         private readonly Text _title, _subtitle, _info;
         private readonly Image _primary, _secondary, _tertiary, _minus, _plus, _toggle;
         private readonly Text _primaryText, _secondaryText, _tertiaryText, _toggleText;
+        private readonly Image _photo;
 
         private static readonly Color Green = new Color(0.1f, 0.45f, 0.2f, 0.95f);
         private static readonly Color Grey = new Color(0.22f, 0.22f, 0.26f, 0.95f);
@@ -57,6 +62,7 @@ namespace TaxiKmer.Driving
             _minus = UiKit.NewButton(_root, font, "–", Grey, out _);
             _plus = UiKit.NewButton(_root, font, "+", Grey, out _);
             _toggle = UiKit.NewButton(_root, font, "", Grey, out _toggleText);
+            _photo = UiKit.NewButton(_root, font, "Mode photo", Grey, out _);
         }
 
         /// <param name="pauseNote">Ligne sous le titre de la pause (état des papiers, jalon 4) ; vide : rien.</param>
@@ -68,7 +74,7 @@ namespace TaxiKmer.Driving
 
         public MenuChoice Update(MenuScreen screen, GameSettings settings, int passengersOnBoard, string pauseNote = "", PendingChoices pending = default)
         {
-            var open = screen != MenuScreen.None;
+            var open = screen != MenuScreen.None && screen != MenuScreen.Photo; // le mode photo a sa propre interface
             _root.gameObject.SetActive(open);
             if (!open) return MenuChoice.None;
             Layout(screen, settings, passengersOnBoard, pauseNote, pending);
@@ -85,6 +91,7 @@ namespace TaxiKmer.Driving
                     if (UiKit.Tapped(_primary.rectTransform) || back) return MenuChoice.Resume;
                     if (UiKit.Tapped(_secondary.rectTransform)) return MenuChoice.OpenSettings;
                     if (UiKit.Tapped(_tertiary.rectTransform)) return MenuChoice.EndDay;
+                    if (UiKit.Tapped(_photo.rectTransform)) return MenuChoice.OpenPhoto;
                     break;
                 case MenuScreen.Settings:
                     if (UiKit.Tapped(_primary.rectTransform) || back) return MenuChoice.CloseSettings;
@@ -118,6 +125,12 @@ namespace TaxiKmer.Driving
             // Aide du clavier dans la pause, hors téléphone (éditeur, démo web) : table KeyMap, une touche par action.
             _info.gameObject.SetActive(screen == MenuScreen.Settings || (screen == MenuScreen.Pause && !Application.isMobilePlatform));
             _toggle.gameObject.SetActive(screen == MenuScreen.Settings);
+            _photo.gameObject.SetActive(screen == MenuScreen.Pause);
+            if (screen == MenuScreen.Pause)
+            {
+                UiKit.PlaceTopLeft(_photo.rectTransform, Screen.width - h * 0.34f, h * 0.04f, h * 0.3f, h * 0.1f);
+                _photo.GetComponentInChildren<Text>().fontSize = Mathf.RoundToInt(h * 0.035f);
+            }
             _toggleText.fontSize = font;
 
             switch (screen)

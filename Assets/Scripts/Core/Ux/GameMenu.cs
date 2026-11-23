@@ -58,6 +58,8 @@ namespace TaxiKmer.Core.Ux
         Title,
         Pause,
         Settings,
+        /// <summary>Mode photo (idée n° 27) : ouvert depuis la pause, HUD masqué, caméra libre, heure figée.</summary>
+        Photo,
     }
 
     /// <summary>
@@ -75,7 +77,16 @@ namespace TaxiKmer.Core.Ux
         /// Le temps du jeu est arrêté (physique, sons) : en pause et dans les réglages ouverts depuis la pause. Sur
         /// l'écran titre, le décor continue de vivre, seule l'horloge de la journée attend.
         /// </summary>
-        public bool TimeStopped => Screen == MenuScreen.Pause || (Screen == MenuScreen.Settings && _settingsReturn == MenuScreen.Pause);
+        public bool TimeStopped => Screen == MenuScreen.Pause || Screen == MenuScreen.Photo
+            || (Screen == MenuScreen.Settings && _settingsReturn == MenuScreen.Pause);
+
+        /// <summary>« Mode photo » dans la pause (idée n° 27).</summary>
+        public bool OpenPhoto()
+        {
+            if (Screen != MenuScreen.Pause) return false;
+            Screen = MenuScreen.Photo;
+            return true;
+        }
 
         /// <param name="showTitle">Ouvrir sur l'écran titre (premier lancement) plutôt que directement au volant.</param>
         public GameMenu(bool showTitle) => Screen = showTitle ? MenuScreen.Title : MenuScreen.None;
@@ -123,6 +134,7 @@ namespace TaxiKmer.Core.Ux
         public void Back()
         {
             if (Screen == MenuScreen.Settings) CloseSettings();
+            else if (Screen == MenuScreen.Photo) Screen = MenuScreen.Pause;
             else Resume();
         }
 
