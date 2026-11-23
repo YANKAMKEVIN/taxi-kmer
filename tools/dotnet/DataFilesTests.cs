@@ -123,7 +123,8 @@ namespace TaxiKmer.Core.DotnetTests
             var d = Load<TaxiKmer.Core.Day.DailyGoalsConfig>("goals.json");
             Assert.AreEqual(JsonSerializer.Serialize(new TaxiKmer.Core.Day.DailyGoalsConfig(), Opts), JsonSerializer.Serialize(d, Opts));
             foreach (var g in d.goals) CollectionAssert.Contains(TaxiKmer.Core.Day.GoalKinds.All, g.kind, g.id);
-            Assert.IsFalse(d.rewardsEnabled, "Récompenses à trancher par Kevin");
+            Assert.IsTrue(d.rewardsEnabled, "Primes activées par Kevin le 23/11 au soir");
+            foreach (var g in d.goals) Assert.That(g.reward, Is.InRange(50, 1000), $"{g.id} : prime d'après l'étude");
         }
 
         [Test]

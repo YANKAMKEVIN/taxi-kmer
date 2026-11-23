@@ -86,6 +86,8 @@ namespace TaxiKmer.Core.DotnetTests
         /// <see cref="BalanceStudy.RunCareers"/> quand un renouvellement coûte quelque chose.
         /// </summary>
         public int? Savings;
+        /// <summary>Compétences du chauffeur (idée n° 50), gardées d'un jour à l'autre comme dans la sauvegarde (null : début de carrière).</summary>
+        public DriverSkills Skills;
     }
 
     /// <summary>Une journée jouée, avec les compteurs utiles à l'étude.</summary>
@@ -111,6 +113,12 @@ namespace TaxiKmer.Core.DotnetTests
         public int PapersNotRenewed;
         /// <summary>Contrôles où un papier expiré a été trouvé.</summary>
         public int ExpiredPaperControls;
+        /// <summary>Objectifs du jour (idée n° 25) tirés ce jour-là, comme dans le jeu (même tirage : jour de carrière, graine 0).</summary>
+        public List<string> GoalsDrawn = new List<string>();
+        /// <summary>Objectifs réussis parmi TOUS ceux de goals.json (suivis chaque jour, tirés ou non : taux de réussite).</summary>
+        public HashSet<string> GoalsDone = new HashSet<string>();
+        /// <summary>Négociations de la journée (clients qui marchandent et policiers), qui font progresser la compétence.</summary>
+        public int Negotiations;
     }
 
     /// <summary>Les données du jeu, lues une fois (chaque journée en fait des copies avant de les régler).</summary>
@@ -128,6 +136,8 @@ namespace TaxiKmer.Core.DotnetTests
         public OwnerConfig Owner;
         public WorldData World;
         public CityConfig City;
+        public DailyGoalsConfig Goals;
+        public SkillsConfig Skills;
 
         public static GameData Load(bool withWorld = false)
         {
@@ -149,6 +159,8 @@ namespace TaxiKmer.Core.DotnetTests
                 Owner = BalanceBot.Load<OwnerConfig>("owner.json"),
                 World = withWorld ? BalanceBot.Load<WorldData>("world_messassi_etoudi.json") : null,
                 City = withWorld ? BalanceBot.Load<CityConfig>("traffic.json") : null,
+                Goals = BalanceBot.Load<DailyGoalsConfig>("goals.json"),
+                Skills = BalanceBot.Load<SkillsConfig>("skills.json"),
             };
         }
 
@@ -188,6 +200,15 @@ namespace TaxiKmer.Core.DotnetTests
             var fuel = data.FuelFor(setting);
             var stops = data.Stops;
             var routeLength = data.RouteLength;
+            // Compétences du chauffeur (idée n° 50), appliquées comme dans StreetView quand elles sont actives.
+            if (carry.Skills == null) carry.Skills = new DriverSkills(data.Skills);
+            var skills = carry.Skills;
+            var policeConfig = data.Police;
+            if (skills.Enabled)
+            {
+                policeConfig = ClonePolice(data.Police);
+                policeConfig.negotiateFailChance = skills.PoliceNegotiateFail(data.Police.negotiateFailChance);
+            }
             var shift = new Shift(day, data.Seating, fuel, carry.TankLitres >= 0f ? carry.TankLitres : fuel.startLitres);
             var street = new Street(data.Street, stops, new ClientFactory(stops, data.FaresFor(setting), seed), shift, routeLength);
             var today = new TaxiKmer.Core.Day.Calendar(data.Calendar).For(carry.DayNumber);
@@ -196,6 +217,11 @@ namespace TaxiKmer.Core.DotnetTests
             if (data.Dialogues.enabled)
             {
                 street.FareDisputes = data.Dialogues.FareRules();
+                if (skills.Enabled)
+                {
+                    street.FareDisputes.HaggleDiscountMin = skills.HaggleDiscount(street.FareDisputes.HaggleDiscountMin);
+                    street.FareDisputes.HaggleDiscountMax = skills.HaggleDiscount(street.FareDisputes.HaggleDiscountMax);
+                }
                 street.DisputeRandom = new Random(seed + 59);
             }
             int start = day.startHour * 60, end = day.endHour * 60;
@@ -214,7 +240,14 @@ namespace TaxiKmer.Core.DotnetTests
                 result.PapersNotRenewed = renewed.Count - result.PapersRenewed;
                 result.RenewalCost = PaperRenewal.TotalPaid(renewed);
             }
-            var police = new PoliceDay(data.Police, carry.Papers, new PoliceContacts(data.Police), carry.DayNumber, routeLength, start, end, new Random(seed + 47));
+            var police = new PoliceDay(policeConfig, carry.Papers, new PoliceContacts(policeConfig), carry.DayNumber, routeLength, start, end, new Random(seed + 47));
+            // Objectifs du jour (idée n° 25) : ceux tirés comme dans le jeu, et tous suivis pour mesurer leur réussite.
+            var goalsConfig = data.Goals ?? new DailyGoalsConfig();
+            foreach (var g in new DailyGoals(goalsConfig, carry.DayNumber, 0).Goals) result.GoalsDrawn.Add(g.Data.id);
+            var allGoals = new DailyGoals(new DailyGoalsConfig
+            {
+                enabled = true, goals = goalsConfig.goals, minPerDay = goalsConfig.goals.Length, maxPerDay = goalsConfig.goals.Length,
+            }, carry.DayNumber, 0);
             var luck = new Random(seed + 71); // accrochages (physique d'Unity remplacée par un tirage)
             var talk = new Random(seed + 73); // réponses aux passagers (pourboires), tirage à part
             var rideLines = data.Dialogues.enabled && player.AnswersPassengers
@@ -265,6 +298,8 @@ namespace TaxiKmer.Core.DotnetTests
                 shift.Drive(meters);
                 result.LitresBurned += before - shift.Tank.Litres;
                 street.Update(dt, taxi);
+                allGoals.Passengers(shift.Cabin.PassengerCount);
+                allGoals.Revenue(shift.Ledger.Revenue);
                 var minute = shift.Clock.GameMinutes;
                 street.PatienceScale = road.Weather.PatienceFactor(minute);
                 street.SpawnRateScale = today.ClientsFactor * road.Weather.ClientsFactor(minute);
@@ -292,7 +327,8 @@ namespace TaxiKmer.Core.DotnetTests
                     else
                     {
                         var aboard = new HashSet<string>(shift.Cabin.Passengers.Select(p => p.Id));
-                        street.Perform(here);
+                        var outcome = street.Perform(here);
+                        if (outcome.Kind == StreetActionKind.Drop && outcome.Paid > 0) allGoals.RidePaid(shift.Clock.GameMinutes);
                         if (rideLines.Length > 0)
                             foreach (var p in shift.Cabin.Passengers)
                                 if (!aboard.Contains(p.Id))
@@ -324,6 +360,7 @@ namespace TaxiKmer.Core.DotnetTests
                 if (e.BrokeDown) result.Breakdowns++;
                 if (luck.NextDouble() < meters / 1000f * player.CrashesPerKm)
                 {
+                    allGoals.Crash();
                     var impact = player.CrashMinKmh + (float)luck.NextDouble() * (player.CrashMaxKmh - player.CrashMinKmh);
                     var atFault = luck.NextDouble() < player.CrashAtFaultShare;
                     if (crash.Report(street, road.Car, ++vehicleId, new CrashJudgement { ImpactKmh = impact, PlayerAtFault = atFault }, seconds).Length > 0)
@@ -333,6 +370,20 @@ namespace TaxiKmer.Core.DotnetTests
 
             foreach (var ex in street.Summary.Expenses)
                 if (ex.Label == Street.PoliceExpenseLabel) result.PolicePaid += ex.Amount;
+            allGoals.PolicePaid(result.PolicePaid);
+            allGoals.EndDay();
+            foreach (var g in allGoals.Goals) if (g.Done) result.GoalsDone.Add(g.Data.id);
+            result.Negotiations = result.Haggles + police.Controls;
+            if (skills.Enabled)
+            {
+                var sum = street.Summary;
+                skills.EndDay(new SkillDay
+                {
+                    Negotiations = result.Negotiations,
+                    FullDay = !sum.Arrested && !sum.Impounded && !sum.VehicleSeized,
+                    Kilometres = sum.Kilometres,
+                });
+            }
             result.Summary = street.Summary;
             result.Reputation = street.Reputation.Score;
             carry.Reputation = street.Reputation.Score;
@@ -341,6 +392,10 @@ namespace TaxiKmer.Core.DotnetTests
             carry.DayNumber++;
             return result;
         }
+
+        private static readonly MethodInfo CloneMethod = typeof(object).GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic);
+        /// <summary>Copie superficielle de police.json (seule negotiateFailChance y est changée).</summary>
+        private static PoliceConfig ClonePolice(PoliceConfig p) => (PoliceConfig)CloneMethod.Invoke(p, null);
 
         private static int CountTaken(Street street)
         {
@@ -384,6 +439,11 @@ namespace TaxiKmer.Core.DotnetTests
         public int Horizon;
         /// <summary>Renouvellements payés (FCFA par journée) ; journées commencées avec un papier impayé ; contrôles avec un papier expiré (par journée).</summary>
         public double MeanRenewalCost, DaysWithUnpaidPaper, ExpiredControlsPerDay;
+        /// <summary>
+        /// Prime des objectifs du jour (idée n° 25, FCFA par journée) et part des journées où la journée PLUS la prime
+        /// couvre le versement (la prime va sur l'épargne, pas dans la recette : ReachedShare ne la compte pas).
+        /// </summary>
+        public double MeanBonus, ReachedWithBonusShare;
     }
 
     public static class BalanceStudy
@@ -440,6 +500,7 @@ namespace TaxiKmer.Core.DotnetTests
         public static List<SettingResult> RunCareers(GameData data, float scale, float price, int[] versements, int careers, int horizon,
             AveragePlayer player, int baseSeed = 1)
         {
+            int Bonus(StudyDay day) => GoalBonus(day, data.Goals);
             StudyDay[][] PlayAll(int versement, bool withSavings)
             {
                 var days = new StudyDay[careers][];
@@ -455,6 +516,7 @@ namespace TaxiKmer.Core.DotnetTests
                         list[d] = StudyDayPlayer.Play(data, s, player, carry, baseSeed * 1000003 + 1000 * k + d);
                         if (!withSavings) continue;
                         wallet.PayFromSavings(list[d].RenewalCost);
+                        wallet.AddBonus(Bonus(list[d])); // comme StreetView : prime versée avant la clôture
                         wallet.CloseDay(WithVersement(list[d].Summary, versement), data.Reputation.effects);
                         if (wallet.Fired) wallet = DriverCareer.Restore(data.Owner, wallet.DayNumber, wallet.Savings, null, false);
                     }
@@ -478,8 +540,8 @@ namespace TaxiKmer.Core.DotnetTests
                 };
                 var fired = new List<int>();
                 var savings7 = new List<int>();
-                int reached = 0, counted = 0, firedBy7 = 0, unpaid = 0, expired = 0;
-                double left = 0, rev = 0, fuel = 0, exp = 0, renewal = 0;
+                int reached = 0, counted = 0, firedBy7 = 0, unpaid = 0, expired = 0, reachedBonus = 0;
+                double left = 0, rev = 0, fuel = 0, exp = 0, renewal = 0, bonus = 0;
                 for (var k = 0; k < careers; k++)
                 {
                     var career = new DriverCareer(data.Owner);
@@ -488,9 +550,12 @@ namespace TaxiKmer.Core.DotnetTests
                     for (var d = 0; d < horizon; d++)
                     {
                         var s = WithVersement(days[k][d].Summary, v);
+                        var b = Bonus(days[k][d]);
                         {
                             counted++;
                             if (s.VersementReached) reached++;
+                            if (s.TowardVersement + b >= v) reachedBonus++;
+                            bonus += b;
                             left += s.TowardVersement - v;
                             rev += s.Revenue; fuel += s.FuelCost; exp += s.ExpensesTotal;
                             renewal += days[k][d].RenewalCost;
@@ -500,6 +565,7 @@ namespace TaxiKmer.Core.DotnetTests
                         if (firedDay == int.MaxValue)
                         {
                             career.PayFromSavings(days[k][d].RenewalCost); // papiers renouvelés au début de la journée
+                            career.AddBonus(b); // prime des objectifs, sur l'épargne avant la clôture (StreetView)
                             var c = career.CloseDay(s, data.Reputation.effects);
                             if (d < 7) saved7 = c.SavingsAfter;
                             if (c.Mood == OwnerMood.Fired) firedDay = d + 1;
@@ -511,6 +577,8 @@ namespace TaxiKmer.Core.DotnetTests
                 }
                 r.DaysCounted = counted;
                 r.ReachedShare = (double)reached / counted;
+                r.ReachedWithBonusShare = (double)reachedBonus / counted;
+                r.MeanBonus = bonus / counted;
                 r.MeanLeftover = left / counted;
                 r.MeanRevenue = rev / counted; r.MeanFuel = fuel / counted; r.MeanExpenses = exp / counted;
                 r.MeanRenewalCost = renewal / counted;
@@ -528,6 +596,41 @@ namespace TaxiKmer.Core.DotnetTests
                 results.Add(r);
             }
             return results;
+        }
+
+        /// <summary>
+        /// Prime des objectifs du jour d'une journée jouée (idée n° 25) : somme des primes des objectifs tirés et réussis,
+        /// 0 si les objectifs ou leurs primes sont coupés (comme DailyGoals.Reward).
+        /// </summary>
+        public static int GoalBonus(StudyDay day, DailyGoalsConfig goals)
+        {
+            if (goals == null || !goals.enabled || !goals.rewardsEnabled || goals.goals == null) return 0;
+            var sum = 0;
+            foreach (var g in goals.goals)
+                if (day.GoalsDrawn.Contains(g.id) && day.GoalsDone.Contains(g.id)) sum += Math.Max(0, g.reward);
+            return sum;
+        }
+
+        /// <summary>Copie des données avec d'autres primes d'objectifs (id → FCFA) et les primes actives ; goals.json n'est pas modifié.</summary>
+        public static GameData WithGoalRewards(GameData data, IDictionary<string, int> rewards, bool enabled = true)
+        {
+            var goals = BalanceBot.Load<DailyGoalsConfig>("goals.json");
+            goals.rewardsEnabled = enabled;
+            foreach (var g in goals.goals)
+                if (rewards.TryGetValue(g.id, out var r)) g.reward = r;
+            var copy = data.Copy();
+            copy.Goals = goals;
+            return copy;
+        }
+
+        /// <summary>Copie des données avec les compétences du chauffeur actives ou coupées ; skills.json n'est pas modifié.</summary>
+        public static GameData WithSkills(GameData data, bool enabled)
+        {
+            var skills = BalanceBot.Load<SkillsConfig>("skills.json");
+            skills.enabled = enabled;
+            var copy = data.Copy();
+            copy.Skills = skills;
+            return copy;
         }
 
         /// <summary>Statistiques brutes des journées d'une carrière type (contrôles, incidents…), pour la méthode.</summary>

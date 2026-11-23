@@ -36,8 +36,8 @@ namespace TaxiKmer.Core.Day
 
     /// <summary>
     /// Petits objectifs du jour (idée n° 25 ; données : Assets/Resources/Data/goals.json) : 1 à 3 défis tirés le
-    /// matin, affichés dans la pause et au bilan. Objectifs proposés par Claude ; récompenses à trancher par Kevin
-    /// (rewardsEnabled = false : réussis, mais sans prime, pour ne pas changer l'équilibrage).
+    /// matin, affichés dans la pause et au bilan. Objectifs proposés par Claude ; primes activées par Kevin le 23/11 au
+    /// soir, montants fixés d'après l'étude d'équilibrage (le versement reste atteint dans 60 à 80 % des journées).
     /// </summary>
     [Serializable]
     public class DailyGoalsConfig
@@ -45,14 +45,15 @@ namespace TaxiKmer.Core.Day
         public bool enabled = true;
         public int minPerDay = 1;
         public int maxPerDay = 3;
-        public bool rewardsEnabled;
+        /// <summary>Primes versées (décision de Kevin du 23/11 au soir ; montants d'après l'étude, docs/tech/equilibrage.md).</summary>
+        public bool rewardsEnabled = true;
         public GoalData[] goals =
         {
-            new GoalData { id = "matinal", kind = GoalKinds.DropsBefore, label = "Déposer {n} passagers avant {heure}", count = 3, beforeTime = "08:00" },
-            new GoalData { id = "honnete", kind = GoalKinds.NoPolicePaid, label = "Ne rien payer aux contrôles" },
-            new GoalData { id = "bonne-recette", kind = GoalKinds.Revenue, label = "Faire {montant} de recette", amount = 12000, reward = 300 },
-            new GoalData { id = "prudent", kind = GoalKinds.NoCrash, label = "Aucun accrochage de la journée" },
-            new GoalData { id = "plein", kind = GoalKinds.FullCabin, label = "Rouler avec {n} passagers à bord", count = 5 },
+            new GoalData { id = "matinal", kind = GoalKinds.DropsBefore, label = "Déposer {n} passagers avant {heure}", count = 3, beforeTime = "08:00", reward = 400 },
+            new GoalData { id = "honnete", kind = GoalKinds.NoPolicePaid, label = "Ne rien payer aux contrôles", reward = 500 },
+            new GoalData { id = "bonne-recette", kind = GoalKinds.Revenue, label = "Faire {montant} de recette", amount = 12000, reward = 100 },
+            new GoalData { id = "prudent", kind = GoalKinds.NoCrash, label = "Aucun accrochage de la journée", reward = 200 },
+            new GoalData { id = "plein", kind = GoalKinds.FullCabin, label = "Rouler avec {n} passagers à bord", count = 5, reward = 100 },
         };
     }
 
@@ -140,7 +141,7 @@ namespace TaxiKmer.Core.Day
             }
         }
 
-        /// <summary>Prime gagnée (0 tant que Kevin n'a pas décidé des récompenses).</summary>
+        /// <summary>Prime gagnée (somme des objectifs réussis ; 0 si rewardsEnabled est coupé).</summary>
         public int Reward
         {
             get

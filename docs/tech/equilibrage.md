@@ -82,6 +82,60 @@ montants retenus) ; avec le trafic : 15 carrières (≈ 4 points d'incertitude).
    des journées sur 45 jours (0,74 contrôle par journée trouve un papier expiré). Aucun montant non nul ne garde 60 % avec
    la concurrence sur 45 jours : question posée à Kevin (`jalon-04.md`).
 
+### Primes des objectifs du jour (décision de Kevin du 23/11 au soir) : 400 / 500 / 100 / 200 / 100 FCFA
+
+Demande de Kevin : « fixe les montants d'après l'étude : le versement doit rester atteint dans 60 à 80 % des
+journées », puis activer les primes. L'outil suit maintenant les objectifs du jour (`DailyGoals`, branchés comme dans
+`StreetView` : courses payées, contrôles payés, accrochages, passagers à bord, recette) et verse la prime **sur
+l'épargne avant la clôture**, comme le jeu. Rapport : `tools/test_core.sh "Name=Goals_Report"` (≈ 10 min).
+
+La prime n'est pas de la recette : « versement atteint » (la journée seule) ne la compte pas. Pour être prudent, le
+tableau donne aussi la part des journées où **journée + prime** couvre le versement ; la cible est tenue sur les deux.
+Elle bouge un peu quand même : la prime remplit l'épargne, qui paie les papiers à l'échéance (moins de contrôles avec
+un papier expiré).
+
+Réussite de chaque objectif (joueur moyen, sans trafic, 2 800 journées, chaque objectif suivi tous les jours) :
+
+| Objectif | Réussi | Tiré (jours 1 à 14, même tirage pour tous : jour de carrière, graine 0) |
+|---|---|---|
+| matinal : déposer 3 passagers avant 08:00 | 23 % | 43 % |
+| honnête : ne rien payer aux contrôles | 17 % | 57 % |
+| bonne-recette : faire 12 000 FCFA de recette | 96 % | 50 % |
+| prudent : aucun accrochage de la journée | 75 % | 36 % |
+| plein : rouler avec 5 passagers à bord | 99 % | 14 % |
+
+| Primes (matinal / honnête / recette / prudent / plein) | Cas | Horizon | Prime / jour | Versement atteint (journée seule) | Avec la prime | Renvoyé | Épargne à 7 j (moy. / méd.) |
+|---|---|---|---|---|---|---|---|
+| 0 (coupées) | sans trafic, 200 carrières | 14 j | 0 | 71 % | 71 % | 9 % | 19 751 / 21 100 |
+| 0 (coupées) | sans trafic, 200 carrières | 45 j | 0 | 70 % | 70 % | 22 % | 19 751 / 21 100 |
+| 0 (coupées) | avec trafic, 15 carrières | 14 j | 0 | 61 % | 61 % | 27 % | 9 240 / 12 750 |
+| 100 / 100 / 150 / 100 / 100 | sans trafic | 14 j | 133 | 71 % | 71 % | 8 % | 20 525 / 22 100 |
+| 200 / 200 / 300 / 200 / 200 (proposé le 23/11) | sans trafic | 14 j | 267 | 71 % | 71 % | 7 % | 21 235 / 23 100 |
+| 200 / 200 / 300 / 200 / 200 (proposé le 23/11) | avec trafic | 14 j | 198 | 61 % | 61 % | 27 % | 10 393 / 13 950 |
+| 300 / 300 / 500 / 300 / 300 | sans trafic | 14 j | 424 | 71 % | 72 % | 7 % | 22 146 / 24 200 |
+| 500 / 500 / 800 / 500 / 500 | sans trafic | 14 j | 691 | 71 % | 73 % | 6 % | 23 706 / 26 200 |
+| 500 / 500 / 800 / 500 / 500 | avec trafic | 14 j | 510 | 61 % | 63 % | 20 % | 12 810 / 15 950 |
+| 1 000 / 1 000 / 1 500 / 1 000 / 1 000 | sans trafic | 14 j | 1 335 | 71 % | 74 % | 4 % | 27 587 / 30 050 |
+| 1 000 / 1 000 / 1 500 / 1 000 / 1 000 | avec trafic | 14 j | 990 | 61 % | 63 % | 13 % | 15 707 / 19 550 |
+| **400 / 500 / 100 / 200 / 100 (retenu)** | **sans trafic, 200 carrières** | **14 j** | **205** | **71 %** | **71 %** | **7 %** | 20 908 / 22 700 |
+| **400 / 500 / 100 / 200 / 100 (retenu)** | sans trafic, 200 carrières | 45 j | 211 | 70 % | 71 % | 19 % | 20 908 / 22 700 |
+| **400 / 500 / 100 / 200 / 100 (retenu)** | **avec trafic, 15 carrières** | **14 j** | **177** | **61 %** | **61 %** | 27 % | 10 337 / 13 650 |
+
+(Primes à 45 jours, non retenues : 139, 278, 437, 716 et 1 395 FCFA par jour ; versement atteint 70 à 72 %.)
+
+Constats et choix :
+
+1. **Tous les jeux essayés restent dans la cible** (61 à 74 %, journée + prime comprise, jusqu'à 1 000 FCFA par
+   objectif). La prime n'est donc pas ce qui fait l'équilibre : elle change surtout l'épargne et le renvoi.
+2. **Deux objectifs sont presque toujours réussis** par le joueur moyen : la recette de 12 000 (96 %) et le taxi plein
+   (99 %). Les payer cher reviendrait à un supplément de recette quotidien. Deux sont rares : ne rien payer à la police
+   (17 %) et 3 courses avant 08:00 (23 %).
+3. **Retenu : la prime suit la rareté**, pour que réussir un objectif difficile se sente : **matinal 400, honnête 500,
+   bonne-recette 100, prudent 200, plein 100 FCFA** (`goals.json`, primes activées). En moyenne ≈ 200 FCFA par journée
+   (1,3 % de la recette, autant que la proposition du 23/11 : 267), versement atteint **71 %** sans trafic (71 % avec la
+   prime), **61 %** avec la concurrence ; renvoyé en 14 jours 7 % au lieu de 9 % sans prime. Garde-fou :
+   `GameData_KeepsTheChosenBalance` vérifie maintenant les deux taux (journée seule et avec la prime) dans 60-80 %.
+
 Depuis cette décision, `fares.json` vaut ×2 des prix de Yaoundé : dans l'outil, le multiplicateur de prix est relatif à
 `fares.json`, donc « prix ×2 » des tableaux ci-dessous (calculés sur les anciens prix, 300 à 800) correspond à « ×1 »
 aujourd'hui. `Decision_Report` et `DayContents_Report` prennent directement les réglages des données.

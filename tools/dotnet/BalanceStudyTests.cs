@@ -96,8 +96,12 @@ namespace TaxiKmer.Core.DotnetTests
             var data = GameData.Load();
             var s = Current(data);
             var r = BalanceStudy.RunCareers(data, s.ConsumptionScale, 1f, new[] { s.Versement }, 40, Horizon, new AveragePlayer())[0];
-            TestContext.WriteLine($"Versement atteint {BalanceStudy.Pct(r.ReachedShare)}, renvoyés en {Horizon} j {BalanceStudy.Pct(r.FiredByHorizon)}");
+            TestContext.WriteLine($"Versement atteint {BalanceStudy.Pct(r.ReachedShare)} (avec la prime {BalanceStudy.Pct(r.ReachedWithBonusShare)}, " +
+                                  $"prime {BalanceStudy.Money(r.MeanBonus)} / jour), renvoyés en {Horizon} j {BalanceStudy.Pct(r.FiredByHorizon)}");
             Assert.That(r.ReachedShare, Is.InRange(0.6, 0.8), "Versement atteint hors de la cible de Kevin (60 à 70 %, equilibrage.md).");
+            // Primes des objectifs du jour (décision du 23/11 au soir) : même avec la prime comptée, on reste dans la cible.
+            Assert.That(r.ReachedWithBonusShare, Is.InRange(0.6, 0.8), "Versement atteint avec la prime des objectifs hors de la cible.");
+            Assert.Greater(r.MeanBonus, 0, "primes actives dans les données");
             Assert.That(r.FiredByHorizon, Is.LessThanOrEqualTo(0.3));
         }
 
@@ -424,6 +428,120 @@ namespace TaxiKmer.Core.DotnetTests
             }
             sb.AppendLine().Append(breakdown);
             Write("journee-type.md", sb.ToString());
+            TestContext.WriteLine(sb.ToString());
+        }
+
+        /// <summary>
+        /// Primes des objectifs du jour (décision de Kevin du 23/11 au soir : « fixe les montants d'après l'étude, le
+        /// versement doit rester atteint dans 60 à 80 % des journées »). Réglage des données ; taux de réussite de chaque
+        /// objectif (suivis tous les jours, tirés ou non), puis plusieurs jeux de primes, versées sur l'épargne avant la
+        /// clôture comme dans StreetView. « Versement atteint » = la journée seule (la prime n'est pas de la recette) ;
+        /// « avec la prime » = journée + prime. Sans trafic : 200 carrières ; avec le trafic : 15 carrières, 14 jours.
+        /// Rapport : equilibrage/primes.md.
+        /// </summary>
+        [Test, Explicit("Long : lancer à la demande"), Category("Equilibrage")]
+        public void Goals_Report()
+        {
+            var baseData = GameData.Load();
+            var current = Current(baseData);
+            var sb = new StringBuilder();
+            var days = new List<StudyDay>();
+            for (var k = 0; k < 200; k++) days.AddRange(BalanceStudy.PlayCareer(baseData, current, new AveragePlayer(), Horizon, 700 + k));
+            sb.AppendLine($"Réussite de chaque objectif (sans trafic, {days.Count} journées, suivis chaque jour) :");
+            sb.AppendLine();
+            sb.AppendLine("| Objectif | Réussi | Tiré (jours 1 à 14) |");
+            sb.AppendLine("|---|---|---|");
+            foreach (var g in baseData.Goals.goals)
+                sb.AppendLine($"| {g.id} ({DailyGoals.Fill(g)}) | {BalanceStudy.Pct(days.Count(d => d.GoalsDone.Contains(g.id)) / (double)days.Count)} | " +
+                              $"{BalanceStudy.Pct(days.Count(d => d.GoalsDrawn.Contains(g.id)) / (double)days.Count)} |");
+            sb.AppendLine();
+            TestContext.Progress.WriteLine(sb.ToString());
+            sb.AppendLine("| Primes (matinal / honnête / recette / prudent / plein) | Cas | Horizon | Prime moyenne / jour | Versement atteint (journée seule) | Avec la prime | Renvoyé à l'horizon | Épargne à 7 j (moy. / méd.) |");
+            sb.AppendLine("|---|---|---|---|---|---|---|---|");
+            foreach (var (label, rewards, on) in GoalCandidates)
+            foreach (var (name, withCity, careers, horizons) in new[]
+                     {
+                         ("sans trafic", false, 200, new[] { Horizon, 45 }),
+                         ("avec trafic", true, 15, new[] { Horizon }),
+                     })
+            foreach (var horizon in horizons)
+            {
+                if (withCity && !on && label != "0") continue;
+                var data = BalanceStudy.WithGoalRewards(GameData.Load(withWorld: withCity), rewards, on);
+                var r = BalanceStudy.RunCareers(data, current.ConsumptionScale, 1f, new[] { current.Versement }, careers, horizon, new AveragePlayer { WithCity = withCity })[0];
+                var line = $"| {label} | {name}, {careers} carrières | {horizon} j | {BalanceStudy.Money(r.MeanBonus)} | {BalanceStudy.Pct(r.ReachedShare)} | {BalanceStudy.Pct(r.ReachedWithBonusShare)} | " +
+                           $"{BalanceStudy.Pct(r.FiredByHorizon)} | {BalanceStudy.Money(r.MeanSavings7)} / {BalanceStudy.Money(r.MedianSavings7)} |";
+                sb.AppendLine(line);
+                TestContext.Progress.WriteLine(line);
+            }
+            Write("primes.md", sb.ToString());
+            TestContext.WriteLine(sb.ToString());
+        }
+
+        private static Dictionary<string, int> Rewards(int matinal, int honnete, int recette, int prudent, int plein) => new Dictionary<string, int>
+        {
+            { "matinal", matinal }, { "honnete", honnete }, { "bonne-recette", recette }, { "prudent", prudent }, { "plein", plein },
+        };
+
+        /// <summary>Jeux de primes essayés par <see cref="Goals_Report"/> (FCFA). Retenu : voir goals.json et equilibrage.md.</summary>
+        public static readonly (string, Dictionary<string, int>, bool)[] GoalCandidates =
+        {
+            ("0", Rewards(0, 0, 0, 0, 0), false),
+            ("100 / 100 / 150 / 100 / 100", Rewards(100, 100, 150, 100, 100), true),
+            ("200 / 200 / 300 / 200 / 200 (proposé)", Rewards(200, 200, 300, 200, 200), true),
+            ("300 / 300 / 500 / 300 / 300", Rewards(300, 300, 500, 300, 300), true),
+            ("500 / 500 / 800 / 500 / 500", Rewards(500, 500, 800, 500, 500), true),
+            ("1 000 / 1 000 / 1 500 / 1 000 / 1 000", Rewards(1000, 1000, 1500, 1000, 1000), true),
+            ("400 / 500 / 100 / 200 / 100 (retenu : selon la rareté)", Rewards(400, 500, 100, 200, 100), true),
+        };
+
+        /// <summary>
+        /// Décisions de Kevin du 23/11 au soir, telles qu'elles sont dans les données (primes des objectifs actives,
+        /// compétences du chauffeur actives), comparées aux mêmes données sans compétences : 200 carrières sans trafic
+        /// (14 et 45 jours), 15 avec le trafic (14 jours). Niveau de négociation atteint en fin d'horizon. Rapport :
+        /// equilibrage/decisions-23-11.md.
+        /// </summary>
+        [Test, Explicit("Long : lancer à la demande"), Category("Equilibrage")]
+        public void Decisions2311_Report()
+        {
+            var current = Current(GameData.Load());
+            var sb = new StringBuilder();
+            sb.AppendLine("| Données | Cas | Horizon | Prime moyenne / jour | Versement atteint (journée seule) | Avec la prime | Renvoyé à l'horizon | Épargne à 7 j (moy. / méd.) |");
+            sb.AppendLine("|---|---|---|---|---|---|---|---|");
+            foreach (var skills in new[] { false, true })
+            foreach (var (name, withCity, careers, horizons) in new[]
+                     {
+                         ("sans trafic", false, 200, new[] { Horizon, 45 }),
+                         ("avec trafic", true, 15, new[] { Horizon }),
+                     })
+            foreach (var horizon in horizons)
+            {
+                var data = BalanceStudy.WithSkills(GameData.Load(withWorld: withCity), skills);
+                var r = BalanceStudy.RunCareers(data, current.ConsumptionScale, 1f, new[] { current.Versement }, careers, horizon, new AveragePlayer { WithCity = withCity })[0];
+                var line = $"| primes{(skills ? " + compétences" : "")} | {name}, {careers} carrières | {horizon} j | {BalanceStudy.Money(r.MeanBonus)} | {BalanceStudy.Pct(r.ReachedShare)} | " +
+                           $"{BalanceStudy.Pct(r.ReachedWithBonusShare)} | {BalanceStudy.Pct(r.FiredByHorizon)} | {BalanceStudy.Money(r.MeanSavings7)} / {BalanceStudy.Money(r.MedianSavings7)} |";
+                sb.AppendLine(line);
+                TestContext.Progress.WriteLine(line);
+            }
+            // Progression des compétences d'un chauffeur moyen (sans trafic, 20 carrières).
+            foreach (var horizon in new[] { Horizon, 45 })
+            {
+                var data = BalanceStudy.WithSkills(GameData.Load(), true);
+                var levels = new List<string>();
+                double neg = 0, end = 0, sc = 0;
+                for (var k = 0; k < 20; k++)
+                {
+                    var carry = new CareerCarry();
+                    for (var d = 0; d < horizon; d++) StudyDayPlayer.Play(data, current, new AveragePlayer(), carry, 900000 + 1000 * k + d);
+                    neg += carry.Skills.Level(Career.DriverSkills.Negotiation);
+                    end += carry.Skills.Level(Career.DriverSkills.Endurance);
+                    sc += carry.Skills.Level(Career.DriverSkills.Shortcuts);
+                }
+                var l = $"Niveaux moyens après {horizon} jours : négociation {BalanceStudy.Num(neg / 20)}, endurance {BalanceStudy.Num(end / 20)}, raccourcis {BalanceStudy.Num(sc / 20)}.";
+                sb.AppendLine().AppendLine(l);
+                TestContext.Progress.WriteLine(l);
+            }
+            Write("decisions-23-11.md", sb.ToString());
             TestContext.WriteLine(sb.ToString());
         }
 

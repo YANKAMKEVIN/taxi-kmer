@@ -1,9 +1,9 @@
 {
-    "_note": "Petits objectifs du jour (idée n° 25, proposés par Claude) : minPerDay à maxPerDay défis tirés le matin (même jour = même tirage) parmi goals. kind : courses-avant (count courses payées avant beforeTime), zero-controle-paye, recette (amount FCFA), zero-accrochage, taxi-plein (count passagers à bord). reward = prime proposée (FCFA) ; rewardsEnabled = false tant que Kevin n'a pas tranché les récompenses (pas d'effet sur l'équilibrage).",
+    "_note": "Petits objectifs du jour (idée n° 25, proposés par Claude) : minPerDay à maxPerDay défis tirés le matin (même jour = même tirage) parmi goals. kind : courses-avant (count courses payées avant beforeTime), zero-controle-paye, recette (amount FCFA), zero-accrochage, taxi-plein (count passagers à bord). reward = prime (FCFA) versée sur l'épargne au bilan. Primes ACTIVÉES par Kevin le 23/11 au soir, montants fixés d'après l'étude (docs/tech/equilibrage.md, « Primes des objectifs du jour ») : plus l'objectif est rare, plus il paie (réussite : matinal 23 %, honnête 17 %, recette 96 %, prudent 75 %, plein 99 %).",
     "enabled": true,
     "minPerDay": 1,
     "maxPerDay": 3,
-    "rewardsEnabled": false,
+    "rewardsEnabled": true,
     "goals": [
         {
             "id": "matinal",
@@ -12,7 +12,7 @@
             "count": 3,
             "beforeTime": "08:00",
             "amount": 0,
-            "reward": 200
+            "reward": 400
         },
         {
             "id": "honnete",
@@ -21,7 +21,7 @@
             "count": 0,
             "beforeTime": "",
             "amount": 0,
-            "reward": 200
+            "reward": 500
         },
         {
             "id": "bonne-recette",
@@ -30,7 +30,7 @@
             "count": 0,
             "beforeTime": "",
             "amount": 12000,
-            "reward": 300
+            "reward": 100
         },
         {
             "id": "prudent",
@@ -48,7 +48,7 @@
             "count": 5,
             "beforeTime": "",
             "amount": 0,
-            "reward": 200
+            "reward": 100
         }
     ]
 }

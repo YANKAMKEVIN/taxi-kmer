@@ -63,9 +63,10 @@ namespace TaxiKmer.Core.Tests
             goals.EndDay();
             Assert.AreEqual(500, goals.Reward);
             Assert.AreEqual("Faire 5 000 FCFA", goals.Goals[0].Label);
-            var noReward = new DailyGoals(new DailyGoalsConfig { goals = new[] { new GoalData { kind = GoalKinds.NoCrash, reward = 200 } }, minPerDay = 1, maxPerDay = 1 }, 1, 1);
+            var noReward = new DailyGoals(new DailyGoalsConfig { goals = new[] { new GoalData { kind = GoalKinds.NoCrash, reward = 200 } }, minPerDay = 1, maxPerDay = 1, rewardsEnabled = false }, 1, 1);
             noReward.EndDay();
-            Assert.AreEqual(0, noReward.Reward, "rewardsEnabled = false par défaut");
+            Assert.AreEqual(0, noReward.Reward, "primes coupées");
+            Assert.IsTrue(new DailyGoalsConfig().rewardsEnabled, "primes activées par Kevin le 23/11 au soir");
         }
 
         [Test]
