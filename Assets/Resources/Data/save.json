@@ -1,6 +1,7 @@
 {
-    "_note": "Sauvegarde (jalon 3, partie technique ; valeurs par défaut). autosaveSeconds : sauvegarde de la journée en cours toutes les N secondes réelles (0 = jamais) ; saveOnPause : aussi quand l'appli passe en arrière-plan ou se ferme ; resumeOnStart : reprendre la journée au lancement (coupé tant que le jalon 3 n'est pas validé).",
+    "_note": "Sauvegarde (jalon 3, partie technique ; valeurs par défaut). autosaveSeconds : sauvegarde de la journée en cours toutes les N secondes réelles (0 = jamais) ; saveOnPause : aussi quand l'appli passe en arrière-plan ou se ferme ; resumeOnStart : reprendre la journée au lancement (coupé tant que le jalon 3 n'est pas validé) ; recordReplay : enregistrer la journée pour la rejouer à l'identique (idée n° 37, fichier rejeux/rejeu-jour-N.json, à joindre à un signalement de bug).",
     "autosaveSeconds": 30,
     "saveOnPause": true,
-    "resumeOnStart": false
+    "resumeOnStart": false,
+    "recordReplay": false
 }

@@ -98,7 +98,7 @@ namespace TaxiKmer.Core.DotnetTests
                 if (pair.Value == null)
                 {
                     // save.json est lu par SaveService (côté Unity) : SaveConfig.
-                    var known = new HashSet<string> { "_note", "autosaveSeconds", "saveOnPause", "resumeOnStart" };
+                    var known = new HashSet<string> { "_note", "autosaveSeconds", "saveOnPause", "resumeOnStart", "recordReplay" };
                     foreach (var p in doc.RootElement.EnumerateObject()) Assert.IsTrue(known.Contains(p.Name), $"{pair.Key} : clé inconnue « {p.Name} »");
                     continue;
                 }

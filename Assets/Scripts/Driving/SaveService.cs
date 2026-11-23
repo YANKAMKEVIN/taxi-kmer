@@ -22,6 +22,11 @@ namespace TaxiKmer.Driving
         /// risqué, validé seul) : les sauvegardes s'écrivent, mais ne se relisent pas encore au lancement.
         /// </summary>
         public bool resumeOnStart;
+        /// <summary>
+        /// Enregistrer chaque journée pour la rejouer (idée n° 37) : fichier rejeux/rejeu-jour-N.json dans le dossier de
+        /// l'appli, à joindre à un signalement de bug. Coupé par défaut (fichier de quelques Mo par journée).
+        /// </summary>
+        public bool recordReplay;
     }
 
     /// <summary>JsonUtility pour la sauvegarde.</summary>

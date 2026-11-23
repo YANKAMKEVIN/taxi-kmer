@@ -93,6 +93,8 @@ namespace TaxiKmer.Driving
         // Textes de l'interface (ui_texts.json, idée n° 32).
         private UiTextsConfig _texts = new UiTextsConfig();
         private PhotoModeView _photo;
+        // Enregistrement de la journée pour la rejouer (save.json → recordReplay, idée n° 37).
+        private DayRecorder _recorder;
         // Petits objectifs du jour (goals.json, idée n° 25).
         private DailyGoals _goals;
         // Vendeurs ambulants aux feux (vendors.json, idée n° 24).
@@ -209,6 +211,7 @@ namespace TaxiKmer.Driving
             Save.street = this;
             Save.taxi = taxi;
             Save.Initialize(actualSeed, Load("Data/save", new SaveConfig()), Load("Data/owner", new Core.Career.OwnerConfig()));
+            if (Save.Config != null && Save.Config.recordReplay) _recorder = new DayRecorder(actualSeed, Save.Career.DayNumber);
             // Calendrier : le jour de la semaine règle les clients et le trafic (dimanche plus calme, jours de marché).
             _calendar = new Calendar(Load("Data/calendar", new CalendarConfig()));
             Today = _calendar.For(Save.Career.DayNumber);
@@ -368,6 +371,25 @@ namespace TaxiKmer.Driving
             };
         }
 
+        /// <summary>Écrit la journée enregistrée (idée n° 37) à côté de la sauvegarde ; une erreur n'arrête pas le bilan.</summary>
+        private void WriteReplay()
+        {
+            if (_recorder == null) return;
+            try
+            {
+                var dir = System.IO.Path.Combine(Application.persistentDataPath, "rejeux");
+                System.IO.Directory.CreateDirectory(dir);
+                var path = System.IO.Path.Combine(dir, $"rejeu-jour-{Save.Career.DayNumber - 1}.json");
+                System.IO.File.WriteAllText(path, JsonUtility.ToJson(_recorder.Data()));
+                Debug.Log($"[TaxiKmer] Journée enregistrée pour rejeu : {path} ({_recorder.Frames} images).");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[TaxiKmer] Rejeu non écrit : {e.Message}");
+            }
+            _recorder = null;
+        }
+
         /// <summary>Le monde est construit : vues qui ont besoin de ses maillages (lampadaires, chaussées).</summary>
         private void OnWorldReady()
         {
@@ -412,6 +434,7 @@ namespace TaxiKmer.Driving
 
             var state = TaxiState();
             Street.Update(dt, state);
+            _recorder?.Frame(dt, state, taxi.Controls, !Street.DayFinished && !_menu.Frozen);
             ApplyTrafficScale();
             if (!_cityPopulated)
             {
@@ -653,6 +676,7 @@ namespace TaxiKmer.Driving
 
         private void OnHonk(TaxiOnRoute state)
         {
+            _recorder?.Event(ReplayEvents.Honk);
             City.Traffic.Honk(PlayerState()); // idée n° 15 : la voiture de devant se range
             var result = Street.Honk(state, out var client);
             if ((result == HonkResult.Accepted || result == HonkResult.AcceptedNeedsMove) && Street.PendingHaggle == null)
@@ -730,6 +754,7 @@ namespace TaxiKmer.Driving
 
         private void OnAction(TaxiOnRoute state)
         {
+            _recorder?.Event(ReplayEvents.Action);
             var candidate = Street.AvailableAction(state).Client;
             var outcome = Street.Perform(state);
             switch (outcome.Kind)
@@ -816,6 +841,7 @@ namespace TaxiKmer.Driving
             _goals?.EndDay();
             if (_goals != null && _goals.Reward > 0) Save.Career.AddBonus(_goals.Reward); // prime, si Kevin l'active
             var closure = Save.CloseDay();
+            WriteReplay();
             _summaryView = gameObject.AddComponent<DaySummaryView>();
             var reputation = Street.Reputation != null && Street.Reputation.Visible
                 ? Core.Career.DriverReputation.SummaryLine(Street.Reputation.Config, Street.Summary.Reputation, Street.Summary.ReputationChange) : "";
