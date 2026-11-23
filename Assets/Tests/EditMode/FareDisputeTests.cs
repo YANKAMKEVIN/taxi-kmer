@@ -175,6 +175,33 @@ namespace TaxiKmer.Core.Tests
             Assert.AreEqual(c2.Client.ProposedFare, other.Summary.UnpaidFares);
         }
 
+        /// <summary>
+        /// Décision de Kevin (23/11) : « Terminer la journée » depuis la pause est refusé tant qu'un choix attend (ici le
+        /// passager qui refuse de payer) ; une fois la réponse donnée, la fin de journée est possible.
+        /// </summary>
+        [Test]
+        public void EndDay_RefusedWhileAPassengerRefusesToPay()
+        {
+            var street = NewStreet(new FareDisputeRules { RefusesToPayChance = 1f, PolicePayChance = 1f, PoliceMinutes = 30 });
+            var c = AcceptOne(street, out var stopped);
+            street.Perform(stopped);
+            var dest = new TaxiOnRoute { Along = street.FindStop(c.Client.DestinationStopId).distanceAlongRouteMeters, Direction = 1, Lateral = 2f };
+            Assert.IsNotNull(street.Perform(dest).Refusal);
+            var menu = new TaxiKmer.Core.Ux.GameMenu(false);
+            menu.Pause();
+            var pending = TaxiKmer.Core.Ux.PendingChoices.Of(street, dest);
+            Assert.IsTrue(pending.Refusal);
+            Assert.IsFalse(menu.EndDay(pending), "Refus de payer en attente : la journée ne se termine pas.");
+            Assert.AreEqual(TaxiKmer.Core.Ux.MenuScreen.Pause, menu.Screen, "La pause reste ouverte.");
+            Assert.AreEqual("Règle d'abord le passager qui refuse de payer avant de terminer la journée", TaxiKmer.Core.Ux.GameMenu.EndDayLabel(0, pending));
+            street.ResolveRefusal(true);
+            pending = TaxiKmer.Core.Ux.PendingChoices.Of(street, dest);
+            Assert.IsFalse(pending.Any);
+            Assert.IsTrue(menu.EndDay(pending));
+            street.EndDayNow();
+            Assert.AreEqual(c.Client.ProposedFare, street.Summary.Revenue, "La course payée grâce à la police est dans le bilan.");
+        }
+
         [Test]
         public void Replies_ChangeReputation_AndPromiseATipPaidWithTheFare()
         {

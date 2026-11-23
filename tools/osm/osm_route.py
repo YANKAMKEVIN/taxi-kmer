@@ -114,7 +114,10 @@ def plan(world: dict, landmarks: list[dict], corridor: float):
     for lm, wp in zip(landmarks, waypoints):
         i = nodes.index(wp, search_from)
         search_from = i
-        stops.append({"id": lm["id"], "name": lm["name"], "distanceAlongRouteMeters": int(round(cumulative[i]))})
+        stop = {"id": lm["id"], "name": lm["name"], "distanceAlongRouteMeters": int(round(cumulative[i]))}
+        if "spoken" in lm:  # forme parlée du lieu dans les répliques (« au dispensaire de Messassi »)
+            stop["spoken"] = lm["spoken"]
+        stops.append(stop)
 
     # Couloir : un point tous les ~25 m de l'itinéraire, pour tester vite la proximité.
     samples = [line[0]]
@@ -176,7 +179,7 @@ def main(argv=None) -> int:
     stops, out_world = plan(world, landmarks, args.corridor)
     mince, normal, costaud = (int(v) for v in args.weights.split(","))
     with open(args.stops, "w", encoding="utf-8") as f:
-        json.dump({"_note": "Généré par tools/osm/osm_route.py : distances mesurées le long de l'itinéraire OSM.",
+        json.dump({"_note": "Généré par tools/osm/osm_route.py : distances mesurées le long de l'itinéraire OSM. spoken : forme parlée du lieu dans les répliques (« au dispensaire de Messassi »), décision de Kevin du 23/11 ; formes proposées par Claude, à valider ; recopiée de tools/osm/landmarks_messassi_etoudi.json.",
                    "stops": stops, "minceWeight": mince, "normalWeight": normal, "costaudWeight": costaud},
                   f, ensure_ascii=False, indent=4)
     with open(args.world, "w", encoding="utf-8") as f:

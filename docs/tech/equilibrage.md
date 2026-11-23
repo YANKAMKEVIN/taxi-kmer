@@ -321,8 +321,12 @@ de départ : réservoir de 12 L, réputation 50, taxi neuf.
 **Graines fixes** : carrière k, jour d → graine 1 000 003 + 1 000 × k + d (clients, disputes, route, police,
 accrochages) ; calcul parallèle mais déterministe (test `SameSeed_SameCareer`).
 
-**Pas simulé** : piétons renversés (le joueur moyen n'en renverse pas), répliques des passagers (pourboires et
-réputation des réponses), feux et ralentissements (inclus dans la vitesse moyenne), conduite gênée par le trafic (le
+**Pourboires** (décision de Kevin du 23/11 : rares et petits, 100 à 200 FCFA sur 6 réponses) : chaque passager qui
+monte dit une réplique à réponses et le joueur moyen répond au hasard (hypothèse généreuse, `AveragePlayer.AnswersPassengers`) ;
+≈ 70 FCFA par jour en moyenne (200 FCFA sur 3 jours et 60 courses), versement atteint 69 % (inchangé), renvoyés en
+14 jours 8 % au lieu de 10 % (garde-fou `GameData_KeepsTheChosenBalance`).
+
+**Pas simulé** : piétons renversés (le joueur moyen n'en renverse pas), réputation des réponses aux passagers, feux et ralentissements (inclus dans la vitesse moyenne), conduite gênée par le trafic (le
 trafic évite le taxi, pas l'inverse), contacts de police (jalon 7, coupé), foyer et charges (jalon 8).
 
 ## Points relevés pour Kevin (pendant l'étude)

@@ -1,35 +1,71 @@
 {
-    "_note": "Généré par tools/osm/osm_route.py : distances mesurées le long de l'itinéraire OSM.",
+    "_note": "Généré par tools/osm/osm_route.py : distances mesurées le long de l'itinéraire OSM. spoken : forme parlée du lieu dans les répliques (« au dispensaire de Messassi »), décision de Kevin du 23/11 ; formes proposées par Claude, à valider ; recopiée de tools/osm/landmarks_messassi_etoudi.json.",
     "stops": [
         {
             "id": "dispensaire-messassi",
             "name": "Dispensaire de Messassi",
-            "distanceAlongRouteMeters": 0
+            "distanceAlongRouteMeters": 0,
+            "spoken": {
+                "name": "le dispensaire de Messassi",
+                "at": "au dispensaire de Messassi",
+                "of": "du dispensaire de Messassi",
+                "bare": "Dispensaire Messassi"
+            }
         },
         {
             "id": "marche-messassi",
             "name": "Carrefour / marché de Messassi",
-            "distanceAlongRouteMeters": 631
+            "distanceAlongRouteMeters": 631,
+            "spoken": {
+                "name": "le carrefour Messassi",
+                "at": "au carrefour Messassi",
+                "of": "du carrefour Messassi",
+                "bare": "Carrefour Messassi"
+            }
         },
         {
             "id": "pont-emana",
             "name": "Pont d'Emana",
-            "distanceAlongRouteMeters": 1567
+            "distanceAlongRouteMeters": 1567,
+            "spoken": {
+                "name": "le pont d'Emana",
+                "at": "au pont d'Emana",
+                "of": "du pont d'Emana",
+                "bare": "Pont d'Emana"
+            }
         },
         {
             "id": "emana",
             "name": "Emana",
-            "distanceAlongRouteMeters": 2154
+            "distanceAlongRouteMeters": 2154,
+            "spoken": {
+                "name": "Emana",
+                "at": "à Emana",
+                "of": "d'Emana",
+                "bare": "Emana"
+            }
         },
         {
             "id": "borne-fontaine",
             "name": "Borne Fontaine",
-            "distanceAlongRouteMeters": 2948
+            "distanceAlongRouteMeters": 2948,
+            "spoken": {
+                "name": "Borne Fontaine",
+                "at": "à Borne Fontaine",
+                "of": "de Borne Fontaine",
+                "bare": "Borne Fontaine"
+            }
         },
         {
             "id": "etoudi",
             "name": "Étoudi (devant le palais de la présidence)",
-            "distanceAlongRouteMeters": 6132
+            "distanceAlongRouteMeters": 6132,
+            "spoken": {
+                "name": "Étoudi",
+                "at": "à Étoudi",
+                "of": "d'Étoudi",
+                "bare": "Étoudi"
+            }
         }
     ],
     "minceWeight": 30,

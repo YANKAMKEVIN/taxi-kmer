@@ -59,6 +59,36 @@ namespace TaxiKmer.Core.Tests
         }
 
         [Test]
+        public void EndDay_RefusedWhileAChoiceIsPending_WithAClearMessage()
+        {
+            // Décision de Kevin (23/11) : contrôle de police, accrochage, négociation… d'abord.
+            var cases = new (PendingChoices pending, string what)[]
+            {
+                (new PendingChoices { PoliceControl = true }, "le contrôle de police"),
+                (new PendingChoices { Crash = true }, "l'accrochage"),
+                (new PendingChoices { Haggle = true }, "la négociation du client"),
+                (new PendingChoices { Refusal = true }, "le passager qui refuse de payer"),
+                (new PendingChoices { DryTank = true }, "la panne sèche"),
+                (new PendingChoices { FlatTyre = true }, "la crevaison"),
+                (new PendingChoices { BrokenDown = true }, "la panne"),
+            };
+            foreach (var (pending, what) in cases)
+            {
+                var m = new GameMenu(false);
+                m.Pause();
+                Assert.IsFalse(m.EndDay(pending), what);
+                Assert.AreEqual(MenuScreen.Pause, m.Screen, $"{what} : la pause reste ouverte");
+                Assert.AreEqual($"Règle d'abord {what} avant de terminer la journée", GameMenu.EndDayRefusal(pending));
+                Assert.AreEqual(GameMenu.EndDayRefusal(pending), GameMenu.EndDayLabel(2, pending), "Le bouton dit quoi régler d'abord.");
+            }
+            Assert.AreEqual("", GameMenu.EndDayRefusal(default));
+            var ok = new GameMenu(false);
+            ok.Pause();
+            Assert.IsTrue(ok.EndDay(new PendingChoices()), "Rien en attente : la journée se termine.");
+            Assert.AreEqual("le contrôle de police", new PendingChoices { PoliceControl = true, Haggle = true }.What, "Le plus urgent d'abord.");
+        }
+
+        [Test]
         public void Volume_ClampsAndSteps()
         {
             var s = new GameSettings();

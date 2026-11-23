@@ -1,6 +1,7 @@
 using TaxiKmer.Core.Day;
 using TaxiKmer.Core.Rides;
 using TaxiKmer.Core.Road;
+using TaxiKmer.Core.Ux;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,7 +10,7 @@ namespace TaxiKmer.Driving
     /// <summary>
     /// La route est dure (jalon 6, activé le 21/11 ; affichage minimal) : nids-de-poule, crevaisons et pannes sur le trajet
     /// du taxi, pluie selon la saison (clients plus nombreux et moins patients, trafic plus dense), boutons « Changer la
-    /// roue » (touche W) et « Appeler un mécanicien » (touche M) payés par le chauffeur. Toute la règle est dans
+    /// roue » (touche J) et « Appeler un mécanicien » (touche M) payés par le chauffeur. Toute la règle est dans
     /// <see cref="RoadDay"/>. Créé par <see cref="StreetView"/> seulement si road.json a enabled = true. Accrochages avec
     /// le trafic (<see cref="ReportCrash"/>, appelé par StreetView quand le taxi heurte un véhicule) : deux boutons au
     /// milieu de l'écran, « S'arrêter » / « Partir » (touches K et X) si le joueur est fautif, « Poursuivre » / « Laisser »
@@ -84,7 +85,7 @@ namespace TaxiKmer.Driving
                 UiKit.PlaceTopCenter(_spare.rectTransform, h * 0.42f, h * 0.6f, h * 0.1f);
                 _spareText.fontSize = Mathf.RoundToInt(h * 0.03f);
                 _spareText.text = Road.SpareWheelButton;
-                if (UiKit.Tapped(_spare.rectTransform) || UnityEngine.Input.GetKeyDown(KeyCode.W))
+                if (UiKit.Tapped(_spare.rectTransform) || UiKit.KeyDown(KeyAction.SpareWheel))
                     if (Road.FitSpareWheel(shift)) message = "Roue changée : on repart";
             }
             if (broken)
@@ -92,7 +93,7 @@ namespace TaxiKmer.Driving
                 UiKit.PlaceTopCenter(_mechanic.rectTransform, h * 0.42f, h * 0.7f, h * 0.1f);
                 _mechanicText.fontSize = Mathf.RoundToInt(h * 0.03f);
                 _mechanicText.text = $"Appeler un mécanicien ({DaySummary.Money(Road.MechanicQuote())})";
-                if (UiKit.Tapped(_mechanic.rectTransform) || UnityEngine.Input.GetKeyDown(KeyCode.M))
+                if (UiKit.Tapped(_mechanic.rectTransform) || UiKit.KeyDown(KeyAction.CallMechanic))
                 {
                     var paid = Road.CallMechanic(shift);
                     if (paid > 0) message = $"Le mécanicien a réparé : {DaySummary.Money(paid)}";
@@ -126,9 +127,9 @@ namespace TaxiKmer.Driving
             _crashNoText.text = atFault ? "Partir" : "Laisser filer";
 
             var said = "";
-            if (UiKit.Tapped(_crashYes.rectTransform) || UnityEngine.Input.GetKeyDown(KeyCode.K))
+            if (UiKit.Tapped(_crashYes.rectTransform) || UiKit.KeyDown(KeyAction.CrashYes))
                 said = atFault ? Crash.Stop(street) : Crash.Chase(street);
-            else if (UiKit.Tapped(_crashNo.rectTransform) || UnityEngine.Input.GetKeyDown(KeyCode.X))
+            else if (UiKit.Tapped(_crashNo.rectTransform) || UiKit.KeyDown(KeyAction.CrashNo))
                 said = atFault ? Crash.Flee(street) : Crash.LetGo(street);
             else
                 said = Crash.Tick(street, Time.deltaTime, state.SpeedKmh);

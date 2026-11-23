@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using TaxiKmer.Core.Day;
 using TaxiKmer.Core.Rides;
 using TaxiKmer.Core.Talk;
+using TaxiKmer.Core.Ux;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -64,17 +65,12 @@ namespace TaxiKmer.Driving
         /// <param name="values">Valeurs que la réplique peut citer (destination, prix, offre : <see cref="TalkValues"/>).</param>
         public void Say(string trigger, string passengerId = "", IDictionary<string, string> values = null) => Director.Trigger(trigger, passengerId ?? "", "", values);
 
-        /// <summary>Valeurs d'une course pour les répliques : destination (nom court) et prix, plus la contre-offre si elle existe.</summary>
-        public static Dictionary<string, string> RideValues(Street street, string destinationStopId, int fare, int offer = 0)
-        {
-            var values = new Dictionary<string, string>();
-            var stop = street.FindStop(destinationStopId);
-            if (stop != null || !string.IsNullOrEmpty(destinationStopId))
-                values[TalkValues.Destination] = TaxiKmer.Core.Ux.StopNames.Short(stop?.name ?? destinationStopId);
-            if (fare > 0) values[TalkValues.Price] = TalkValues.Amount(fare);
-            if (offer > 0) values[TalkValues.Offer] = TalkValues.Amount(offer);
-            return values;
-        }
+        /// <summary>
+        /// Valeurs d'une course pour les répliques : destination sous ses formes parlées (« au dispensaire de Messassi »,
+        /// décision de Kevin du 23/11) et prix, plus la contre-offre si elle existe (<see cref="TalkValues.ForRide"/>).
+        /// </summary>
+        public static Dictionary<string, string> RideValues(Street street, string destinationStopId, int fare, int offer = 0) =>
+            TalkValues.ForRide(street.FindStop(destinationStopId), destinationStopId, fare, offer);
 
         /// <summary>Un passager à bord, n'importe lequel (pour panne, contrôle, pluie).</summary>
         public static string AnyPassenger(Street street)
@@ -91,6 +87,7 @@ namespace TaxiKmer.Driving
             var ids = new List<string>();
             foreach (var p in cabin.Passengers) ids.Add(p.Id);
             Director.SetPassengers(ids);
+            Director.MinuteOfDay = street.Shift.Clock.GameMinutes; // répliques liées à l'heure (« Bonsoir » le soir)
 
             if (driving && !street.DayFinished)
             {
@@ -134,8 +131,8 @@ namespace TaxiKmer.Driving
                 _disputeText.text = $"Le passager refuse de payer {DaySummary.Money(r.Fare)}.";
                 _yesText.text = "Laisser partir";
                 _noText.text = "Appeler la police";
-                if (UiKit.Tapped(_yes.rectTransform) || UnityEngine.Input.GetKeyDown(KeyCode.L)) { street.ResolveRefusal(false); return "Il part sans payer."; }
-                if (UiKit.Tapped(_no.rectTransform) || UnityEngine.Input.GetKeyDown(KeyCode.P))
+                if (UiKit.Tapped(_yes.rectTransform) || UiKit.KeyDown(KeyAction.RefusalLetGo)) { street.ResolveRefusal(false); return "Il part sans payer."; }
+                if (UiKit.Tapped(_no.rectTransform) || UiKit.KeyDown(KeyAction.RefusalCallPolice))
                 {
                     var o = street.ResolveRefusal(true);
                     return o.Paid ? $"La police est venue : il a payé {DaySummary.Money(o.Amount)}." : "La police est venue, mais il n'a rien payé.";
@@ -147,8 +144,8 @@ namespace TaxiKmer.Driving
             _disputeText.text = $"Le client propose {DaySummary.Money(h.Offer)} au lieu de {DaySummary.Money(h.Asked)}.";
             _yesText.text = "Accepter";
             _noText.text = "Refuser";
-            if (UiKit.Tapped(_yes.rectTransform) || UnityEngine.Input.GetKeyDown(KeyCode.O)) { street.AnswerHaggle(true); return $"D'accord pour {DaySummary.Money(h.Offer)}."; }
-            if (UiKit.Tapped(_no.rectTransform) || UnityEngine.Input.GetKeyDown(KeyCode.N)) { street.AnswerHaggle(false); return "Refusé : il attend un autre taxi."; }
+            if (UiKit.Tapped(_yes.rectTransform) || UiKit.KeyDown(KeyAction.HaggleAccept)) { street.AnswerHaggle(true); return $"D'accord pour {DaySummary.Money(h.Offer)}."; }
+            if (UiKit.Tapped(_no.rectTransform) || UiKit.KeyDown(KeyAction.HaggleRefuse)) { street.AnswerHaggle(false); return "Refusé : il attend un autre taxi."; }
             return "";
         }
 
@@ -178,7 +175,7 @@ namespace TaxiKmer.Driving
                 var bw = w * 0.31f;
                 UiKit.PlaceTopCenter(_replies[i].rectTransform, h * 0.1f, bw, h * 0.08f);
                 _replies[i].rectTransform.anchoredPosition = new Vector2((i - (replies.Length - 1) * 0.5f) * (bw + w * 0.02f), -h * 0.1f);
-                if (UiKit.Tapped(_replies[i].rectTransform) || UnityEngine.Input.GetKeyDown(KeyCode.F1 + i)) Director.Answer(replies[i].id);
+                if (UiKit.Tapped(_replies[i].rectTransform) || UiKit.KeyDown(KeyAction.Reply1 + i)) Director.Answer(replies[i].id);
             }
         }
 

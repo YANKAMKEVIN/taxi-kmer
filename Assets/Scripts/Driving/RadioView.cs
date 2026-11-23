@@ -1,4 +1,5 @@
 using TaxiKmer.Core.Radio;
+using TaxiKmer.Core.Ux;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -6,7 +7,7 @@ namespace TaxiKmer.Driving
 {
     /// <summary>
     /// Radio du taxi à l'écran (affichage minimal) : un bouton en haut à droite, sous les jauges, qui fait défiler
-    /// « Radio coupée » → station 1 → station 2 → … (touche N au clavier), et une source audio sur le taxi qui joue la
+    /// « Radio coupée » → station 1 → station 2 → … (touche B au clavier, KeyMap), et une source audio sur le taxi qui joue la
     /// piste en cours si un son est fourni (Resources), muette sinon. Toute la règle est dans <see cref="CarRadio"/>.
     /// Créé par <see cref="StreetView"/> seulement si radio.json a enabled = true. Non exécuté dans Unity (session cloud).
     /// </summary>
@@ -43,7 +44,7 @@ namespace TaxiKmer.Driving
             Radio.Update(dt);
 
             _button.gameObject.SetActive(inTaxi);
-            if (inTaxi && (UiKit.Tapped(_button.rectTransform) || UnityEngine.Input.GetKeyDown(KeyCode.N))) Radio.NextStation();
+            if (inTaxi && (UiKit.Tapped(_button.rectTransform) || UiKit.KeyDown(KeyAction.Radio))) Radio.NextStation();
 
             var h = Screen.height;
             var r = _button.rectTransform;

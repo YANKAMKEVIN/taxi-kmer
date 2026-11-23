@@ -101,6 +101,25 @@ namespace TaxiKmer.Core.DotnetTests
             Assert.That(r.FiredByHorizon, Is.LessThanOrEqualTo(0.3));
         }
 
+        /// <summary>
+        /// Pourboires rares et petits (décision de Kevin du 23/11, 100 à 200 FCFA sur quelques réponses) : le joueur moyen
+        /// qui répond à une bulle par passager en reçoit un peu, sans changer l'équilibre (une petite part des recettes).
+        /// </summary>
+        [Test]
+        public void Tips_AreRareAndSmall()
+        {
+            var data = GameData.Load();
+            var days = BalanceStudy.PlayCareer(data, Current(data), new AveragePlayer(), 3, 14);
+            var tips = days.Sum(d => d.TipsPromised);
+            var revenue = days.Sum(d => d.Summary.Revenue);
+            var rides = days.Sum(d => d.Summary.RideCount);
+            TestContext.WriteLine($"{days.Length} jours : {rides} courses, pourboires {tips} FCFA ({tips / (double)days.Length:0} par jour), recettes {revenue} FCFA");
+            Assert.Greater(tips, 0, "Quelques pourboires en 14 jours.");
+            Assert.LessOrEqual(tips * 100, revenue * 3, "Les pourboires restent sous 3 % des recettes.");
+            var off = BalanceStudy.PlayCareer(data, Current(data), new AveragePlayer { AnswersPassengers = false }, 3, 14);
+            Assert.AreEqual(0, off.Sum(d => d.TipsPromised), "Sans réponse, pas de pourboire.");
+        }
+
         [Test]
         public void LessFuel_HigherPrices_LowerVersement_AreEasier()
         {

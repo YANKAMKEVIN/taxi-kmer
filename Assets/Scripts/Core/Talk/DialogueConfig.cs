@@ -116,6 +116,36 @@ namespace TaxiKmer.Core.Talk
         public string statut = "";
         /// <summary>« à traduire » : écrite en français faute de tournure sûre dans le registre visé.</summary>
         public string traduction = "";
+        /// <summary>
+        /// Plage horaire (décision de Kevin, 23/11) : la réplique n'est dite qu'à partir de <see cref="fromTime"/> et
+        /// avant <see cref="untilTime"/> (« HH:MM » ; « Bonsoir » le soir, « Bonjour » le matin). Vide : à toute heure.
+        /// Une plage qui passe minuit (« 22:00 » → « 05:00 ») est permise.
+        /// </summary>
+        public string fromTime = "";
+        public string untilTime = "";
+
+        /// <summary>La réplique peut être dite à cette heure (minutes depuis minuit ; négatif : heure inconnue, toujours vrai).</summary>
+        public bool SaidAt(int minuteOfDay)
+        {
+            if (minuteOfDay < 0) return true;
+            var from = ParseTime(fromTime);
+            var until = ParseTime(untilTime);
+            if (from < 0 && until < 0) return true;
+            if (from < 0) from = 0;
+            if (until < 0) until = 24 * 60;
+            var m = minuteOfDay % (24 * 60);
+            return from <= until ? m >= from && m < until : m >= from || m < until;
+        }
+
+        /// <summary>« 07:30 » → 450 ; « 24:00 » → 1440 ; vide ou illisible → -1.</summary>
+        public static int ParseTime(string hhmm)
+        {
+            if (string.IsNullOrEmpty(hhmm)) return -1;
+            var parts = hhmm.Split(':');
+            if (parts.Length != 2 || !int.TryParse(parts[0], out var h) || !int.TryParse(parts[1], out var mn)) return -1;
+            if (h < 0 || mn < 0 || mn > 59 || h * 60 + mn > 24 * 60) return -1;
+            return h * 60 + mn;
+        }
     }
 
     /// <summary>

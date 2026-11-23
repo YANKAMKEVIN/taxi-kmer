@@ -306,8 +306,9 @@ namespace TaxiKmer.Driving
 
             // Menu d'abord : la touche qui ouvre la pause ne doit pas la refermer dans la même image.
             // Le bilan passe devant tout (l'écran titre ne reste pas affiché par-dessus).
+            var pending = _menu.Screen == MenuScreen.Pause && !Street.DayFinished ? CurrentPendingChoices() : default; // seulement en pause (projection du taxi)
             ApplyMenu(_menuView.Update(Street.DayFinished ? MenuScreen.None : _menu.Screen, _settings, shift.Cabin.PassengerCount,
-                _police != null ? _police.Police.Papers.Summary(_police.Police.Day) : ""));
+                _police != null ? _police.Police.Papers.Summary(_police.Police.Day) : "", pending), pending);
             if (controls.PauseTriggered && !Street.DayFinished && _menu.Pause()) SetTimeStopped(true);
             controls.Locked = _menu.Frozen || _summaryView != null || (_police != null && _police.Active);
 
@@ -416,7 +417,15 @@ namespace TaxiKmer.Driving
             _cabinView.Update(Street.Shift.Cabin, !Street.DayFinished);
         }
 
-        private void ApplyMenu(MenuChoice choice)
+        /// <summary>
+        /// Choix qui attendent le joueur (contrôle, accrochage, négociation, refus de payer, panne sèche, crevaison, panne) :
+        /// « Terminer la journée » est refusé tant qu'il y en a un (décision de Kevin du 23/11).
+        /// </summary>
+        private PendingChoices CurrentPendingChoices() =>
+            Core.Ux.PendingChoices.Of(Street, TaxiState(), _police != null && _police.Active,
+                _road != null ? _road.Crash.Pending : Core.Road.CrashChoice.None, _road?.Road.Car);
+
+        private void ApplyMenu(MenuChoice choice, PendingChoices pending = default)
         {
             switch (choice)
             {
@@ -428,7 +437,7 @@ namespace TaxiKmer.Driving
                 case MenuChoice.OpenSettings: _menu.OpenSettings(); break;
                 case MenuChoice.CloseSettings: _menu.CloseSettings(); break;
                 case MenuChoice.EndDay:
-                    if (_menu.EndDay()) Street.EndDayNow();
+                    if (_menu.EndDay(pending)) Street.EndDayNow(); // refusé tant qu'un choix attend (le bouton dit lequel)
                     break;
                 case MenuChoice.ToggleVibration:
                     _settings.Vibration = !_settings.Vibration;
@@ -673,7 +682,7 @@ namespace TaxiKmer.Driving
 
         /// <summary>
         /// Panne sèche hors de la station : deux boutons au milieu de l'écran (le taxi est arrêté), « Pousser le taxi »
-        /// (au pas) ou « Appeler un technicien (prix, délai) » ; touches P et T au clavier. Toute la règle est dans Core.
+        /// (au pas) ou « Appeler un technicien (prix, délai) » ; touches U et T au clavier (KeyMap). Toute la règle est dans Core.
         /// </summary>
         private void UpdateDryTank(TaxiOnRoute state)
         {
@@ -694,11 +703,11 @@ namespace TaxiKmer.Driving
             _pushText.fontSize = _technicianText.fontSize = Mathf.RoundToInt(h * 0.032f);
             _technicianText.text = FuelGauge.TechnicianLabel(Street.TechnicianQuote());
 
-            if (UiKit.Tapped(_pushButton.rectTransform) || UnityEngine.Input.GetKeyDown(KeyCode.P))
+            if (UiKit.Tapped(_pushButton.rectTransform) || UiKit.KeyDown(KeyAction.PushTaxi))
             {
                 if (Street.PushTaxi()) Toast(FuelGauge.PushingMessage, 5f);
             }
-            else if (UiKit.Tapped(_technicianButton.rectTransform) || UnityEngine.Input.GetKeyDown(KeyCode.T))
+            else if (UiKit.Tapped(_technicianButton.rectTransform) || UiKit.KeyDown(KeyAction.CallTechnician))
             {
                 if (Street.CallTechnician(out var call))
                 {

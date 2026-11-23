@@ -1,5 +1,56 @@
 namespace TaxiKmer.Core.Ux
 {
+    /// <summary>
+    /// Choix qui attendent la réponse du joueur (décision de Kevin, 23/11) : tant qu'il y en a un, « Terminer la journée »
+    /// est refusé, sinon son effet (amende, dédommagement, course…) serait perdu.
+    /// </summary>
+    public struct PendingChoices
+    {
+        public bool PoliceControl;
+        /// <summary>Accrochage : s'arrêter ou partir, poursuivre ou laisser filer.</summary>
+        public bool Crash;
+        /// <summary>Contre-offre d'un client (négociation).</summary>
+        public bool Haggle;
+        /// <summary>Passager qui refuse de payer.</summary>
+        public bool Refusal;
+        /// <summary>Panne sèche : pousser ou appeler le technicien.</summary>
+        public bool DryTank;
+        /// <summary>Crevaison : changer la roue.</summary>
+        public bool FlatTyre;
+        /// <summary>Panne : appeler un mécanicien.</summary>
+        public bool BrokenDown;
+
+        /// <summary>Choix en attente lus dans la logique du jeu (la présentation ajoute le contrôle de police et l'accrochage).</summary>
+        public static PendingChoices Of(Rides.Street street, Rides.TaxiOnRoute taxi, bool policeControl = false,
+            Road.CrashChoice crash = Road.CrashChoice.None, Road.VehicleCondition car = null)
+        {
+            var finished = street == null || street.DayFinished;
+            return new PendingChoices
+            {
+                PoliceControl = policeControl && !finished,
+                Crash = crash != Road.CrashChoice.None && !finished,
+                Haggle = !finished && street.PendingHaggle != null,
+                Refusal = !finished && street.PendingRefusal != null,
+                DryTank = !finished && street.DryTankChoice(taxi),
+                FlatTyre = !finished && car != null && car.FlatTyre && !car.BrokenDown,
+                BrokenDown = !finished && car != null && car.BrokenDown,
+            };
+        }
+
+        public bool Any => PoliceControl || Crash || Haggle || Refusal || DryTank || FlatTyre || BrokenDown;
+
+        /// <summary>Ce qu'il faut régler d'abord (« le contrôle de police ») ; vide s'il n'y a rien.</summary>
+        public string What =>
+            PoliceControl ? "le contrôle de police"
+            : Crash ? "l'accrochage"
+            : Refusal ? "le passager qui refuse de payer"
+            : Haggle ? "la négociation du client"
+            : DryTank ? "la panne sèche"
+            : BrokenDown ? "la panne"
+            : FlatTyre ? "la crevaison"
+            : "";
+    }
+
     public enum MenuScreen
     {
         /// <summary>En jeu, aucun menu.</summary>
@@ -67,17 +118,29 @@ namespace TaxiKmer.Core.Ux
             if (Screen == MenuScreen.Settings) Screen = _settingsReturn;
         }
 
-        /// <summary>« Terminer la journée » dans la pause : on quitte le menu pour le bilan.</summary>
-        public bool EndDay()
+        /// <summary>
+        /// « Terminer la journée » dans la pause : on quitte le menu pour le bilan. Refusé tant qu'un choix attend sa
+        /// réponse (<paramref name="pending"/> : contrôle de police, accrochage, négociation… ; décision de Kevin du 23/11) :
+        /// la pause reste ouverte et le bouton dit quoi régler d'abord (<see cref="EndDayLabel"/>).
+        /// </summary>
+        public bool EndDay(PendingChoices pending = default)
         {
-            if (Screen != MenuScreen.Pause) return false;
+            if (Screen != MenuScreen.Pause || pending.Any) return false;
             Screen = MenuScreen.None;
             return true;
         }
 
-        /// <summary>Libellé du bouton de fin de journée, qui prévient si des passagers ne paieront pas.</summary>
-        public static string EndDayLabel(int passengersOnBoard)
+        /// <summary>Message quand la fin de journée est refusée (vide si elle est possible).</summary>
+        public static string EndDayRefusal(PendingChoices pending) =>
+            pending.Any ? $"Règle d'abord {pending.What} avant de terminer la journée" : "";
+
+        /// <summary>
+        /// Libellé du bouton de fin de journée, qui prévient si des passagers ne paieront pas, ou dit ce qu'il faut régler
+        /// d'abord quand un choix attend (le bouton ne fait alors rien).
+        /// </summary>
+        public static string EndDayLabel(int passengersOnBoard, PendingChoices pending = default)
         {
+            if (pending.Any) return EndDayRefusal(pending);
             if (passengersOnBoard <= 0) return "Terminer la journée";
             return passengersOnBoard == 1
                 ? "Terminer la journée (1 passager ne paiera pas)"

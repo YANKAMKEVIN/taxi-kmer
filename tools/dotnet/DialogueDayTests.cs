@@ -41,11 +41,8 @@ namespace TaxiKmer.Core.DotnetTests
                     var id = $"p{n++ / 3}";
                     d.SetPassengers(new[] { id, $"p{n}" });
                     // Valeurs fournies par le jeu (22/11) : destination et prix de la course.
-                    var values = new System.Collections.Generic.Dictionary<string, string>
-                    {
-                        [TalkValues.Destination] = "Emana",
-                        [TalkValues.Price] = TalkValues.Amount(800),
-                    };
+                    // Formes parlées du lieu (décision de Kevin du 23/11) : « à Emana », « d'Emana ».
+                    var values = TalkValues.ForRide(new TaxiKmer.Core.Rides.Stop { id = "emana", name = "Emana" }, "emana", 800);
                     if (d.Trigger(triggers[rng.Next(triggers.Length)], id, "", values))
                     {
                         last = d.Current;
@@ -65,5 +62,48 @@ namespace TaxiKmer.Core.DotnetTests
             Assert.Greater(chatSaid, 20, "Des discussions entre passagers dans la journée");
             Assert.LessOrEqual(chatRepeats * 10, chatSaid, "Plus d'une discussion sur dix répétée dans la journée");
         }
+
+        /// <summary>
+        /// Décision de Kevin (23/11, QA « Bonsoir chauffeur » à 6 h) : une réplique peut avoir une plage horaire, et la
+        /// sélection la respecte. Une journée de 06:00 à 20:00 sur les vraies répliques : « Bonsoir » seulement le soir,
+        /// « Bonjour » seulement le matin, « ce matin » / « avant huit heures » à la bonne heure.
+        /// </summary>
+        [Test]
+        public void ProposedLines_ADay_RespectTheirHours()
+        {
+            var opts = new JsonSerializerOptions { IncludeFields = true };
+            var config = JsonSerializer.Deserialize<DialogueConfig>(File.ReadAllText(Path.Combine(TestContext.CurrentContext.TestDirectory, "Data", "dialogues.json")), opts);
+            var errors = new System.Collections.Generic.List<string>();
+            int bonsoir = 0, bonjour = 0;
+            for (var seed = 1; seed <= 6; seed++)
+            {
+                var d = new DialogueDirector(config, new Random(seed));
+                var n = 0;
+                for (var minute = 6 * 60; minute < 20 * 60; minute += 2)
+                {
+                    SetTime(d, minute);
+                    d.Update(30f, 2);
+                    d.Update(10f, 2); // la bulle précédente est partie, le silence entre deux bulles est passé
+                    var id = $"p{n++}";
+                    var trigger = TalkTriggers.All[n % TalkTriggers.All.Length];
+                    var values = TalkValues.ForRide(new TaxiKmer.Core.Rides.Stop { id = "emana", name = "Emana" }, "emana", 800, 600);
+                    if (!d.Trigger(trigger, id, "", values)) continue;
+                    var text = d.Current.Text;
+                    var hhmm = $"{minute / 60:00}:{minute % 60:00}";
+                    if (text.StartsWith("Bonsoir")) { bonsoir++; if (minute < 17 * 60) errors.Add($"{hhmm} {d.Current.Line.id} : {text}"); }
+                    if (text.StartsWith("Bonjour")) { bonjour++; if (minute >= 12 * 60) errors.Add($"{hhmm} {d.Current.Line.id} : {text}"); }
+                    if ((text.Contains("pressé ce matin") && minute >= 12 * 60)
+                        || (text.Contains("on arrive à midi") && minute >= 12 * 60)
+                        || (text.Contains("avant huit heures") && minute >= 8 * 60)
+                        || (text.Contains("ce soir") && minute >= 19 * 60))
+                        errors.Add($"{hhmm} {d.Current.Line.id} : {text}");
+                }
+            }
+            TestContext.WriteLine($"« Bonjour » {bonjour} fois, « Bonsoir » {bonsoir} fois sur 6 journées");
+            CollectionAssert.IsEmpty(errors, string.Join("\n", errors));
+            Assert.Greater(bonjour, 0, "Le matin, on dit bonjour.");
+        }
+
+        private static void SetTime(DialogueDirector d, int minuteOfDay) => d.MinuteOfDay = minuteOfDay;
     }
 }
