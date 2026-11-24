@@ -1,5 +1,5 @@
 {
-    "_note": "Vendeurs ambulants aux feux (idée n° 24, à valider par Kevin ; valeurs par défaut de Claude) : lightIds = feux de tools/osm/traffic_lights_messassi_etoudi.json (1 marché de Messassi, 4 Borne Fontaine) ; le vendeur vient quand le taxi attend arrêté (sous stoppedKmh depuis waitSeconds) à moins de approachMeters avant le feu, reste staySeconds au plus ; buyChance = chance qu'un passager achète ; cooldownSeconds entre deux vendeurs au même feu ; goods = ce qu'il vend (prix en FCFA, payé par le passager, pas par le chauffeur).",
+    "_note": "Vendeurs ambulants aux feux (idée n° 24, GARDÉE par Kevin le 23/11 au soir avec les prix proposés ; autres valeurs par défaut de Claude) : lightIds = feux de tools/osm/traffic_lights_messassi_etoudi.json (1 marché de Messassi, 4 Borne Fontaine) ; le vendeur vient quand le taxi attend arrêté (sous stoppedKmh depuis waitSeconds) à moins de approachMeters avant le feu, reste staySeconds au plus ; buyChance = chance qu'un passager achète ; cooldownSeconds entre deux vendeurs au même feu ; goods = ce qu'il vend (prix en FCFA, payé par le passager, pas par le chauffeur).",
     "enabled": true,
     "lightIds": [
         1,

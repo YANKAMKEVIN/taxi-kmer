@@ -13,7 +13,7 @@ namespace TaxiKmer.Core.Traffic
     }
 
     /// <summary>
-    /// Vendeurs ambulants aux feux (idée n° 24, à valider par Kevin ; données : Assets/Resources/Data/vendors.json) :
+    /// Vendeurs ambulants aux feux (idée n° 24, gardée par Kevin le 23/11 au soir avec les prix proposés ; données : Assets/Resources/Data/vendors.json) :
     /// quand le taxi attend arrêté juste avant un feu de Messassi ou de Borne Fontaine, un vendeur s'approche (eau,
     /// arachides, crédit de téléphone) ; un passager peut acheter et en parler. Valeurs par défaut de Claude.
     /// </summary>
