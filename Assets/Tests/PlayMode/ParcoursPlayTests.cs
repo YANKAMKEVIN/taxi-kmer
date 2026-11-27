@@ -90,6 +90,8 @@ namespace TaxiKmer.PlayModeTests
             var nextRadio = 20f;
             var nextShot = 0f;
             var blockedFor = 0f;
+            var blockedTimes = 0;
+            var blockedAt = -1f;
             var ignoreObstaclesUntil = 0f;
             var stuckFor = 0f;
             var lastAlong = 0f;
@@ -165,15 +167,28 @@ namespace TaxiKmer.PlayModeTests
                 if (!float.IsNaN(stopAt))
                 {
                     var dist = Mathf.Abs(stopAt - s.Along);
-                    target = dist < 2.5f ? 0f : Mathf.Min(CruiseKmh, 4f + 2.2f * Mathf.Sqrt(dist) * 3f);
+                    target = dist < 8f ? 0f : Mathf.Min(CruiseKmh, 3f * Mathf.Sqrt(dist - 8f) + 2f);
                 }
                 if (controls.Locked || pending.Any) target = 0f;
                 var obstacle = Time.time < ignoreObstaclesUntil ? float.PositiveInfinity : ObstacleAhead(taxi);
                 blockedFor = obstacle < 25f && taxi.SpeedKmh < 1f ? blockedFor + Time.deltaTime : 0f;
                 if (blockedFor > 10f)
                 {
-                    _journal.Add($"{street.Shift.Clock.Display} à {s.Along:0} m : obstacle devant depuis 10 s ({_lastObstacle}), on avance quand même");
-                    ignoreObstaclesUntil = Time.time + 3f;
+                    blockedTimes = Mathf.Abs(s.Along - blockedAt) < 3f ? blockedTimes + 1 : 1;
+                    blockedAt = s.Along;
+                    if (blockedTimes >= 2)
+                    {
+                        // Coincé pour de bon (un véhicule du trafic collé au taxi, le muret) : le pilote « contourne » en
+                        // reposant le taxi un peu plus loin. Noté au journal : c'est peut-être un défaut du trafic.
+                        _journal.Add($"{street.Shift.Clock.Display} à {s.Along:0} m : coincé ({_lastObstacle}), taxi reposé 20 m plus loin");
+                        taxi.PlaceOnRoute(Mathf.Clamp(s.Along + direction * 20f, 50f, length - 50f), direction);
+                        blockedTimes = 0;
+                    }
+                    else
+                    {
+                        _journal.Add($"{street.Shift.Clock.Display} à {s.Along:0} m : obstacle devant depuis 10 s ({_lastObstacle}), on avance quand même");
+                        ignoreObstaclesUntil = Time.time + 3f;
+                    }
                     blockedFor = 0f;
                 }
                 if (Mathf.Abs(s.Lateral) > 7f && taxi.SpeedKmh < 2f && stuckFor > 3f) BotInput.Press(KeyAction.ResetCar); // sorti de la route
@@ -292,7 +307,7 @@ namespace TaxiKmer.PlayModeTests
 
         private static void Steer(TaxiCar taxi, float[] xz, float[] cum, float along, int direction, float targetKmh)
         {
-            var ahead = along + direction * Mathf.Max(8f, taxi.SpeedKmh * 0.5f);
+            var ahead = along + direction * Mathf.Max(12f, taxi.SpeedKmh * 0.6f);
             WorldGeometry.SampleAlong(xz, cum, ahead, out var x, out var z, out var dx, out var dz);
             if (direction < 0) { dx = -dx; dz = -dz; }
             var aim = new Vector3(x + dz * LaneOffset, 0f, z - dx * LaneOffset);
@@ -302,7 +317,9 @@ namespace TaxiKmer.PlayModeTests
             f.y = 0f;
             var angle = Vector3.SignedAngle(f, to, Vector3.up);
             var speed = taxi.SpeedKmh;
-            Hold(angle < -3f, angle > 3f, speed < targetKmh - 2f && targetKmh > 0f, speed > targetKmh + 3f || (targetKmh == 0f && speed > 0.5f));
+            // Commande tout ou rien : par petits coups (une image sur deux) quand l'écart est faible, pour ne pas zigzaguer.
+            var pulse = Mathf.Abs(angle) > 6f || Time.frameCount % 2 == 0;
+            Hold(angle < -1.5f && pulse, angle > 1.5f && pulse, speed < targetKmh - 2f && targetKmh > 0f, speed > targetKmh + 3f || (targetKmh == 0f && speed > 0.5f));
         }
 
         private string _lastPendingKey = "";
