@@ -828,6 +828,18 @@ namespace TaxiKmer.Driving
         /// <summary>L'écran de bilan (null tant que la journée n'est pas terminée).</summary>
         public DaySummaryView SummaryView => _summaryView;
 
+        /// <summary>Choix qui attendent le joueur (police, accrochage, marchandage, refus de payer, panne…), pour les tests et le pilote automatique.</summary>
+        public PendingChoices Pending => CurrentPendingChoices();
+        /// <summary>Systèmes affichés (null s'ils sont coupés dans leurs données).</summary>
+        public PoliceView PoliceView => _police;
+        public RoadView RoadView => _road;
+        public TalkView TalkView => _talk;
+        public RadioView RadioView => _radio;
+        /// <summary>Longueur de l'itinéraire (m).</summary>
+        public float RouteLength => _cum[_cum.Length - 1];
+        /// <summary>Le menu (titre, pause, réglages) gèle le jeu.</summary>
+        public bool MenuFrozen => _menu != null && _menu.Frozen;
+
         // ---------- Silhouettes ----------
 
         private void SyncPeople()

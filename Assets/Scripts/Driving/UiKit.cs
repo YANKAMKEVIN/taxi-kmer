@@ -29,6 +29,7 @@ namespace TaxiKmer.Driving
         /// <summary>Une touche de l'action vient d'être enfoncée (cette image).</summary>
         public static bool KeyDown(KeyAction action)
         {
+            if (BotInput.Down(action)) return true;
             foreach (var k in Keys(action)) if (UnityEngine.Input.GetKeyDown(k)) return true;
             return false;
         }
@@ -36,6 +37,7 @@ namespace TaxiKmer.Driving
         /// <summary>Une touche de l'action est tenue.</summary>
         public static bool KeyHeld(KeyAction action)
         {
+            if (BotInput.Held(action)) return true;
             foreach (var k in Keys(action)) if (UnityEngine.Input.GetKey(k)) return true;
             return false;
         }

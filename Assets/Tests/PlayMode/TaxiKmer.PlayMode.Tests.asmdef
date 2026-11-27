@@ -4,6 +4,7 @@
     "references": [
         "TaxiKmer.Core",
         "TaxiKmer.Driving",
+        "TaxiKmer.World",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
