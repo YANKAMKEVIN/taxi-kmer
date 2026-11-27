@@ -1,0 +1,16 @@
+{
+    "_note": "Lumière du jour à Yaoundé (3,9° N : le soleil se lève vers 6 h à l'est, passe presque à la verticale, se couche vers 18 h à l'ouest ; crépuscule court). Une clé par moment de la journée, interpolée entre les clés : minute (depuis minuit), hauteur et direction du soleil (degrés ; azimut 90 = est, 270 = ouest), couleur et intensité du soleil, lumière ambiante (ciel, horizon, sol), couleur du brouillard (horizon), exposition (EV, étalonnage), lampadaires allumés. Valeurs par défaut de Claude (27/11), direction « réaliste stylisé poussé » à valider par Kevin sur les captures.",
+    "keys": [
+        { "minute": 330, "elevation": -8, "azimuth": 85, "sun": [0.45, 0.5, 0.75], "intensity": 0.0, "sky": [0.16, 0.2, 0.34], "equator": [0.14, 0.15, 0.22], "ground": [0.06, 0.05, 0.05], "fog": [0.22, 0.24, 0.34], "exposure": 0.4, "lamps": true },
+        { "minute": 365, "elevation": 3, "azimuth": 88, "sun": [1.0, 0.58, 0.34], "intensity": 0.55, "sky": [0.42, 0.45, 0.6], "equator": [0.62, 0.48, 0.4], "ground": [0.22, 0.14, 0.1], "fog": [0.86, 0.66, 0.54], "exposure": 0.3, "lamps": false },
+        { "minute": 450, "elevation": 22, "azimuth": 92, "sun": [1.0, 0.86, 0.7], "intensity": 1.05, "sky": [0.55, 0.66, 0.85], "equator": [0.72, 0.68, 0.62], "ground": [0.32, 0.2, 0.14], "fog": [0.85, 0.82, 0.8], "exposure": 0.1, "lamps": false },
+        { "minute": 750, "elevation": 78, "azimuth": 180, "sun": [1.0, 0.97, 0.92], "intensity": 1.4, "sky": [0.58, 0.72, 0.95], "equator": [0.78, 0.78, 0.76], "ground": [0.38, 0.24, 0.16], "fog": [0.84, 0.86, 0.9], "exposure": -0.15, "lamps": false },
+        { "minute": 990, "elevation": 38, "azimuth": 262, "sun": [1.0, 0.9, 0.76], "intensity": 1.25, "sky": [0.55, 0.67, 0.9], "equator": [0.76, 0.72, 0.66], "ground": [0.36, 0.22, 0.15], "fog": [0.86, 0.84, 0.82], "exposure": 0.0, "lamps": false },
+        { "minute": 1060, "elevation": 12, "azimuth": 268, "sun": [1.0, 0.66, 0.38], "intensity": 0.95, "sky": [0.5, 0.52, 0.68], "equator": [0.82, 0.6, 0.45], "ground": [0.3, 0.17, 0.11], "fog": [0.92, 0.68, 0.5], "exposure": 0.15, "lamps": false },
+        { "minute": 1090, "elevation": 1, "azimuth": 270, "sun": [0.95, 0.42, 0.26], "intensity": 0.4, "sky": [0.34, 0.32, 0.5], "equator": [0.6, 0.4, 0.38], "ground": [0.16, 0.1, 0.08], "fog": [0.66, 0.42, 0.38], "exposure": 0.35, "lamps": true },
+        { "minute": 1125, "elevation": -7, "azimuth": 272, "sun": [0.45, 0.5, 0.75], "intensity": 0.0, "sky": [0.12, 0.15, 0.28], "equator": [0.12, 0.12, 0.2], "ground": [0.05, 0.04, 0.04], "fog": [0.14, 0.15, 0.24], "exposure": 0.5, "lamps": true },
+        { "minute": 1200, "elevation": -15, "azimuth": 275, "sun": [0.45, 0.5, 0.75], "intensity": 0.0, "sky": [0.08, 0.1, 0.2], "equator": [0.08, 0.08, 0.14], "ground": [0.04, 0.03, 0.03], "fog": [0.08, 0.09, 0.16], "exposure": 0.6, "lamps": true }
+    ],
+    "moonIntensity": 0.18,
+    "moonColor": [0.55, 0.65, 0.9]
+}

@@ -21,6 +21,9 @@ namespace UnityEngine.UI
         public float preferredHeight => 0f;
         public FontStyle fontStyle { get; set; }
         public bool supportRichText { get; set; }
+        public bool resizeTextForBestFit { get; set; }
+        public int resizeTextMinSize { get; set; }
+        public int resizeTextMaxSize { get; set; }
     }
     public class Image : MaskableGraphic
     {

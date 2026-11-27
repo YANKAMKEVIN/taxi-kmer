@@ -4,6 +4,7 @@ using System.Text.Json;
 using NUnit.Framework;
 using TaxiKmer.Core.Day;
 using TaxiKmer.Core.Rides;
+using TaxiKmer.Core.World;
 
 namespace TaxiKmer.Core.DotnetTests
 {
@@ -179,6 +180,32 @@ namespace TaxiKmer.Core.DotnetTests
             for (var i = 1; i < cfg.stops.Length; i++)
                 Assert.Greater(cfg.stops[i].distanceAlongRouteMeters, cfg.stops[i - 1].distanceAlongRouteMeters);
             Assert.DoesNotThrow(() => new ClientFactory(cfg, FareConfig.Default(), 0).CreateAt("etoudi"));
+        }
+    
+        [Test]
+        public void DayLight_KeysInOrder_CoverTheWorkingDay()
+        {
+            var c = Load<DayLightConfig>("daylight.json");
+            Assert.Greater(c.keys.Length, 3);
+            for (var i = 1; i < c.keys.Length; i++) Assert.Greater(c.keys[i].minute, c.keys[i - 1].minute, $"Clé {i} dans l'ordre");
+            Assert.LessOrEqual(c.keys[0].minute, 6 * 60, "Couvre le début de la journée (6 h)");
+            Assert.GreaterOrEqual(c.keys[c.keys.Length - 1].minute, 20 * 60, "Couvre la fin (20 h)");
+        }
+
+        [Test]
+        public void DayLight_Yaounde_SunRisesEast_HighAtNoon_SetsWest_NightIsReadable()
+        {
+            var c = Load<DayLightConfig>("daylight.json");
+            var morning = DayLight.At(c, 7 * 60);
+            var noon = DayLight.At(c, 12 * 60 + 30);
+            var evening = DayLight.At(c, 17 * 60 + 30);
+            var night = DayLight.At(c, 19 * 60 + 30);
+            Assert.That(morning.Azimuth, Is.InRange(70f, 110f), "Le matin, le soleil est à l'est");
+            Assert.Greater(noon.Elevation, 70f, "À midi il est presque à la verticale (3,9° N)");
+            Assert.That(evening.Azimuth, Is.InRange(250f, 290f), "Le soir, à l'ouest");
+            Assert.Greater(morning.SunColor.R - morning.SunColor.B, noon.SunColor.R - noon.SunColor.B, "Plus chaud le matin qu'à midi");
+            Assert.IsTrue(night.Night && night.Lamps, "À 19 h 30 il fait nuit, lampadaires allumés");
+            Assert.Greater(night.SunIntensity, 0.05f, "La lune éclaire assez pour conduire");
         }
     }
 }

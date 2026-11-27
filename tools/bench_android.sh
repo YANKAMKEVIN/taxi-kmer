@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Banc de performance sur le téléphone branché (adb) : installe l'APK, dépose le fichier banc.txt (le jeu lance alors le
 # pilote automatique et mesure chaque niveau de qualité), attend la fin, rapatrie les résultats.
-# Usage : tools/bench_android.sh [chemin de l'APK]   (défaut : build/android/TaxiKmer.apk)
+# Usage : tools/bench_android.sh [chemin de l'APK] [alloc]   (défaut : build/android/TaxiKmer.apk ; « alloc » : allocations seulement)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 APK=${1:-build/android/TaxiKmer.apk}
@@ -22,7 +22,7 @@ fi
 "$ADB" shell am force-stop $PKG
 "$ADB" shell mkdir -p $DATA
 "$ADB" shell rm -f $DATA/banc-resultats.txt
-echo 1 | "$ADB" shell "cat > $DATA/banc.txt"
+echo "${2:-tout}" | "$ADB" shell "cat > $DATA/banc.txt"
 "$ADB" logcat -c
 "$ADB" shell monkey -p $PKG -c android.intent.category.LAUNCHER 1 >/dev/null
 echo "Banc lancé sur $("$ADB" shell getprop ro.product.model | tr -d '\r') (environ 5 minutes)…"

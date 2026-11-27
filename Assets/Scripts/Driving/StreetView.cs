@@ -302,8 +302,10 @@ namespace TaxiKmer.Driving
 
         private void Update()
         {
+            AllocProbe.BeginFrame();
             var dt = Time.deltaTime;
             var shift = Street.Shift;
+            Core.World.SceneClock.Minute = shift.Clock.GameMinutesExact; // lumière du jour (rendu)
 
             // Menu d'abord : la touche qui ouvre la pause ne doit pas la refermer dans la même image.
             // Le bilan passe devant tout (l'écran titre ne reste pas affiché par-dessus).
@@ -322,10 +324,13 @@ namespace TaxiKmer.Driving
                 shift.Clock.Advance(dt);
                 shift.Drive(Mathf.Abs(taxi.SpeedKmh) / 3.6f * dt);
             }
+            AllocProbe.Mark("menu");
             UpdateFuel(shift.Tank);
 
             var state = TaxiState();
+            AllocProbe.Mark("carburant, position");
             Street.Update(dt, state);
+            AllocProbe.Mark("Street.Update");
             ApplyTrafficScale();
             if (!_cityPopulated)
             {
@@ -348,7 +353,9 @@ namespace TaxiKmer.Driving
                 }
                 City.Populate(Hour, PlayerState());
             }
+            AllocProbe.Mark("début de journée");
             City.Update(dt, Hour, PlayerState());
+            AllocProbe.Mark("City.Update");
             foreach (var lost in Street.Lost) OnClientLost(lost);
             if (_paperNewsAt >= 0f && Time.time >= _paperNewsAt)
             {
@@ -362,6 +369,7 @@ namespace TaxiKmer.Driving
                 OnHonk(state);
             }
             if (Street.DryTankLeft > 0) Toast(FuelGauge.PassengersLeftMessage(Street.DryTankLeft), 6f);
+            AllocProbe.Mark("klaxon, nouvelles");
             if (_police != null)
             {
                 var policeDone = _police.Update(Street, state, !_menu.Frozen && _summaryView == null);
@@ -369,6 +377,7 @@ namespace TaxiKmer.Driving
                 if (_police.Active && !_policeWasActive) _talk?.Say(Core.Talk.TalkTriggers.Control, TalkView.AnyPassenger(Street));
                 _policeWasActive = _police.Active;
             }
+            AllocProbe.Mark("police");
             if (_road != null)
             {
                 var roadSays = _road.Update(Street, state, !_menu.Frozen && _summaryView == null);
@@ -377,17 +386,20 @@ namespace TaxiKmer.Driving
                 if (_road.IncidentStarted) _talk?.Say(Core.Talk.TalkTriggers.Breakdown, TalkView.AnyPassenger(Street));
                 Street.SpawnRateScale = Today.ClientsFactor * _road.Road.Weather.ClientsFactor(shift.Clock.GameMinutes);
             }
+            AllocProbe.Mark("route");
             if (_radio != null) UpdateRadioNews();
             if (_talk != null)
             {
                 var said = _talk.Update(dt, Street, state, !_menu.Frozen && _summaryView == null);
                 if (said.Length > 0) Toast(said, 5f);
             }
+            AllocProbe.Mark("dialogues");
             UpdateDryTank(state);
             // La radio se tait en pause et au bilan ; elle baisse quand un passager parle (jalon 5).
             _radio?.Update(dt, !Street.DayFinished && !_menu.Frozen && _summaryView == null, _talk != null && _talk.Speaking);
             _ambience?.Update(dt, Street, state.Along, taxi.transform.position, City.Traffic.Vehicles, Today.Market,
                 _talk != null && _talk.Speaking, !_menu.Frozen && _summaryView == null);
+            AllocProbe.Mark("radio, ambiance");
             var action = Street.AvailableAction(state);
             if (controls.ActionTriggered && action.Kind != StreetActionKind.None) OnAction(state);
             action = Street.AvailableAction(state);
@@ -413,13 +425,20 @@ namespace TaxiKmer.Driving
                 Toast("Fin de la journée : dépose tes passagers, ou arrête-toi pour terminer", 8f);
             }
             if (Street.DayFinished) ShowSummary();
+            AllocProbe.Mark("action, bilan");
             UpdateTutorial(dt, state);
+            AllocProbe.Mark("tutoriel");
 
             SyncPeople();
+            AllocProbe.Mark("silhouettes");
             SyncStopMarkers(state.Along);
+            AllocProbe.Mark("repères");
             UpdateHud();
+            AllocProbe.Mark("HUD");
             _strip.Update(Street, state.Along, !Street.DayFinished);
+            AllocProbe.Mark("frise");
             _cabinView.Update(Street.Shift.Cabin, !Street.DayFinished);
+            AllocProbe.Mark("places");
         }
 
         /// <summary>

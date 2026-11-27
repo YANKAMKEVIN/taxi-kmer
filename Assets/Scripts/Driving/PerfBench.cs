@@ -59,7 +59,9 @@ namespace TaxiKmer.Driving
 
             var config = QualityView.LoadConfig();
             var stats = new FrameStats();
-            for (var level = 0; level < config.levels.Length; level++)
+            // « alloc » dans banc.txt : seulement la mesure des allocations (plus court).
+            var allocOnly = File.ReadAllText(Path.Combine(Application.persistentDataPath, FlagFile)).Contains("alloc");
+            for (var level = 0; level < config.levels.Length && !allocOnly; level++)
             {
                 quality.Apply(level, false);
                 var target = config.levels[level].targetFrameRate;
@@ -90,10 +92,15 @@ namespace TaxiKmer.Driving
             yield return HeapGrowth(240, result);
             var baseline = result[0];
             Line(report, $"Allocations : {baseline} o par image en conduite");
+            AllocProbe.Reset();
+            AllocProbe.Enabled = true;
+            yield return HeapGrowth(240, result);
+            AllocProbe.Enabled = false;
+            Line(report, "  par section de StreetView : " + AllocProbe.Report());
             var types = new System.Collections.Generic.Dictionary<System.Type, System.Collections.Generic.List<MonoBehaviour>>();
             foreach (var mb in FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None))
             {
-                if (!mb.enabled || mb == this || mb is Autopilot || mb is UnityEngine.EventSystems.UIBehaviour) continue;
+                if (!mb.enabled || mb == this || mb is Autopilot || (mb.GetType().Namespace ?? "").StartsWith("UnityEngine")) continue; // interface d'Unity : pas d'Update
                 if (!types.TryGetValue(mb.GetType(), out var list)) types[mb.GetType()] = list = new System.Collections.Generic.List<MonoBehaviour>();
                 list.Add(mb);
             }

@@ -41,7 +41,30 @@ namespace TaxiKmer.Core.Day
         /// <summary>Minutes de jeu avant l'heure de fin (0 une fois atteinte).</summary>
         public int MinutesLeft => _config.endHour * 60 - GameMinutes;
 
-        public string Display => $"{GameMinutes / 60:00}:{GameMinutes % 60:00}";
+        /// <summary>Minutes de jeu depuis minuit, avec la fraction (pour une lumière qui avance sans à-coups).</summary>
+        public float GameMinutesExact
+        {
+            get
+            {
+                var span = (_config.endHour - _config.startHour) * 60f;
+                var t = Math.Min(_elapsedReal / _config.dayLengthRealSeconds, 1f);
+                return _config.startHour * 60f + t * span;
+            }
+        }
+
+        /// <summary>« 07:05 » ; refait seulement quand la minute change (lu à chaque image par le HUD).</summary>
+        public string Display
+        {
+            get
+            {
+                var m = GameMinutes;
+                if (m != _displayMinute) { _displayMinute = m; _display = $"{m / 60:00}:{m % 60:00}"; }
+                return _display;
+            }
+        }
+
+        private int _displayMinute = -1;
+        private string _display = "";
 
         /// <summary>Fait passer <paramref name="minutes"/> minutes de jeu d'un coup (temps perdu : hôpital…).</summary>
         public void AdvanceGameMinutes(int minutes)

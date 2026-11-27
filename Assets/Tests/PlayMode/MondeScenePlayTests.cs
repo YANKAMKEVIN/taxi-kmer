@@ -87,8 +87,18 @@ namespace TaxiKmer.PlayModeTests
             Assert.IsNotNull(marker, "Repère de destination visible");
 
             var paid = street.Perform(new TaxiOnRoute { Along = dest.distanceAlongRouteMeters, Direction = 1, Lateral = 2f });
-            Assert.AreEqual(client.Client.ProposedFare, paid.Paid);
-            Assert.AreEqual(client.Client.ProposedFare, street.Shift.Ledger.Revenue);
+            Assert.AreEqual(StreetActionKind.Drop, paid.Kind);
+            if (paid.Refusal != null)
+            {
+                // Le passager peut refuser de payer (jalon 5, tiré au hasard) : la course est alors en attente de la réponse.
+                Assert.AreEqual(0, paid.Paid, "Refus de payer : rien encaissé");
+                Assert.IsNotNull(street.PendingRefusal);
+            }
+            else
+            {
+                Assert.AreEqual(client.Client.ProposedFare, paid.Paid);
+                Assert.AreEqual(client.Client.ProposedFare, street.Shift.Ledger.Revenue);
+            }
             yield return null;
         }
 

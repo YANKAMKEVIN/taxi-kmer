@@ -17,6 +17,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(RepoRoot)Assets/Scripts/**/*.cs" />
+    <!-- Rendu URP (volumes, étalonnage) : pas de références URP ici, compilé seulement par Unity (et la CI Unity). -->
+    <Compile Remove="$(RepoRoot)Assets/Scripts/Rendering/**/*.cs" />
     <Compile Include="$(RepoRoot)Assets/Tests/PlayMode/**/*.cs" />
     <Compile Include="*.cs" />
   </ItemGroup>
