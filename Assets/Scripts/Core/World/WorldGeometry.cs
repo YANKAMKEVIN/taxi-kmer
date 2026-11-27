@@ -85,13 +85,18 @@ namespace TaxiKmer.Core.World
         /// <summary>Paroi verticale de a à b, de 0 à <paramref name="height"/>, tournée vers <paramref name="outward"/>.</summary>
         private static void Quad(MeshData mesh, Vec3 a, Vec3 b, float height, Vec3 outward)
         {
-            var a0 = mesh.AddVertex(a);
-            var b0 = mesh.AddVertex(b);
-            var a1 = mesh.AddVertex(new Vec3(a.X, height, a.Z));
-            var b1 = mesh.AddVertex(new Vec3(b.X, height, b.Z));
+            // Texture le long de la paroi (u) et en hauteur (v), 1 répétition par PlanarTile mètres.
+            var ua = (a.X + a.Z) / MeshData.PlanarTile;
+            var ub = ua + Distance(a, b) / MeshData.PlanarTile;
+            var a0 = mesh.AddVertex(a, ua, a.Y / MeshData.PlanarTile);
+            var b0 = mesh.AddVertex(b, ub, b.Y / MeshData.PlanarTile);
+            var a1 = mesh.AddVertex(new Vec3(a.X, height, a.Z), ua, height / MeshData.PlanarTile);
+            var b1 = mesh.AddVertex(new Vec3(b.X, height, b.Z), ub, height / MeshData.PlanarTile);
             mesh.AddTriangle(a0, b0, b1, outward);
             mesh.AddTriangle(a0, b1, a1, outward);
         }
+
+        private static float Distance(Vec3 a, Vec3 b) => (float)Math.Sqrt((b.X - a.X) * (b.X - a.X) + (b.Z - a.Z) * (b.Z - a.Z));
 
         /// <summary>
         /// Pavé centré en (<paramref name="cx"/>, <paramref name="cy"/>, <paramref name="cz"/>), de dimensions

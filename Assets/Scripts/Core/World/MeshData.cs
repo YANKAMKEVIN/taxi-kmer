@@ -12,6 +12,13 @@ namespace TaxiKmer.Core.World
         public static float Dot(Vec3 a, Vec3 b) => a.X * b.X + a.Y * b.Y + a.Z * b.Z;
     }
 
+    /// <summary>Coordonnée de texture (la logique pure n'utilise pas UnityEngine.Vector2).</summary>
+    public struct Vec2
+    {
+        public float U, V;
+        public Vec2(float u, float v) { U = u; V = v; }
+    }
+
     /// <summary>
     /// Maillage en cours de construction. Les triangles sont orientés pour que leur face visible
     /// pointe vers la normale demandée (convention Unity : normale = (b - a) × (c - a)).
@@ -20,13 +27,30 @@ namespace TaxiKmer.Core.World
     {
         public readonly List<Vec3> Vertices = new List<Vec3>();
         public readonly List<int> Triangles = new List<int>();
+        /// <summary>Une coordonnée de texture par sommet (par défaut : projection du dessus, 1 unité = <see cref="PlanarTile"/> m).</summary>
+        public readonly List<Vec2> Uvs = new List<Vec2>();
+
+        /// <summary>Taille (m) d'une répétition de texture en projection du dessus (sols, routes, toits).</summary>
+        public const float PlanarTile = 4f;
 
         public int TriangleCount => Triangles.Count / 3;
 
-        public int AddVertex(Vec3 v)
+        public int AddVertex(Vec3 v) => AddVertex(v, v.X / PlanarTile, v.Z / PlanarTile);
+
+        /// <summary>Sommet avec sa coordonnée de texture (u, w).</summary>
+        public int AddVertex(Vec3 v, float u, float w)
         {
             Vertices.Add(v);
+            Uvs.Add(new Vec2(u, w));
             return Vertices.Count - 1;
+        }
+
+        /// <summary>Triangle déjà orienté (sommets dans l'ordre de la face visible).</summary>
+        public void AddTriangleRaw(int a, int b, int c)
+        {
+            Triangles.Add(a);
+            Triangles.Add(b);
+            Triangles.Add(c);
         }
 
         /// <summary>Ajoute le triangle (a, b, c), retourné si besoin pour faire face à <paramref name="facing"/>.</summary>
@@ -43,6 +67,7 @@ namespace TaxiKmer.Core.World
         {
             Vertices.Clear();
             Triangles.Clear();
+            Uvs.Clear();
         }
     }
 }

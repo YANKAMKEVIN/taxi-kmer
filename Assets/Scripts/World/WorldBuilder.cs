@@ -29,6 +29,9 @@ namespace TaxiKmer.World
 
         public WorldData Data { get; private set; }
 
+        /// <summary>Rues goudronnées en plus des grands axes ; les autres (résidentielles, de service) sont en terre.</summary>
+        private static readonly HashSet<string> Paved = new HashSet<string> { "tertiary", "tertiary_link", "unclassified" };
+
         private static readonly HashSet<string> MainRoads = new HashSet<string>
         {
             "trunk", "primary", "secondary", "trunk_link", "primary_link", "secondary_link",
@@ -52,16 +55,20 @@ namespace TaxiKmer.World
 
         private void Build(WorldData data)
         {
-            var roads = new Dictionary<Vector2Int, MeshData>();
-            var mainRoads = new Dictionary<Vector2Int, MeshData>();
-            var buildings = new Dictionary<Vector2Int, MeshData>();
+            // Monde habillé (planche d'ambiance v1) : un jeu de sous-maillages par bloc, un par matériau (CitySlot).
+            var roads = new Dictionary<Vector2Int, MeshSet>();
+            var buildings = new Dictionary<Vector2Int, MeshSet>();
+            var medians = new Dictionary<Vector2Int, MeshSet>();
+            var lamps = new Dictionary<Vector2Int, MeshSet>();
             float minX = float.MaxValue, minZ = float.MaxValue, maxX = float.MinValue, maxZ = float.MinValue;
 
             foreach (var r in data.roads)
             {
                 if (r.xz.Length < 4) continue;
                 var main = MainRoads.Contains(r.highway);
-                var target = Get(main ? mainRoads : roads, Cell(r.xz[0], r.xz[1]));
+                // Grands axes goudronnés ; rues de quartier en terre rouge (références photo de Kevin).
+                var paved = main || Paved.Contains(r.highway);
+                var target = GetSet(roads, Cell(r.xz[0], r.xz[1]))[paved ? CitySlot.RoadPaved : CitySlot.RoadDirt];
                 // Les grands axes un peu plus haut que les petites rues : pas de scintillement aux carrefours.
                 WorldGeometry.AddRoadStrip(target, r.xz, Mathf.Max(3f, r.width), main ? 0.04f : 0.03f);
                 for (var i = 0; i < r.xz.Length; i += 2)
@@ -71,30 +78,49 @@ namespace TaxiKmer.World
                 }
             }
 
-            foreach (var b in data.buildings)
+            var style = LoadStyle();
+            var route = data.route != null && data.route.xz != null && data.route.xz.Length >= 4 ? data.route.xz : null;
+            var routeCum = route != null ? WorldGeometry.CumulativeLengths(route) : null;
+            bool FacesRoute(float x, float z, float nx, float nz)
             {
+                if (route == null) return true;
+                WorldGeometry.Project(route, routeCum, x, z, out var along, out var dist);
+                WorldGeometry.SampleAlong(route, routeCum, along, out var px, out var pz, out _, out _);
+                var dx = px - x;
+                var dz = pz - z;
+                var l = Mathf.Sqrt(dx * dx + dz * dz);
+                return l < 1e-3f || (dx * nx + dz * nz) / l > 0.4f;
+            }
+            var detailed = 0;
+            for (var bi = 0; bi < data.buildings.Length; bi++)
+            {
+                var b = data.buildings[bi];
                 if (b.xz.Length < 6) continue;
-                var target = Get(buildings, Cell(b.xz[0], b.xz[1]));
-                WorldGeometry.AddBuilding(target, b.xz, Mathf.Max(1, b.levels) * WorldGeometry.LevelHeight);
+                var distance = 1e6f;
+                if (route != null)
+                {
+                    WorldGeometry.Project(route, routeCum, b.xz[0], b.xz[1], out _, out distance);
+                }
+                var s = CityStyle.For(style, b.id != 0 ? (int)(b.id % int.MaxValue) : bi, b.xz.Length / 2, distance);
+                if (b.levels > 1) s.Levels = b.levels; // étages connus d'OpenStreetMap : prioritaires
+                if (s.Detailed) detailed++;
+                FacadeBuilder.Build(GetSet(buildings, Cell(b.xz[0], b.xz[1])), b.xz, s, style, FacesRoute);
             }
 
             // Murets centraux et lampadaires doubles (références photo de Kevin : RN1 en 2 × 2 voies).
-            var medians = new Dictionary<Vector2Int, MeshData>();
-            var lamps = new Dictionary<Vector2Int, MeshData>();
             if (data.traffic?.medians != null)
                 foreach (var m in data.traffic.medians)
                 {
                     if (m.xz == null || m.xz.Length < 4) continue;
-                    WorldGeometry.AddWallStrip(Get(medians, Cell(m.xz[0], m.xz[1])), m.xz, medianWidth, medianHeight);
+                    WorldGeometry.AddWallStrip(GetSet(medians, Cell(m.xz[0], m.xz[1]))[CitySlot.Median], m.xz, medianWidth, medianHeight);
                     AddLamps(lamps, m.xz);
                 }
 
             var root = transform;
-            Emit(root, "Routes", roads, roadMaterial, false);
-            Emit(root, "Murets centraux", medians, buildingMaterial, true);
-            Emit(root, "Lampadaires", lamps, buildingMaterial, false);
-            Emit(root, "Grands axes", mainRoads, mainRoadMaterial != null ? mainRoadMaterial : roadMaterial, false);
-            Emit(root, "Bâtiments", buildings, buildingMaterial, buildingColliders);
+            Emit(root, "Routes", roads, false);
+            Emit(root, "Murets centraux", medians, true);
+            Emit(root, "Lampadaires", lamps, false);
+            Emit(root, "Bâtiments", buildings, buildingColliders);
 
             var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
             ground.name = "Sol";
@@ -102,15 +128,30 @@ namespace TaxiKmer.World
             const float margin = 300f;
             ground.transform.position = new Vector3((minX + maxX) / 2f, 0f, (minZ + maxZ) / 2f);
             // Un Plane Unity mesure 10 × 10 m.
-            ground.transform.localScale = new Vector3((maxX - minX + 2 * margin) / 10f, 1f, (maxZ - minZ + 2 * margin) / 10f);
-            if (groundMaterial != null) ground.GetComponent<MeshRenderer>().sharedMaterial = groundMaterial;
+            var sizeX = maxX - minX + 2 * margin;
+            var sizeZ = maxZ - minZ + 2 * margin;
+            ground.transform.localScale = new Vector3(sizeX / 10f, 1f, sizeZ / 10f);
+            var groundMat = CityMaterials.Named("Ground", groundMaterial);
+            if (groundMat != null)
+            {
+                // Latérite répétée tous les 6 m (instance propre au sol : sa répétition dépend de la taille du monde).
+                var mat = new Material(groundMat) { name = "Sol (latérite)" };
+                mat.mainTextureScale = new Vector2(sizeX / 6f, sizeZ / 6f);
+                ground.GetComponent<MeshRenderer>().sharedMaterial = mat;
+            }
 
-            Debug.Log($"[TaxiKmer] Monde construit : {data.roads.Length} routes, {data.buildings.Length} bâtiments, " +
-                      $"{roads.Count + mainRoads.Count + buildings.Count} blocs de maillage.");
+            Debug.Log($"[TaxiKmer] Monde construit : {data.roads.Length} routes, {data.buildings.Length} bâtiments " +
+                      $"(dont {detailed} détaillés), {roads.Count + buildings.Count} blocs de maillage.");
+        }
+
+        private static CityStyleConfig LoadStyle()
+        {
+            var text = Resources.Load<TextAsset>("Data/city_style");
+            return text != null ? JsonUtility.FromJson<CityStyleConfig>(text.text) : new CityStyleConfig();
         }
 
         /// <summary>Lampadaire double tous les <see cref="lampSpacing"/> m : mât au milieu du muret, deux bras vers les chaussées.</summary>
-        private void AddLamps(Dictionary<Vector2Int, MeshData> lamps, float[] xz)
+        private void AddLamps(Dictionary<Vector2Int, MeshSet> lamps, float[] xz)
         {
             var cum = WorldGeometry.CumulativeLengths(xz);
             var length = cum[cum.Length - 1];
@@ -118,7 +159,7 @@ namespace TaxiKmer.World
             for (var d = lampSpacing * 0.5f; d < length; d += lampSpacing)
             {
                 WorldGeometry.SampleAlong(xz, cum, d, out var x, out var z, out var dx, out var dz);
-                var mesh = Get(lamps, Cell(x, z));
+                var mesh = GetSet(lamps, Cell(x, z))[CitySlot.Lamp];
                 float rx = dz, rz = -dx; // perpendiculaire au muret
                 WorldGeometry.AddBox(mesh, x, lampHeight / 2f, z, 0.18f, lampHeight, 0.18f, dx, dz);
                 foreach (var side in new[] { -1f, 1f })
@@ -133,43 +174,73 @@ namespace TaxiKmer.World
         private Vector2Int Cell(float x, float z) =>
             new Vector2Int(Mathf.FloorToInt(x / chunkSize), Mathf.FloorToInt(z / chunkSize));
 
-        private static MeshData Get(Dictionary<Vector2Int, MeshData> map, Vector2Int key)
+        private static MeshSet GetSet(Dictionary<Vector2Int, MeshSet> map, Vector2Int key)
         {
-            if (!map.TryGetValue(key, out var m)) map[key] = m = new MeshData();
+            if (!map.TryGetValue(key, out var m)) map[key] = m = new MeshSet();
             return m;
         }
 
-        private static void Emit(Transform root, string name, Dictionary<Vector2Int, MeshData> chunks, Material material, bool collider)
+        /// <summary>Un objet par bloc : un maillage à sous-maillages (un par matériau), statique.</summary>
+        private void Emit(Transform root, string name, Dictionary<Vector2Int, MeshSet> chunks, bool collider)
         {
             var group = new GameObject(name).transform;
             group.SetParent(root, false);
+            var verts = new List<Vector3>();
+            var uvs = new List<Vector2>();
+            var materials = new List<Material>();
+            var submeshes = new List<int[]>();
             foreach (var kv in chunks)
             {
-                var data = kv.Value;
-                if (data.Vertices.Count == 0) continue;
+                verts.Clear();
+                uvs.Clear();
+                materials.Clear();
+                submeshes.Clear();
+                foreach (var slot in kv.Value.Slots)
+                {
+                    var data = slot.Value;
+                    if (data.Vertices.Count == 0) continue;
+                    var offset = verts.Count;
+                    for (var i = 0; i < data.Vertices.Count; i++)
+                    {
+                        var v = data.Vertices[i];
+                        verts.Add(new Vector3(v.X, v.Y, v.Z));
+                        var uv = data.Uvs[i];
+                        uvs.Add(new Vector2(uv.U, uv.V));
+                    }
+                    var tris = new int[data.Triangles.Count];
+                    for (var i = 0; i < tris.Length; i++) tris[i] = data.Triangles[i] + offset;
+                    submeshes.Add(tris);
+                    materials.Add(CityMaterials.Slot(slot.Key, Fallback((CitySlot)slot.Key)));
+                }
+                if (verts.Count == 0) continue;
                 var mesh = new Mesh
                 {
                     name = $"{name} {kv.Key.x},{kv.Key.y}",
-                    indexFormat = data.Vertices.Count > 65000 ? IndexFormat.UInt32 : IndexFormat.UInt16,
+                    indexFormat = verts.Count > 65000 ? IndexFormat.UInt32 : IndexFormat.UInt16,
                 };
-                var verts = new Vector3[data.Vertices.Count];
-                for (var i = 0; i < verts.Length; i++)
-                {
-                    var v = data.Vertices[i];
-                    verts[i] = new Vector3(v.X, v.Y, v.Z);
-                }
-                mesh.vertices = verts;
-                mesh.triangles = data.Triangles.ToArray();
+                mesh.SetVertices(verts);
+                mesh.SetUVs(0, uvs);
+                mesh.subMeshCount = submeshes.Count;
+                for (var i = 0; i < submeshes.Count; i++) mesh.SetTriangles(submeshes[i], i);
                 mesh.RecalculateNormals();
+                mesh.RecalculateTangents(); // cartes de normales
                 mesh.RecalculateBounds();
 
                 var go = new GameObject(mesh.name);
                 go.transform.SetParent(group, false);
                 go.isStatic = true;
                 go.AddComponent<MeshFilter>().sharedMesh = mesh;
-                go.AddComponent<MeshRenderer>().sharedMaterial = material;
+                go.AddComponent<MeshRenderer>().sharedMaterials = materials.ToArray();
                 if (collider) go.AddComponent<MeshCollider>().sharedMesh = mesh;
             }
         }
+
+        /// <summary>Matériau de secours (scène d'avant l'habillage) si celui de Resources/Art/Materials manque.</summary>
+        private Material Fallback(CitySlot slot) => slot switch
+        {
+            CitySlot.RoadPaved => mainRoadMaterial != null ? mainRoadMaterial : roadMaterial,
+            CitySlot.RoadDirt => roadMaterial,
+            _ => buildingMaterial,
+        };
     }
 }
