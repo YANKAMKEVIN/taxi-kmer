@@ -83,6 +83,7 @@ namespace TaxiKmer.Driving
         private ShiftGaugesView _gauges;
         private GameMenu _menu;
         private Canvas _hudCanvas;
+        private TrafficView _trafficView;
         private TaxiSounds _sounds;
         private GameMenuView _menuView;
         private readonly GameSettings _settings = new GameSettings();
@@ -186,7 +187,7 @@ namespace TaxiKmer.Driving
             Street.Reputation = Core.Save.SaveSnapshot.LoadReputation(Save.Data, Load("Data/reputation", new Core.Career.ReputationConfig()));
             Street.SpawnRateScale = Today.ClientsFactor;
             ApplyTrafficScale();
-            var trafficView = gameObject.AddComponent<TrafficView>();
+            var trafficView = _trafficView = gameObject.AddComponent<TrafficView>();
             trafficView.baseMaterial = personMaterial;
             trafficView.City = City;
             // Le taxi du joueur prend les mêmes détails que ceux de Yaoundé (plaques, baguette, pastille).
@@ -929,15 +930,9 @@ namespace TaxiKmer.Driving
             root.transform.SetParent(transform, false);
             root.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(new Vector3(place.FaceX, 0f, place.FaceZ), Vector3.up));
 
-            var width = c.Client.Corpulence switch
-            {
-                Core.Rides.Corpulence.Mince => 0.42f,
-                Core.Rides.Corpulence.Costaud => 0.78f,
-                _ => 0.56f,
-            };
-            var shirt = Shirts[(c.Client.Id.GetHashCode() & 0x7fffffff) % Shirts.Length];
-            Part(root.transform, PrimitiveType.Capsule, new Vector3(0f, 0.8f, 0f), new Vector3(width, 0.8f, width * 0.75f), shirt);
-            Part(root.transform, PrimitiveType.Sphere, new Vector3(0f, 1.78f, 0f), Vector3.one * 0.26f, new Color(0.35f, 0.22f, 0.14f));
+            var look = c.Client.Id.GetHashCode() & 0x7fffffff;
+            var shirt = Shirts[look % Shirts.Length];
+            PeopleMeshes.Dress(PeopleMeshes.Build(root.transform, "Silhouette"), Corpulence(c.Client.Corpulence), look, shirt, _trafficView.Paint);
             // Client accepté : anneau jaune qui pulse au sol sous lui, et zone d'arrêt dessinée sur la voie devant lui
             // (le taxi s'y arrête pour le faire monter ; local +z = vers la route).
             var mark = new GameObject("Client accepté");
@@ -963,11 +958,12 @@ namespace TaxiKmer.Driving
             var t = taxi.transform;
             var go = new GameObject("Client déposé");
             go.transform.SetPositionAndRotation(t.position + t.right * 2.5f, Quaternion.LookRotation(t.right, Vector3.up));
-            var shirt = Shirts[(c.Id.GetHashCode() & 0x7fffffff) % Shirts.Length];
-            Part(go.transform, PrimitiveType.Capsule, new Vector3(0f, 0.8f, 0f), new Vector3(0.56f, 0.8f, 0.42f), shirt);
-            Part(go.transform, PrimitiveType.Sphere, new Vector3(0f, 1.78f, 0f), Vector3.one * 0.26f, new Color(0.35f, 0.22f, 0.14f));
+            var look = c.Id.GetHashCode() & 0x7fffffff;
+            PeopleMeshes.Dress(PeopleMeshes.Build(go.transform, "Silhouette"), Corpulence(c.Corpulence), look, Shirts[look % Shirts.Length], _trafficView.Paint);
             Destroy(go, 5f);
         }
+
+        private static int Corpulence(Core.Rides.Corpulence c) => c == Core.Rides.Corpulence.Mince ? 0 : c == Core.Rides.Corpulence.Costaud ? 2 : 1;
 
         private GameObject Part(Transform parent, PrimitiveType type, Vector3 pos, Vector3 scale, Color color)
         {

@@ -50,6 +50,7 @@ namespace TaxiKmer.Driving
             Config = DriveData.Load();
             _rb = GetComponent<Rigidbody>();
             _logic = new DriveLogic(Config);
+            VehicleMeshes.DressPlayerTaxi(transform); // carrosserie de berline à la place des blocs (direction artistique)
         }
 
         private void Start()

@@ -55,6 +55,8 @@ namespace TaxiKmer.Driving
             public VehicleKind Kind;
             /// <summary>Mototaxi : passager assis derrière le conducteur (affiché s'il en a un).</summary>
             public GameObject Passenger;
+            /// <summary>Piéton : silhouette habillée, jambes qui se balancent.</summary>
+            public PersonParts Person;
         }
 
         private static readonly Color[] CarPaints =
@@ -142,7 +144,13 @@ namespace TaxiKmer.Driving
                     _vehicles[v.Id] = body;
                     body.Root.GetComponent<TrafficVehicleMarker>().Id = v.Id;
                     var paint = v.Kind == VehicleKind.Taxi ? TaxiYellow : CarPaints[v.Id % CarPaints.Length];
-                    if (body.Paint != null) body.Paint.sharedMaterial = MaterialFor(paint);
+                    if (body.Paint != null)
+                    {
+                        // La peinture est le premier matériau de la carrosserie (les autres : vitres, garnitures…).
+                        var mats = body.Paint.sharedMaterials;
+                        mats[0] = MaterialFor(paint);
+                        body.Paint.sharedMaterials = mats;
+                    }
                     if (body.Shirt != null) body.Shirt.sharedMaterial = MaterialFor(Shirts[v.Id % Shirts.Length]);
                 }
                 if (body.Passenger != null && body.Passenger.activeSelf != v.Passengers > 0) body.Passenger.SetActive(v.Passengers > 0);
@@ -184,9 +192,16 @@ namespace TaxiKmer.Driving
         {
             var root = new GameObject(kind == VehicleKind.Taxi ? "Taxi concurrent" : "Voiture");
             root.transform.SetParent(transform, false);
-            var paint = Part(root.transform, PrimitiveType.Cube, new Vector3(0f, 0.72f, 0f), new Vector3(1.74f, 0.6f, 4.3f), Color.white);
-            Part(root.transform, PrimitiveType.Cube, new Vector3(0f, 1.22f, -0.2f), new Vector3(1.58f, 0.44f, 2.1f), Glass);
-            Part(root.transform, PrimitiveType.Cube, new Vector3(0f, 0.3f, 0f), new Vector3(1.66f, 0.3f, 3.9f), Rubber);
+            // Carrosserie de berline partagée (Core/World/CarBodyBuilder) : peinture, vitres, garnitures, phares, feux, pneus.
+            var shape = new GameObject("Carrosserie");
+            shape.transform.SetParent(root.transform, false);
+            shape.AddComponent<MeshFilter>().sharedMesh = VehicleMeshes.TrafficSedan;
+            var paint = shape.AddComponent<MeshRenderer>();
+            paint.sharedMaterials = new[]
+            {
+                MaterialFor(Color.white), MaterialFor(Glass), MaterialFor(new Color(0.08f, 0.08f, 0.09f)),
+                MaterialFor(new Color(0.95f, 0.93f, 0.85f)), MaterialFor(new Color(0.7f, 0.08f, 0.06f)), MaterialFor(Rubber),
+            };
             // Taxis de Yaoundé (photos de référence) : pas d'enseigne sur le toit, mais baguette sombre et pastille numérotée.
             Decorate(root.transform, 4.3f, 1.74f, kind == VehicleKind.Taxi, _decorated++);
             AddKinematicBox(root, new Vector3(0f, 0.75f, 0f), new Vector3(1.74f, 1.3f, 4.3f));
@@ -234,7 +249,7 @@ namespace TaxiKmer.Driving
         public void Decorate(Transform root, float length, float width, bool taxi, int seed)
         {
             foreach (var end in new[] { -1f, 1f })
-                Part(root, PrimitiveType.Cube, new Vector3(0f, 0.62f, end * (length / 2f + 0.012f)), new Vector3(0.36f, 0.11f, 0.02f), PlateOrange)
+                Part(root, PrimitiveType.Cube, new Vector3(0f, 0.52f, end * (length / 2f + 0.1f)), new Vector3(0.36f, 0.11f, 0.02f), PlateOrange) // sur le pare-chocs
                     .shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             if (!taxi) return;
             foreach (var side in new[] { -1f, 1f })
@@ -265,12 +280,14 @@ namespace TaxiKmer.Driving
                     body = TakePerson();
                     _people[p.Id] = body;
                     body.Root.GetComponent<PedestrianMarker>().Id = p.Id;
-                    body.Shirt.sharedMaterial = MaterialFor(Shirts[p.Look % Shirts.Length]);
-                    var width = 0.42f + (p.Look % 7) * 0.05f;
-                    body.Shirt.transform.localScale = new Vector3(width, 0.8f, width * 0.75f);
+                    var corpulence = p.Look % 7 < 2 ? 0 : p.Look % 7 > 4 ? 2 : 1;
+                    PeopleMeshes.Dress(body.Person, corpulence, p.Look, Shirts[p.Look % Shirts.Length], _materialFor ??= MaterialFor);
+                    body.Root.transform.position = new Vector3(p.X, 0f, p.Z);
                 }
                 var face = new Vector3(p.FaceX, 0f, p.FaceZ);
-                body.Root.transform.SetPositionAndRotation(new Vector3(p.X, 0f, p.Z),
+                var at = new Vector3(p.X, 0f, p.Z);
+                PeopleMeshes.Walk(body.Person, (at - body.Root.transform.position).magnitude, p.Speed);
+                body.Root.transform.SetPositionAndRotation(at,
                     face.sqrMagnitude > 1e-6f ? Quaternion.LookRotation(face, Vector3.up) : body.Root.transform.rotation);
             }
             _gone.Clear();
@@ -300,9 +317,8 @@ namespace TaxiKmer.Driving
             contact.center = new Vector3(0f, 0.9f, 0f);
             contact.radius = 0.3f;
             contact.height = 1.8f;
-            var shirt = Part(root.transform, PrimitiveType.Capsule, new Vector3(0f, 0.8f, 0f), new Vector3(0.56f, 0.8f, 0.42f), Color.white);
-            Part(root.transform, PrimitiveType.Sphere, new Vector3(0f, 1.78f, 0f), Vector3.one * 0.26f, Skin);
-            return new Body { Root = root, Shirt = shirt };
+            var person = PeopleMeshes.Build(root.transform, "Silhouette");
+            return new Body { Root = root, Person = person };
         }
 
         // ---------- Outils ----------
@@ -319,6 +335,11 @@ namespace TaxiKmer.Driving
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
             return r;
         }
+
+        private System.Func<Color, Material> _materialFor;
+
+        /// <summary>Matériau de cette couleur (partagé, créé à la demande) : aussi pour les clients de la scène.</summary>
+        public Material Paint(Color color) => MaterialFor(color);
 
         private Material MaterialFor(Color color)
         {
