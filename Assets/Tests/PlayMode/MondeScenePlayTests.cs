@@ -23,6 +23,10 @@ namespace TaxiKmer.PlayModeTests
             // Les tests n'écrivent jamais dans la vraie sauvegarde de l'éditeur.
             _saveDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "taxikmer-tests-" + System.Guid.NewGuid());
             SaveService.DirectoryForTests = _saveDir;
+            // Écran titre à chaque test : le jeu y est figé, le temps ne court pas pendant les attentes. Sans cela, la valeur
+            // laissée par le test précédent (« Jour suivant ») faisait courir la journée et rendait la course complète
+            // instable (le passager posé à la main repartait).
+            StreetView.TitleDone = false;
         }
 
         [TearDown]
@@ -30,6 +34,7 @@ namespace TaxiKmer.PlayModeTests
         {
             SaveService.DirectoryForTests = null;
             SaveService.ConfigForTests = null;
+            StreetView.TitleDone = false;
             if (System.IO.Directory.Exists(_saveDir)) System.IO.Directory.Delete(_saveDir, true);
         }
 
