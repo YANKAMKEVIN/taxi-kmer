@@ -151,7 +151,12 @@ namespace TaxiKmer.Driving
                         mats[0] = MaterialFor(paint);
                         body.Paint.sharedMaterials = mats;
                     }
-                    if (body.Shirt != null) body.Shirt.sharedMaterial = MaterialFor(Shirts[v.Id % Shirts.Length]);
+                    if (body.Shirt != null)
+                    {
+                        var mats = body.Shirt.sharedMaterials; // peau, haut, bas, cheveux : on change le haut
+                        mats[1] = MaterialFor(Shirts[v.Id % Shirts.Length]);
+                        body.Shirt.sharedMaterials = mats;
+                    }
                 }
                 if (body.Passenger != null && body.Passenger.activeSelf != v.Passengers > 0) body.Passenger.SetActive(v.Passengers > 0);
                 var dir = new Vector3(v.DirX, 0f, v.DirZ);
@@ -219,15 +224,24 @@ namespace TaxiKmer.Driving
                 var wheel = Part(root.transform, PrimitiveType.Cylinder, new Vector3(0f, 0.32f, z), new Vector3(0.64f, 0.06f, 0.64f), Rubber);
                 wheel.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
             }
-            var shirt = Part(root.transform, PrimitiveType.Capsule, new Vector3(0f, 1.25f, -0.1f), new Vector3(0.45f, 0.45f, 0.35f), Color.white);
-            Part(root.transform, PrimitiveType.Sphere, new Vector3(0f, 1.85f, -0.05f), Vector3.one * 0.25f, Skin);
-            var passenger = new GameObject("Passager");
-            passenger.transform.SetParent(root.transform, false);
-            Part(passenger.transform, PrimitiveType.Capsule, new Vector3(0f, 1.2f, -0.6f), new Vector3(0.45f, 0.42f, 0.35f), Shirts[2]);
-            Part(passenger.transform, PrimitiveType.Sphere, new Vector3(0f, 1.78f, -0.6f), Vector3.one * 0.25f, Skin);
+            // Conducteur et passager assis : silhouettes habillées, jambes repliées vers l'avant.
+            var driver = Seated(root.transform, "Conducteur", -0.05f, _decorated++);
+            var shirt = driver.Body;
+            var passengerParts = Seated(root.transform, "Passager", -0.55f, _decorated++);
+            var passenger = passengerParts.Root;
             passenger.SetActive(false);
             AddKinematicBox(root, new Vector3(0f, 0.8f, 0f), new Vector3(0.6f, 1.6f, 2f));
             return new Body { Root = root, Shirt = shirt, Kind = VehicleKind.Moto, Passenger = passenger };
+        }
+
+        /// <summary>Personne assise sur la moto : bassin sur la selle, jambes à l'horizontale vers l'avant.</summary>
+        private PersonParts Seated(Transform parent, string name, float z, int look)
+        {
+            var p = PeopleMeshes.Build(parent, name);
+            PeopleMeshes.Dress(p, 1, look * 3 + 1, Shirts[look % Shirts.Length], _materialFor ??= MaterialFor); // pas de pagne sur la moto
+            p.Root.transform.localPosition = new Vector3(0f, 0.85f - Core.World.PersonBuilder.HipHeight, z);
+            p.LegL.localRotation = p.LegR.localRotation = Quaternion.Euler(-75f, 0f, 0f);
+            return p;
         }
 
         private static void AddKinematicBox(GameObject root, Vector3 center, Vector3 size)
