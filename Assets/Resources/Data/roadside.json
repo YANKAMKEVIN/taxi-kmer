@@ -1,0 +1,13 @@
+{
+    "_note": "Bas-côtés de l'itinéraire (planche d'ambiance v1, 27/11) : poteaux électriques en bois reliés par des fils, manguiers et palmiers, étals sous parasol autour des lieux à clients. Distances en mètres. Valeurs par défaut de Claude, à régler avec Kevin sur les captures.",
+    "singleOffset": 7.5,
+    "dualOffset": 12,
+    "poleSpacing": 38,
+    "poleHeight": 8.5,
+    "wireSag": 0.9,
+    "treeSpacing": 26,
+    "palmShare": 0.3,
+    "stallsPerStop": 6,
+    "stallRadius": 45,
+    "junctionClearance": 9
+}

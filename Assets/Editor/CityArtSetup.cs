@@ -36,6 +36,15 @@ namespace TaxiKmer.EditorTools
             ("Windows", "fenetres_atlas", Color.white, 0.55f),
             ("Signs", "enseignes_atlas", Color.white, 0.3f),
             ("Ground", "cracked_red_ground", new Color(1f, 0.92f, 0.86f), 0.1f),
+            ("Pole", "bark_brown_02", new Color(0.7f, 0.6f, 0.5f), 0.1f),
+            ("Wire", "dirty_concrete", new Color(0.08f, 0.08f, 0.08f), 0.3f),
+            ("Trunk", "palm_tree_bark", new Color(0.9f, 0.85f, 0.8f), 0.1f),
+            ("Foliage", "forest_leaves_03", new Color(0.45f, 0.75f, 0.35f), 0.15f),
+            ("Stall", "weathered_planks", new Color(0.95f, 0.88f, 0.8f), 0.15f),
+            ("Umbrella0", "grey_plaster_02", new Color(0.15f, 0.35f, 0.85f), 0.3f),
+            ("Umbrella1", "grey_plaster_02", new Color(0.9f, 0.2f, 0.15f), 0.3f),
+            ("Umbrella2", "grey_plaster_02", new Color(1f, 0.8f, 0.15f), 0.3f),
+            ("Goods", "enseignes_atlas", Color.white, 0.3f),
         };
 
         [MenuItem("Taxi Kmer/Matériaux du monde")]

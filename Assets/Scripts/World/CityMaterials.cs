@@ -12,6 +12,8 @@ namespace TaxiKmer.World
         {
             "RoadPaved", "RoadDirt", "Median", "Lamp", "Wall0", "Wall1", "Wall2", "Wall3", "Wall4", "Wall5", "Wall6", "Wall7",
             "RoofTin", "RoofRust", "RoofConcrete", "Windows", "Signs",
+            // Décors de bas-côté (Core.World.PropBuilder, emplacements 17 à 25).
+            "Pole", "Wire", "Trunk", "Foliage", "Stall", "Umbrella0", "Umbrella1", "Umbrella2", "Goods",
         };
 
         public static Material Slot(int slot, Material fallback)

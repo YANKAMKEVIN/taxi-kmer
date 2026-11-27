@@ -116,11 +116,17 @@ namespace TaxiKmer.World
                     AddLamps(lamps, m.xz);
                 }
 
+            // Bas-côtés de l'itinéraire : poteaux et fils, arbres, étals sous parasol (Core/World/RoadsideProps).
+            var props = new Dictionary<Vector2Int, MeshSet>();
+            var obstacles = BuildProps(data, props);
+
             var root = transform;
             Emit(root, "Routes", roads, false);
             Emit(root, "Murets centraux", medians, true);
             Emit(root, "Lampadaires", lamps, false);
             Emit(root, "Bâtiments", buildings, buildingColliders);
+            Emit(root, "Bas-côtés", props, false);
+            AddObstacles(root, obstacles);
 
             var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
             ground.name = "Sol";
@@ -142,6 +148,69 @@ namespace TaxiKmer.World
 
             Debug.Log($"[TaxiKmer] Monde construit : {data.roads.Length} routes, {data.buildings.Length} bâtiments " +
                       $"(dont {detailed} détaillés), {roads.Count + buildings.Count} blocs de maillage.");
+        }
+
+        /// <summary>Planifie et construit les décors de bas-côté ; rend les obstacles à doter d'un collisionneur (troncs, poteaux).</summary>
+        private List<Prop> BuildProps(WorldData data, Dictionary<Vector2Int, MeshSet> props)
+        {
+            var text = Resources.Load<TextAsset>("Data/roadside");
+            var config = text != null ? JsonUtility.FromJson<RoadsideConfig>(text.text) : new RoadsideConfig();
+            var stopsText = Resources.Load<TextAsset>(worldResource.Replace("world_", "stops_"));
+            var stopsAlong = new List<float>();
+            if (stopsText != null)
+                foreach (var s in JsonUtility.FromJson<Core.Rides.StopsConfig>(stopsText.text).stops) stopsAlong.Add(s.distanceAlongRouteMeters);
+
+            var medians = data.traffic?.medians ?? System.Array.Empty<MedianData>();
+            bool Dual(float x, float z)
+            {
+                foreach (var m in medians)
+                {
+                    if (m.xz == null || m.xz.Length < 4) continue;
+                    WorldGeometry.Project(m.xz, WorldGeometry.CumulativeLengths(m.xz), x, z, out _, out var d);
+                    if (d < 6f) return true;
+                }
+                return false;
+            }
+            bool NearOtherRoad(float x, float z)
+            {
+                foreach (var r in data.roads)
+                {
+                    if (MainRoads.Contains(r.highway) || r.xz.Length < 4) continue;
+                    for (var i = 0; i + 3 < r.xz.Length; i += 2)
+                        if (SegmentDistance(x, z, r.xz[i], r.xz[i + 1], r.xz[i + 2], r.xz[i + 3]) < config.junctionClearance + r.width / 2f) return true;
+                }
+                return false;
+            }
+            var list = RoadsideProps.Plan(config, data.route?.xz, stopsAlong, Dual, NearOtherRoad, 2711);
+            foreach (var p in list) PropBuilder.Build(GetSet(props, Cell(p.X, p.Z)), p, config);
+            return list;
+        }
+
+        private static float SegmentDistance(float x, float z, float ax, float az, float bx, float bz)
+        {
+            float ex = bx - ax, ez = bz - az;
+            var len2 = ex * ex + ez * ez;
+            var t = len2 > 1e-6f ? Mathf.Clamp01(((x - ax) * ex + (z - az) * ez) / len2) : 0f;
+            float dx = ax + ex * t - x, dz = az + ez * t - z;
+            return Mathf.Sqrt(dx * dx + dz * dz);
+        }
+
+        /// <summary>Collisionneurs simples des troncs et poteaux (on peut les percuter) ; étals et palmes sans collision.</summary>
+        private static void AddObstacles(Transform root, List<Prop> props)
+        {
+            var group = new GameObject("Obstacles des bas-côtés").transform;
+            group.SetParent(root, false);
+            foreach (var p in props)
+            {
+                if (p.Kind == PropKind.Stall) continue;
+                var go = new GameObject(p.Kind.ToString());
+                go.transform.SetParent(group, false);
+                go.transform.position = new Vector3(p.X, 2f, p.Z);
+                go.isStatic = true;
+                var capsule = go.AddComponent<CapsuleCollider>();
+                capsule.radius = p.Kind == PropKind.Pole ? 0.15f : 0.3f * p.Scale;
+                capsule.height = 4f;
+            }
         }
 
         private static CityStyleConfig LoadStyle()

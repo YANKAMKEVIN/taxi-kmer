@@ -13,7 +13,8 @@ SRC, DST = sys.argv[1], sys.argv[2]
 SIZE = 1024
 MATERIALS = ["cracked_red_ground", "dry_ground_01", "asphalt_02", "asphalt_03", "painted_plaster_wall", "beige_wall_002",
              "blue_plaster_weathered", "clay_plaster", "grey_plaster_02", "damaged_plaster", "corrugated_iron",
-             "green_metal_rust", "dirty_concrete", "concrete_pavement", "painted_metal_shutter"]
+             "green_metal_rust", "dirty_concrete", "concrete_pavement", "painted_metal_shutter",
+             "bark_brown_02", "palm_tree_bark", "forest_leaves_03", "weathered_planks"]
 
 
 def matter(name):
