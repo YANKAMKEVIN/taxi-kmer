@@ -69,8 +69,10 @@ namespace TaxiKmer.PlayModeTests
             // On « téléporte » le taxi à la destination et on vérifie que la vue suit (repère, bouton contextuel).
             var dest = street.FindStop(client.Client.DestinationStopId);
             taxi.PlaceOnRoute(dest.distanceAlongRouteMeters);
-            yield return new WaitForSeconds(1.5f);
             var controls = Object.FindFirstObjectByType<DriverControls>();
+            // Le taxi se pose sur ses roues avant d'être « arrêté » ; au premier lancement (shaders à compiler),
+            // les images sont lentes : on attend la condition plutôt qu'une durée fixe.
+            for (var t = 0f; t < 6f && !controls.ActionVisible; t += Time.deltaTime) yield return null;
             Assert.IsTrue(controls.ActionVisible, "Bouton « Faire descendre » affiché à la destination");
             StringAssert.StartsWith("Faire descendre", controls.ActionLabel);
             var marker = GameObject.Find("Repère " + dest.name);
@@ -97,8 +99,8 @@ namespace TaxiKmer.PlayModeTests
             Assert.IsNotNull(GameObject.Find("Station " + station.name), "Station-service construite");
             tank.Set(5f);
             taxi.PlaceOnRoute(station.distanceAlongRouteMeters);
-            yield return new WaitForSeconds(1.5f);
             var controls = Object.FindFirstObjectByType<DriverControls>();
+            for (var t = 0f; t < 6f && !controls.ActionVisible; t += Time.deltaTime) yield return null;
             Assert.IsTrue(controls.ActionVisible, "Bouton de la station affiché");
             StringAssert.StartsWith("Carburant", controls.ActionLabel);
             var outcome = view.Street.Perform(new TaxiOnRoute { Along = station.distanceAlongRouteMeters, Direction = 1, Lateral = 2f });

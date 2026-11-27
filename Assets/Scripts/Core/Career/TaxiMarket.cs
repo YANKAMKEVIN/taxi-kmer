@@ -45,7 +45,7 @@ namespace TaxiKmer.Core.Career
     public static class TaxiPurchase
     {
         public static int DownPayment(LoanData loan, int price) =>
-            (int)Math.Ceiling(price * Math.Max(0f, Math.Min(1f, loan.minDownPayment)));
+            (int)Math.Ceiling(price * Math.Round((double)Math.Max(0f, Math.Min(1f, loan.minDownPayment)), 6));
 
         /// <summary>Remboursement par jour d'un prêt de <paramref name="borrowed"/> FCFA (intérêts compris), arrondi au franc supérieur.</summary>
         public static int DailyRepayment(LoanData loan, int borrowed)
