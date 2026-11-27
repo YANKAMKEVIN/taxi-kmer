@@ -12,7 +12,7 @@ namespace TaxiKmer.Core.DotnetTests
     {
         private static readonly JsonSerializerOptions Opts = new JsonSerializerOptions { IncludeFields = true };
 
-        private static T Load<T>(string name)
+        internal static T Load<T>(string name)
         {
             var dir = TestContext.CurrentContext.TestDirectory;
             var path = Path.Combine(dir, "Data", name);
@@ -185,7 +185,7 @@ namespace TaxiKmer.Core.DotnetTests
         [Test]
         public void DayLight_KeysInOrder_CoverTheWorkingDay()
         {
-            var c = Load<DayLightConfig>("daylight.json");
+            var c = DataFilesTests.Load<DayLightConfig>("daylight.json");
             Assert.Greater(c.keys.Length, 3);
             for (var i = 1; i < c.keys.Length; i++) Assert.Greater(c.keys[i].minute, c.keys[i - 1].minute, $"Clé {i} dans l'ordre");
             Assert.LessOrEqual(c.keys[0].minute, 6 * 60, "Couvre le début de la journée (6 h)");
@@ -195,7 +195,7 @@ namespace TaxiKmer.Core.DotnetTests
         [Test]
         public void DayLight_Yaounde_SunRisesEast_HighAtNoon_SetsWest_NightIsReadable()
         {
-            var c = Load<DayLightConfig>("daylight.json");
+            var c = DataFilesTests.Load<DayLightConfig>("daylight.json");
             var morning = DayLight.At(c, 7 * 60);
             var noon = DayLight.At(c, 12 * 60 + 30);
             var evening = DayLight.At(c, 17 * 60 + 30);
