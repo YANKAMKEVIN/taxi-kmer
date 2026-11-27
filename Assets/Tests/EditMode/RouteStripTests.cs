@@ -1,3 +1,4 @@
+using System.Linq;
 using NUnit.Framework;
 using TaxiKmer.Core.Ux;
 
@@ -31,7 +32,7 @@ namespace TaxiKmer.Core.Tests
             for (var i = 0; i < placed.Length; i++)
             for (var j = i + 1; j < placed.Length; j++)
             {
-                if (placed[i].Row != placed[j].Row) continue;
+                if (placed[i].Row != placed[j].Row || placed[i].Hidden || placed[j].Hidden) continue;
                 var overlap = placed[i].Left < placed[j].Left + widths[j] && placed[j].Left < placed[i].Left + widths[i];
                 Assert.IsFalse(overlap, $"Noms {i} et {j} sur la même rangée.");
             }
@@ -43,6 +44,24 @@ namespace TaxiKmer.Core.Tests
             var placed = RouteStrip.LayoutLabels(new[] { 5f, 995f }, new[] { 200f, 200f }, 1000f);
             Assert.GreaterOrEqual(placed[0].Left, 0f);
             Assert.LessOrEqual(placed[1].Left + 200f, 1000f);
+        }
+
+        [Test]
+        public void Crowded_NamesAreHidden_NeverStacked_AndTheTerminusStays()
+        {
+            // Frise étroite d'un téléphone : six lieux serrés au début, le terminus au bout (vu le 27/11).
+            var centers = new[] { 0f, 30f, 50f, 70f, 90f, 400f };
+            var widths = new[] { 90f, 70f, 80f, 100f, 60f, 50f };
+            var placed = RouteStrip.LayoutLabels(centers, widths, 400f, 2, 6f);
+            Assert.IsFalse(placed[0].Hidden, "Le départ est nommé");
+            Assert.IsFalse(placed[5].Hidden, "Le terminus est nommé");
+            Assert.IsTrue(placed.Any(p => p.Hidden), "Les noms qui ne tiennent pas sont cachés");
+            for (var i = 0; i < placed.Length; i++)
+            for (var j = i + 1; j < placed.Length; j++)
+            {
+                if (placed[i].Hidden || placed[j].Hidden || placed[i].Row != placed[j].Row) continue;
+                Assert.IsFalse(placed[i].Left < placed[j].Left + widths[j] && placed[j].Left < placed[i].Left + widths[i], $"{i} et {j} se chevauchent");
+            }
         }
 
         [Test]

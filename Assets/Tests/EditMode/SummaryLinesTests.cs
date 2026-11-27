@@ -16,7 +16,7 @@ namespace TaxiKmer.Core.Tests
             ledger.AddCompensation(22000);
             ledger.AddTip(500);
             var lines = SummaryLines.Build(DaySummary.From(ledger), new DayClosure());
-            Assert.AreEqual("Courses (0 courses)", lines[0].Label);
+            Assert.AreEqual("Courses (0)", lines[0].Label);
             Assert.AreEqual(0, lines[0].Amount);
             Assert.AreEqual(500, lines.Single(l => l.Label == "Pourboires").Amount);
             Assert.AreEqual(22000, lines.Single(l => l.Label == "Dédommagements reçus").Amount);
@@ -30,7 +30,7 @@ namespace TaxiKmer.Core.Tests
             ledger.AddFare(800);
             ledger.AddExpense("Garage", 1500);
             var lines = SummaryLines.Build(DaySummary.From(ledger), new DayClosure { VersementPaid = 800, VersementMissing = 5200 });
-            CollectionAssert.AreEqual(new[] { "Courses (1 course)", "Versement (incomplet)", "Carburant (0,0 L · 0,0 km)", "Garage" },
+            CollectionAssert.AreEqual(new[] { "Courses (1)", "Versement (incomplet)", "Carburant (0,0 L · 0,0 km)", "Garage" },
                 lines.Select(l => l.Label).ToArray());
             CollectionAssert.AreEqual(new[] { "+ ", "- ", "- ", "- " }, lines.Select(l => l.Sign).ToArray());
         }

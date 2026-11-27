@@ -23,10 +23,9 @@ namespace TaxiKmer.Core.Ux
     {
         public static List<SummaryLine> Build(DaySummary s, DayClosure c)
         {
-            var courses = s.RideCount == 1 ? "1 course" : $"{s.RideCount} courses";
             var lines = new List<SummaryLine>
             {
-                new SummaryLine { Label = $"Courses ({courses})", Income = true, Amount = s.FaresRevenue },
+                new SummaryLine { Label = $"Courses ({s.RideCount})", Income = true, Amount = s.FaresRevenue },
             };
             if (s.Tips > 0) lines.Add(new SummaryLine { Label = "Pourboires", Income = true, Amount = s.Tips });
             if (s.Compensations > 0) lines.Add(new SummaryLine { Label = "Dédommagements reçus", Income = true, Amount = s.Compensations });

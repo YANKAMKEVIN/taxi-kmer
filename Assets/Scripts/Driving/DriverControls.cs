@@ -278,7 +278,8 @@ namespace TaxiKmer.Driving
 
             foreach (var (zone, image, rect) in _buttons)
             {
-                rect.gameObject.SetActive(!Locked);
+                // Le bouton contextuel disparaît en entier (son contour restait affiché, vide, en haut de l'écran : vu le 27/11).
+                rect.gameObject.SetActive(!Locked && (zone.control != DriveControl.Action || ActionVisible));
                 var on = zone.control switch
                 {
                     DriveControl.SteerLeft => input.Left,

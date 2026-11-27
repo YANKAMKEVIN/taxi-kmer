@@ -132,6 +132,7 @@ namespace TaxiKmer.Driving
             for (var i = 0; i < _stops.Length; i++)
             {
                 var row = placed[i].Row;
+                _labels[i].enabled = !placed[i].Hidden;
                 UiKit.PlaceTopLeft(_labels[i].rectTransform, _x0 + placed[i].Left, h * (0.006f + 0.026f * row), widths[i] + 2f, h * 0.03f);
             }
         }

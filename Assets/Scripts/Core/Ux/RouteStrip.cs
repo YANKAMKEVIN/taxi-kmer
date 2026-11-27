@@ -7,6 +7,8 @@ namespace TaxiKmer.Core.Ux
     {
         public float Left;
         public int Row;
+        /// <summary>Le nom ne tient nulle part sans chevaucher un autre : il n'est pas affiché (le repère reste).</summary>
+        public bool Hidden;
     }
 
     /// <summary>
@@ -24,8 +26,8 @@ namespace TaxiKmer.Core.Ux
 
         /// <summary>
         /// Place les noms des lieux sans chevauchement : chaque nom est centré sur son lieu (le premier calé à gauche,
-        /// le dernier à droite, tous gardés dans la frise), sur la première rangée s'il y tient, sinon sur la rangée qui
-        /// le gêne le moins. <paramref name="centers"/> croissants, en pixels depuis le début de la frise.
+        /// le dernier à droite, tous gardés dans la frise), sur la première rangée s'il y tient, sinon sur la suivante, sinon
+        /// caché (jamais deux noms l'un sur l'autre) ; le dernier lieu est toujours nommé. <paramref name="centers"/> croissants, en pixels depuis le début de la frise.
         /// </summary>
         public static StripLabel[] LayoutLabels(float[] centers, float[] widths, float stripWidth, int rows = 2, float gap = 6f)
         {
@@ -36,21 +38,28 @@ namespace TaxiKmer.Core.Ux
             var rowEnd = new float[Math.Max(1, rows)];
             for (var r = 0; r < rowEnd.Length; r++) rowEnd[r] = float.NegativeInfinity;
 
+            // Le dernier lieu (le terminus) est toujours nommé : sa place est réservée sur la première rangée.
+            var lastLeft = n > 0 ? Math.Max(0f, Math.Min(stripWidth - widths[n - 1], centers[n - 1] - widths[n - 1])) : 0f;
             for (var i = 0; i < n; i++)
             {
                 var w = widths[i];
                 var left = i == 0 ? centers[i] : i == n - 1 ? centers[i] - w : centers[i] - w / 2f;
                 left = Math.Max(0f, Math.Min(stripWidth - w, left));
-                var best = 0;
-                var bestOverlap = float.MaxValue;
+                if (i == n - 1 && n > 1)
+                {
+                    result[i] = new StripLabel { Left = left, Row = 0 };
+                    break;
+                }
+                var row = -1;
                 for (var r = 0; r < rowEnd.Length; r++)
                 {
-                    var overlap = Math.Max(0f, rowEnd[r] + gap - left);
-                    if (overlap < bestOverlap - 1e-3f) { best = r; bestOverlap = overlap; }
-                    if (overlap <= 0f) break;
+                    var free = rowEnd[r] + gap <= left;
+                    if (free && r == 0 && n > 1 && left + w + gap > lastLeft) free = false; // gênerait le terminus
+                    if (free) { row = r; break; }
                 }
-                result[i] = new StripLabel { Left = left, Row = best };
-                rowEnd[best] = Math.Max(rowEnd[best], left + w);
+                // Quand aucune rangée n'a la place, le nom est caché plutôt que superposé (vu le 27/11 : « CaPont d'EBorne »).
+                result[i] = row < 0 ? new StripLabel { Left = left, Row = 0, Hidden = true } : new StripLabel { Left = left, Row = row };
+                if (row >= 0) rowEnd[row] = left + w;
             }
             return result;
         }

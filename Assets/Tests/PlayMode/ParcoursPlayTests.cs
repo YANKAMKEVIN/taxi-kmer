@@ -39,6 +39,20 @@ namespace TaxiKmer.PlayModeTests
             Directory.CreateDirectory(_shots);
             foreach (var f in Directory.GetFiles(_shots, "*.png")) File.Delete(f);
             StreetView.TitleDone = false;
+            PhoneResolution();
+        }
+
+        /// <summary>
+        /// Rendu au format d'un téléphone en paysage (S24 : 19,5/9) plutôt qu'au 640x480 du batchmode, pour que les
+        /// captures montrent la vraie mise en page. API de l'éditeur appelée par réflexion (assembly de jeu).
+        /// </summary>
+        private static void PhoneResolution()
+        {
+#if UNITY_EDITOR
+            var type = System.Type.GetType("UnityEditor.PlayModeWindow, UnityEditor");
+            var set = type?.GetMethod("SetCustomRenderingResolution", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+            set?.Invoke(null, new object[] { 1560u, 720u, "Téléphone paysage (tests)" });
+#endif
         }
 
         [TearDown]

@@ -155,13 +155,17 @@ namespace TaxiKmer.Driving
             _bubble.gameObject.SetActive(visible && b != null);
             if (!visible || b == null) return;
             var h = Screen.height;
-            var w = h * 1.2f;
+            // Entre les flèches (gauche) et les pédales (droite) : la bulle les recouvrait (vu le 27/11 au format du S24).
+            var w = Mathf.Clamp(Screen.width - h * 1.3f, h * 0.8f, h * 1.2f);
             var r = _bubble.rectTransform;
             r.anchorMin = r.anchorMax = r.pivot = new Vector2(0.5f, 0f);
             r.anchoredPosition = new Vector2(0f, h * 0.2f);
             r.sizeDelta = new Vector2(w, h * 0.2f);
             _text.text = b.Text;
             _text.fontSize = Mathf.RoundToInt(h * 0.032f);
+            _text.resizeTextForBestFit = true;
+            _text.resizeTextMaxSize = _text.fontSize;
+            _text.resizeTextMinSize = Mathf.RoundToInt(h * 0.022f);
             UiKit.PlaceTopCenter(_text.rectTransform, h * 0.015f, w * 0.94f, h * 0.08f);
             var open = b.RepliesOpen(_config.replySeconds);
             var replies = b.Line.replies ?? new ReplyData[0];

@@ -221,13 +221,13 @@ namespace TaxiKmer.Driving
             sr.pivot = new Vector2(0.5f, 0.5f);
             _stampText.fontSize = Mathf.RoundToInt(h * 0.055f);
             sr.sizeDelta = new Vector2(_stampText.preferredWidth + h * 0.08f, h * 0.1f);
-            sr.anchoredPosition = new Vector2(0f, -h * 0.545f);
-            sr.localRotation = Quaternion.Euler(0f, 0f, 6f);
+            sr.anchoredPosition = new Vector2(0f, -h * 0.52f); // au-dessus de la note (le tampon la mordait : vu le 27/11)
+            sr.localRotation = Quaternion.Euler(0f, 0f, 4f);
             sr.localScale = Vector3.one * Mathf.Max(stampScale, 0.01f);
 
             // Note (propriétaire, garde à vue, passagers partis sans payer) : jusqu'à trois lignes dans 0,09 d'écran.
             var noteLines = _note.text.Split('\n').Length;
-            Place(_note, pad, h * 0.6f, w - 2 * pad, h * 0.09f, h * Mathf.Min(0.04f, 0.075f / noteLines));
+            Place(_note, pad, h * 0.61f, w - 2 * pad, h * 0.09f, h * Mathf.Min(0.04f, 0.075f / noteLines));
             _note.enabled = _reveal.NoteVisible;
 
             _button.anchorMin = _button.anchorMax = new Vector2(0.5f, 0f);

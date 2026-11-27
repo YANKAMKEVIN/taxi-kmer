@@ -82,6 +82,7 @@ namespace TaxiKmer.Driving
         private CabinPlanView _cabinView;
         private ShiftGaugesView _gauges;
         private GameMenu _menu;
+        private Canvas _hudCanvas;
         private TaxiSounds _sounds;
         private GameMenuView _menuView;
         private readonly GameSettings _settings = new GameSettings();
@@ -311,6 +312,10 @@ namespace TaxiKmer.Driving
                 _police != null ? _police.Police.Papers.Summary(_police.Police.Day) : "", pending), pending);
             if (controls.PauseTriggered && !Street.DayFinished && _menu.Pause()) SetTimeStopped(true);
             controls.Locked = _menu.Frozen || _summaryView != null || (_police != null && _police.Active);
+            // Écran titre (et ses réglages) : le jeu reste visible derrière, mais pas le HUD de conduite par-dessus.
+            var onTitle = _menu.Screen == MenuScreen.Title || (_menu.Screen == MenuScreen.Settings && !_menu.TimeStopped);
+            if (_hudCanvas == null) _hudCanvas = controls.Overlay.GetComponentInParent<Canvas>();
+            if (_hudCanvas != null && _hudCanvas.enabled == onTitle) _hudCanvas.enabled = !onTitle;
 
             if (!Street.DayFinished && !_menu.Frozen)
             {
@@ -509,7 +514,8 @@ namespace TaxiKmer.Driving
             var h = Screen.height;
             _tutorialText.text = _tutorial.Instruction;
             _tutorialText.fontSize = Mathf.RoundToInt(h * 0.04f);
-            var w = Mathf.Min(Screen.width * 0.6f, h * 1.1f);
+            // Entre le plan des places (gauche) et la colonne du klaxon et de la radio (droite).
+            var w = Mathf.Max(h * 0.6f, Mathf.Min(h * 1.1f, Screen.width - h * 1.12f));
             var r = _tutorialPanel.rectTransform;
             r.anchorMin = r.anchorMax = r.pivot = new Vector2(0.5f, 1f);
             r.anchoredPosition = new Vector2(0f, -h * 0.30f);
@@ -1147,10 +1153,16 @@ namespace TaxiKmer.Driving
                 line.enabled = i < lines.Count;
                 if (!line.enabled) continue;
                 line.text = lines[i];
+                // Entre le plan des places (gauche) et le klaxon (droite) ; un message long rapetisse au lieu de déborder
+                // de l'écran (vu le 27/11 : le message d'accrochage sortait des deux côtés).
                 line.fontSize = Mathf.RoundToInt(h * (i == 0 ? 0.045f : 0.036f));
+                line.horizontalOverflow = HorizontalWrapMode.Wrap;
+                line.resizeTextForBestFit = true;
+                line.resizeTextMaxSize = line.fontSize;
+                line.resizeTextMinSize = Mathf.RoundToInt(h * 0.022f);
                 line.color = i == 0 ? Color.white : new Color(1f, 1f, 1f, 0.75f);
-                line.rectTransform.anchoredPosition = new Vector2(0f, -(top + i * h * 0.06f));
-                line.rectTransform.sizeDelta = new Vector2(h * 1.4f, h * 0.06f);
+                line.rectTransform.anchoredPosition = new Vector2(0f, -(top + i * h * 0.07f));
+                line.rectTransform.sizeDelta = new Vector2(Mathf.Min(h * 1.4f, Screen.width - h * 0.62f), h * 0.07f);
             }
         }
 

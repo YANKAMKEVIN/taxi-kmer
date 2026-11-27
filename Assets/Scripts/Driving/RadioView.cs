@@ -63,7 +63,7 @@ namespace TaxiKmer.Driving
                 var sr = _subtitle.rectTransform;
                 sr.anchorMin = sr.anchorMax = sr.pivot = new Vector2(1f, 1f);
                 sr.anchoredPosition = new Vector2(-h * 0.04f, -h * (ShiftGaugesView.BottomFraction + 0.11f));
-                sr.sizeDelta = new Vector2(h * 0.7f, h * 0.12f);
+                sr.sizeDelta = new Vector2(h * 0.5f, h * 0.14f); // colonne du bouton : ne passe pas sous la consigne du tutoriel
                 _subtitle.fontSize = Mathf.RoundToInt(h * 0.024f);
                 _subtitle.text = $"« {text} »";
             }

@@ -71,9 +71,12 @@ namespace TaxiKmer.PlayModeTests
             taxi.PlaceOnRoute(dest.distanceAlongRouteMeters);
             var controls = Object.FindFirstObjectByType<DriverControls>();
             // Le taxi se pose sur ses roues avant d'être « arrêté » ; au premier lancement (shaders à compiler),
-            // les images sont lentes : on attend la condition plutôt qu'une durée fixe.
-            for (var t = 0f; t < 6f && !controls.ActionVisible; t += Time.deltaTime) yield return null;
-            Assert.IsTrue(controls.ActionVisible, "Bouton « Faire descendre » affiché à la destination");
+            // les images sont lentes : on attend la condition (15 s réelles au plus) plutôt qu'une durée fixe.
+            for (var until = Time.realtimeSinceStartup + 15f; !controls.ActionVisible && Time.realtimeSinceStartup < until;) yield return null;
+            var seen = view.TaxiOnRouteNow();
+            Assert.IsTrue(controls.ActionVisible, "Bouton « Faire descendre » affiché à la destination ; " +
+                $"action {street.AvailableAction(seen).Kind}, {seen.SpeedKmh:0.0} km/h, écart {seen.Lateral:0.0} m, à {seen.Along:0}/{dest.distanceAlongRouteMeters:0} m, " +
+                $"passagers {street.Shift.Cabin.PassengerCount}, fin {street.DayFinished}, titre passé {StreetView.TitleDone}, choix {view.Pending.Any}");
             StringAssert.StartsWith("Faire descendre", controls.ActionLabel);
             var marker = GameObject.Find("Repère " + dest.name);
             Assert.IsNotNull(marker, "Repère de destination visible");
@@ -100,7 +103,7 @@ namespace TaxiKmer.PlayModeTests
             tank.Set(5f);
             taxi.PlaceOnRoute(station.distanceAlongRouteMeters);
             var controls = Object.FindFirstObjectByType<DriverControls>();
-            for (var t = 0f; t < 6f && !controls.ActionVisible; t += Time.deltaTime) yield return null;
+            for (var until = Time.realtimeSinceStartup + 15f; !controls.ActionVisible && Time.realtimeSinceStartup < until;) yield return null;
             Assert.IsTrue(controls.ActionVisible, "Bouton de la station affiché");
             StringAssert.StartsWith("Carburant", controls.ActionLabel);
             var outcome = view.Street.Perform(new TaxiOnRoute { Along = station.distanceAlongRouteMeters, Direction = 1, Lateral = 2f });
