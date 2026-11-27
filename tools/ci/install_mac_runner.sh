@@ -13,6 +13,12 @@ if [[ ! -f ./config.sh ]]; then
   curl -fsSL -o runner.tar.gz "https://github.com/actions/runner/releases/download/v$VERSION/actions-runner-osx-$ARCH-$VERSION.tar.gz"
   tar xzf runner.tar.gz && rm runner.tar.gz
 fi
+# Relançable : si l'exécuteur existe déjà (GitHub l'a oublié, Mac en veille…), on l'arrête et on le réinscrit.
+if [[ -f .service ]]; then ./svc.sh stop || true; ./svc.sh uninstall || true; fi
+if [[ -f .runner || -f .runner_migrated ]]; then
+  REMOVE=$(gh api -X POST "repos/$REPO/actions/runners/remove-token" --jq .token)
+  ./config.sh remove --token "$REMOVE" || rm -f .runner .runner_migrated .credentials .credentials_migrated .credentials_rsaparams
+fi
 TOKEN=$(gh api -X POST "repos/$REPO/actions/runners/registration-token" --jq .token)
 ./config.sh --unattended --replace --url "https://github.com/$REPO" --token "$TOKEN" \
   --name "mac-de-kevin" --labels unity --work _work
