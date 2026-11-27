@@ -12,6 +12,10 @@ namespace TaxiKmer.Core.Day
     {
         public int Revenue { get; private set; }
         public int RideCount { get; private set; }
+        /// <summary>Part de <see cref="Revenue"/> venue des courses, des pourboires et des dédommagements d'accrochage.</summary>
+        public int FaresRevenue { get; private set; }
+        public int Tips { get; private set; }
+        public int Compensations { get; private set; }
         public int Versement { get; private set; }
         public float Kilometres { get; private set; }
         public float FuelLitres { get; private set; }
@@ -63,6 +67,9 @@ namespace TaxiKmer.Core.Day
                 Impounded = impounded,
                 Revenue = ledger.Revenue,
                 RideCount = ledger.RideCount,
+                FaresRevenue = ledger.FaresRevenue,
+                Tips = ledger.Tips,
+                Compensations = ledger.Compensations,
                 Versement = ledger.Versement,
                 Kilometres = ledger.MetersDriven / 1000f,
                 FuelLitres = ledger.FuelLitres,

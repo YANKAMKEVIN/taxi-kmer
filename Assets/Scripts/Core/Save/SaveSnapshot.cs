@@ -46,6 +46,8 @@ namespace TaxiKmer.Core.Save
                 tankLitres = shift.Tank != null ? shift.Tank.Litres : -1f,
                 fuelBoughtLitres = shift.Ledger.FuelBoughtLitres,
                 fuelBoughtCost = shift.Ledger.FuelBoughtCost,
+                tips = shift.Ledger.Tips,
+                compensations = shift.Ledger.Compensations,
                 reputationDayStart = street.Reputation?.DayStart ?? -1,
                 reputation = street.Reputation?.Score ?? -1,
             };
@@ -67,6 +69,7 @@ namespace TaxiKmer.Core.Save
                 expenses.Add(new Expense { Label = e.label, Amount = e.amount });
             shift.Ledger.Restore(day.revenue, day.rideCount, day.metersDriven, expenses);
             shift.Ledger.RestoreFuel(day.fuelBoughtLitres, day.fuelBoughtCost);
+            shift.Ledger.RestoreExtras(day.tips, day.compensations);
             if (shift.Tank != null && day.tankLitres >= 0f) shift.Tank.Set(day.tankLitres);
             if (street.Reputation != null && day.reputation >= 0)
                 street.Reputation.Restore(day.reputationDayStart >= 0 ? day.reputationDayStart : day.reputation, day.reputation);

@@ -102,6 +102,9 @@ namespace TaxiKmer.Core.Save
         public float tankLitres = -1f;
         public float fuelBoughtLitres;
         public int fuelBoughtCost;
+        /// <summary>Pourboires et dédommagements compris dans <see cref="revenue"/> (absents des sauvegardes d'avant : 0).</summary>
+        public int tips;
+        public int compensations;
         /// <summary>Version 4 : réputation au début de la journée et maintenant (-1 = inconnue).</summary>
         public int reputationDayStart = -1;
         public int reputation = -1;

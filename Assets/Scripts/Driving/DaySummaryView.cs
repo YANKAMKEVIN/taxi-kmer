@@ -49,26 +49,10 @@ namespace TaxiKmer.Driving
             _font = font;
             _closure = c;
 
-            var courses = s.RideCount == 1 ? "1 course" : $"{s.RideCount} courses";
-            var versementLabel = c.TakenFromSavings > 0
-                ? $"Versement au propriétaire (dont {DaySummary.Money(c.TakenFromSavings)} d'épargne)"
-                : c.VersementMissing > 0 ? "Versement remis (incomplet)" : "Versement au propriétaire";
-            var labels = new System.Collections.Generic.List<string>
-            {
-                $"Recettes ({courses})",
-                versementLabel,
-                s.TankLitres >= 0f
-                    ? $"Carburant acheté ({DaySummary.OneDecimal(s.FuelLitres)} L ; {DaySummary.OneDecimal(s.Kilometres)} km parcourus)"
-                    : $"Carburant ({DaySummary.OneDecimal(s.FuelLitres)} L, {DaySummary.OneDecimal(s.Kilometres)} km)",
-            };
-            var values = new System.Collections.Generic.List<int> { s.Revenue, c.VersementPaid, s.FuelCost };
-            var signs = new System.Collections.Generic.List<string> { "+ ", "- ", "- " };
-            foreach (var e in s.Expenses)
-            {
-                labels.Add(e.Label);
-                values.Add(e.Amount);
-                signs.Add("- ");
-            }
+            var lines = SummaryLines.Build(s, c);
+            var labels = lines.ConvertAll(l => l.Label);
+            var values = lines.ConvertAll(l => l.Amount);
+            var signs = lines.ConvertAll(l => l.Sign);
             _values = values.ToArray();
             _signs = signs.ToArray();
             _reveal = new SummaryReveal(_values.Length);
@@ -224,7 +208,7 @@ namespace TaxiKmer.Driving
             var change = after - _closure.SavingsBefore;
             var shownAfter = SummaryReveal.Partial(Mathf.Abs(after), _reveal.TotalCount);
             var shownChange = SummaryReveal.Partial(Mathf.Abs(change), _reveal.TotalCount);
-            _total.text = $"Épargne : {DaySummary.Money(after < 0 ? -shownAfter : shownAfter)} ({(change >= 0 ? "+ " : "- ")}{DaySummary.Money(shownChange)})";
+            _total.text = SummaryLines.Savings(after < 0 ? -shownAfter : shownAfter, change < 0 ? -shownChange : shownChange);
             var tc = _total.color;
             tc.a = totalDrop;
             _total.color = tc;

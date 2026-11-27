@@ -70,6 +70,16 @@ namespace TaxiKmer.Core.Day
         /// <summary>Ce qui reste au chauffeur ; peut être négatif (versement non atteint, dépenses imprévues).</summary>
         public int Remaining => Revenue - Versement - FuelCost - ExpensesTotal;
 
+        /// <summary>Reprend pourboires et dédommagements d'une journée sauvegardée (bornés par la recette).</summary>
+        internal void RestoreExtras(int tips, int compensations)
+        {
+            Tips = Math.Max(0, Math.Min(tips, Revenue));
+            Compensations = Math.Max(0, Math.Min(compensations, Revenue - Tips));
+        }
+
+        /// <summary>Recette des seules courses (sans pourboires ni dédommagements).</summary>
+        public int FaresRevenue => Revenue - Tips - Compensations;
+
         /// <summary>Reprend les comptes d'une journée sauvegardée.</summary>
         internal void Restore(int revenue, int rideCount, float metersDriven, IEnumerable<Expense> expenses)
         {
