@@ -64,6 +64,9 @@ namespace TaxiKmer.Core.DotnetTests
             ["taxi_market.json"] = typeof(TaxiMarketConfig),
             ["radio.json"] = typeof(TaxiKmer.Core.Radio.RadioConfig),
             ["ambience.json"] = typeof(TaxiKmer.Core.Ux.AmbienceConfig),
+            ["daylight.json"] = typeof(TaxiKmer.Core.World.DayLightConfig),
+            ["city_style.json"] = typeof(TaxiKmer.Core.World.CityStyleConfig),
+            ["roadside.json"] = typeof(TaxiKmer.Core.World.RoadsideConfig),
         };
 
         [Test]

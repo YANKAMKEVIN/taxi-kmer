@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/dotnet"
 if [[ $# -gt 0 ]]; then
-  dotnet test --nologo -v q --filter "$1"
+  dotnet test --nologo -v q --logger "console;verbosity=normal" --filter "$1"
 else
-  dotnet test --nologo -v q
+  dotnet test --nologo -v q --logger "console;verbosity=normal"
 fi
