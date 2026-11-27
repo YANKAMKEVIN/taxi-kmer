@@ -54,6 +54,7 @@ namespace TaxiKmer.Driving
         public Font Font { get; private set; }
         /// <summary>Commandes bloquées (écran de bilan) : le taxi ne reçoit plus rien et les boutons sont cachés.</summary>
         public bool Locked { get; set; }
+        private int _shownKmh = -1;
         /// <summary>Commande mise en avant (tutoriel) : son bouton pulse en jaune. None : aucune.</summary>
         public DriveControl Highlight { get; set; }
 
@@ -307,7 +308,8 @@ namespace TaxiKmer.Driving
             _speed.enabled = !Locked;
             if (taxi != null)
             {
-                _speed.text = $"{Mathf.RoundToInt(taxi.SpeedKmh)} km/h";
+                var kmh = Mathf.RoundToInt(taxi.SpeedKmh);
+                if (kmh != _shownKmh) { _shownKmh = kmh; _speed.text = kmh + " km/h"; } // texte refait seulement s'il change
                 var reverse = taxi.Command.Gear == Gear.Reverse && !Locked;
                 _reverseLight.gameObject.SetActive(reverse);
                 if (reverse) _reverseLight.color = new Color(0.85f, 0.12f, 0.1f, 0.7f + 0.3f * UiKit.Pulse(8f));

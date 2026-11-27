@@ -239,6 +239,9 @@ namespace TaxiKmer.Core.Radio
             return last;
         }
 
+        private object _labelFor;
+        private string _label;
+
         /// <summary>Texte du bouton : « Radio coupée », « Station 1 · FM ? » ou « Radio Kmer · 94,5 FM ».</summary>
         public string ButtonLabel
         {
@@ -246,8 +249,10 @@ namespace TaxiKmer.Core.Radio
             {
                 var s = Station;
                 if (s == null) return "Radio coupée";
+                if (ReferenceEquals(s, _labelFor)) return _label; // lu à chaque image : calculé une fois par station
                 var freq = s.frequencyMHz > 0f ? $"{s.frequencyMHz.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',')} FM" : "FM ?";
-                return $"{s.name} · {freq}";
+                _labelFor = s;
+                return _label = $"{s.name} · {freq}";
             }
         }
 

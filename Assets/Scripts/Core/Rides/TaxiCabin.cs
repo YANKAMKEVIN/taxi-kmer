@@ -19,14 +19,8 @@ namespace TaxiKmer.Core.Rides
 
         public int PassengerCount => Front.Passengers.Count + Back.Passengers.Count;
 
-        public IEnumerable<Client> Passengers
-        {
-            get
-            {
-                foreach (var p in Back.Passengers) yield return p;
-                foreach (var p in Front.Passengers) yield return p;
-            }
-        }
+        /// <summary>Passagers, banquette arrière d'abord. Parcours sans allocation (lu à chaque image par l'affichage).</summary>
+        public CabinPassengers Passengers => new CabinPassengers(Back.Passengers, Front.Passengers);
 
         public bool CanBoard(Client client) => Back.CanSeat(client) || Front.CanSeat(client);
 
@@ -117,6 +111,43 @@ namespace TaxiKmer.Core.Rides
             var bench = side == BenchSide.Front ? Front : Back;
             if (bench.CanSeat(client)) { bench.Seat(client); return true; }
             return TryBoard(client, out _);
+        }
+    }
+
+    /// <summary>Les passagers des deux banquettes, parcourus par foreach sans allocation (énumérateur en struct).</summary>
+    public readonly struct CabinPassengers : IEnumerable<Client>
+    {
+        private readonly IReadOnlyList<Client> _first, _second;
+
+        public CabinPassengers(IReadOnlyList<Client> first, IReadOnlyList<Client> second)
+        {
+            _first = first;
+            _second = second;
+        }
+
+        public int Count => _first.Count + _second.Count;
+
+        public Enumerator GetEnumerator() => new Enumerator(_first, _second);
+        IEnumerator<Client> IEnumerable<Client>.GetEnumerator() => GetEnumerator();
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+
+        public struct Enumerator : IEnumerator<Client>
+        {
+            private readonly IReadOnlyList<Client> _first, _second;
+            private int _index;
+
+            public Enumerator(IReadOnlyList<Client> first, IReadOnlyList<Client> second)
+            {
+                _first = first;
+                _second = second;
+                _index = -1;
+            }
+
+            public Client Current => _index < _first.Count ? _first[_index] : _second[_index - _first.Count];
+            object System.Collections.IEnumerator.Current => Current;
+            public bool MoveNext() => ++_index < _first.Count + _second.Count;
+            public void Reset() => _index = -1;
+            public void Dispose() { }
         }
     }
 }

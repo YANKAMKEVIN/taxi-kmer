@@ -21,6 +21,9 @@ namespace TaxiKmer.Driving
         private readonly Text _subtitle;
         private string _playingKey = "";
 
+        private string _shownPlaying, _shownButton, _shownSubtitle;
+        private int _shownHeight;
+
         public RadioView(RectTransform overlay, Font font, GameObject taxi, RadioConfig config)
         {
             Radio = new CarRadio(config);
@@ -53,7 +56,15 @@ namespace TaxiKmer.Driving
             r.sizeDelta = new Vector2(h * 0.5f, h * 0.08f);
             _label.fontSize = Mathf.RoundToInt(h * 0.026f);
             var playing = Radio.NowPlaying;
-            _label.text = playing.Length > 0 ? $"{Radio.ButtonLabel}\n<size={Mathf.RoundToInt(h * 0.02f)}>{playing}</size>" : Radio.ButtonLabel;
+            var button = Radio.ButtonLabel;
+            if (playing != _shownPlaying || button != _shownButton || h != _shownHeight)
+            {
+                // Texte refait seulement quand la station, l'émission ou la taille d'écran change (pas à chaque image).
+                _shownPlaying = playing;
+                _shownButton = button;
+                _shownHeight = h;
+                _label.text = playing.Length > 0 ? $"{button}\n<size={Mathf.RoundToInt(h * 0.02f)}>{playing}</size>" : button;
+            }
             _label.supportRichText = true;
 
             var text = Radio.ScreenText;
@@ -65,7 +76,7 @@ namespace TaxiKmer.Driving
                 sr.anchoredPosition = new Vector2(-h * 0.04f, -h * (ShiftGaugesView.BottomFraction + 0.11f));
                 sr.sizeDelta = new Vector2(h * 0.5f, h * 0.14f); // colonne du bouton : ne passe pas sous la consigne du tutoriel
                 _subtitle.fontSize = Mathf.RoundToInt(h * 0.024f);
-                _subtitle.text = $"« {text} »";
+                if (text != _shownSubtitle) { _shownSubtitle = text; _subtitle.text = $"« {text} »"; }
             }
             _source.volume = Radio.Volume;
 

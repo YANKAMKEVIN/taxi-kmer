@@ -73,10 +73,57 @@ namespace TaxiKmer.Driving
                              $"{System.GC.CollectionCount(0) - gcBefore} ramassages de mémoire");
             }
             quality.Apply(config.defaultLevel, false);
+            yield return Allocations(report);
             var autopilot = view != null ? view.GetComponent<Autopilot>() : null;
             if (autopilot != null) Line(report, "Parcours : " + autopilot.Summary());
             Line(report, "FIN");
             File.WriteAllText(Path.Combine(Application.persistentDataPath, ResultFile), report.ToString());
+        }
+
+        /// <summary>
+        /// Mémoire allouée par image (croissance du tas entre deux images sans ramassage), puis la même chose en coupant
+        /// tour à tour chaque type de composant : le type qui fait le plus baisser le chiffre est celui qui alloue.
+        /// </summary>
+        private IEnumerator Allocations(StringBuilder report)
+        {
+            var result = new long[1];
+            yield return HeapGrowth(240, result);
+            var baseline = result[0];
+            Line(report, $"Allocations : {baseline} o par image en conduite");
+            var types = new System.Collections.Generic.Dictionary<System.Type, System.Collections.Generic.List<MonoBehaviour>>();
+            foreach (var mb in FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None))
+            {
+                if (!mb.enabled || mb == this || mb is Autopilot || mb is UnityEngine.EventSystems.UIBehaviour) continue;
+                if (!types.TryGetValue(mb.GetType(), out var list)) types[mb.GetType()] = list = new System.Collections.Generic.List<MonoBehaviour>();
+                list.Add(mb);
+            }
+            foreach (var kv in types)
+            {
+                foreach (var mb in kv.Value) if (mb != null) mb.enabled = false;
+                yield return null;
+                yield return HeapGrowth(90, result);
+                foreach (var mb in kv.Value) if (mb != null) mb.enabled = true;
+                Line(report, $"  sans {kv.Key.Name} : {result[0]} o par image ({result[0] - baseline:+0;-0} o)");
+                yield return null;
+            }
+        }
+
+        private static IEnumerator HeapGrowth(int frames, long[] result)
+        {
+            long total = 0;
+            var counted = 0;
+            var last = UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong();
+            var gc = System.GC.CollectionCount(0);
+            for (var i = 0; i < frames; i++)
+            {
+                yield return null;
+                var now = UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong();
+                var gcNow = System.GC.CollectionCount(0);
+                if (gcNow == gc && now >= last) { total += now - last; counted++; } // image sans ramassage
+                last = now;
+                gc = gcNow;
+            }
+            result[0] = counted > 0 ? total / counted : 0;
         }
 
         private static IEnumerator Measure(FrameStats stats, float seconds)

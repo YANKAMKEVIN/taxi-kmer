@@ -35,6 +35,14 @@ namespace TaxiKmer.Core.Ux
             return list;
         }
 
+        /// <summary>Comme <see cref="Visible"/>, dans une liste fournie (sans allocation, pour chaque image).</summary>
+        public void CopyVisible(float now, List<string> into)
+        {
+            Expire(now);
+            into.Clear();
+            foreach (var m in _items) into.Add(m.text);
+        }
+
         public void Clear() => _items.Clear();
 
         private void Expire(float now) => _items.RemoveAll(m => m.until <= now);

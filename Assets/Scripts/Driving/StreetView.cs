@@ -848,10 +848,24 @@ namespace TaxiKmer.Driving
 
         // ---------- Silhouettes ----------
 
+        private readonly HashSet<RoadsideClient> _syncSeen = new HashSet<RoadsideClient>();
+        private readonly List<RoadsideClient> _syncGone = new List<RoadsideClient>();
+        private readonly List<RoadsideClient> _syncCalling = new List<RoadsideClient>();
+        private readonly List<string> _messageBuffer = new List<string>();
+        private System.Comparison<RoadsideClient> _byDistance;
+        private Vector3 _sortFrom;
+
+        private int CompareByDistance(RoadsideClient a, RoadsideClient b) =>
+            (_people[a].Root.transform.position - _sortFrom).sqrMagnitude.CompareTo((_people[b].Root.transform.position - _sortFrom).sqrMagnitude);
+
         private void SyncPeople()
         {
-            var seen = new HashSet<RoadsideClient>(Street.Waiting);
-            var gone = new List<RoadsideClient>();
+            // Ensembles réutilisés d'une image à l'autre (pas d'allocation par image).
+            var seen = _syncSeen;
+            seen.Clear();
+            foreach (var c in Street.Waiting) seen.Add(c);
+            var gone = _syncGone;
+            gone.Clear();
             foreach (var kv in _people)
                 if (!seen.Contains(kv.Key)) gone.Add(kv.Key);
             foreach (var c in gone)
@@ -860,7 +874,8 @@ namespace TaxiKmer.Driving
                 _people.Remove(c);
             }
 
-            var calling = new List<RoadsideClient>();
+            var calling = _syncCalling;
+            calling.Clear();
             foreach (var c in Street.Waiting)
             {
                 if (!_people.TryGetValue(c, out var person)) _people[c] = person = MakePerson(c);
@@ -875,8 +890,8 @@ namespace TaxiKmer.Driving
             }
             // Le plus proche d'abord : sa bulle reste à sa place, les suivantes montent si elles la chevauchent.
             var taxiPos = taxi.transform.position;
-            calling.Sort((a, b) => (_people[a].Root.transform.position - taxiPos).sqrMagnitude
-                .CompareTo((_people[b].Root.transform.position - taxiPos).sqrMagnitude));
+            _sortFrom = taxiPos;
+            calling.Sort(_byDistance ??= CompareByDistance);
             _placed.Clear();
             for (var i = 0; i < calling.Count; i++)
             {
@@ -1145,7 +1160,9 @@ namespace TaxiKmer.Driving
             _endReminder.rectTransform.sizeDelta = new Vector2(Mathf.Max(h * 0.4f, Screen.width - h * 1.2f), h * 0.1f);
 
             // Messages empilés sur deux lignes (le plus récent en haut), sous la consigne du tutoriel si elle est affichée.
-            var lines = Street.DayFinished ? new List<string>() : new List<string>(_messages.Visible(Time.time));
+            var lines = _messageBuffer;
+            if (Street.DayFinished) lines.Clear();
+            else _messages.CopyVisible(Time.time, lines);
             var top = _tutorialPanel.gameObject.activeSelf ? h * 0.42f : h * 0.30f;
             for (var i = 0; i < _messageLines.Length; i++)
             {

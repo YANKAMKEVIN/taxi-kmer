@@ -32,6 +32,7 @@ namespace TaxiKmer.Driving
         private readonly Image _taxi;
         private readonly List<Image> _ticks = new List<Image>();
         private readonly List<Text> _labels = new List<Text>();
+        private readonly Dictionary<Stop, int> _perStop = new Dictionary<Stop, int>();
         private readonly List<Image> _pins = new List<Image>();
         private readonly List<Text> _pinCounts = new List<Text>();
         private readonly List<Image> _dots = new List<Image>();
@@ -93,7 +94,8 @@ namespace TaxiKmer.Driving
 
             // Clients qui attendent : petits points sous la ligne, alignés sous leur lieu.
             var shown = 0;
-            var perStop = new Dictionary<Stop, int>();
+            var perStop = _perStop; // réutilisé d'une image à l'autre (pas d'allocation par image)
+            perStop.Clear();
             foreach (var c in street.Waiting)
             {
                 perStop.TryGetValue(c.Pickup, out var k);

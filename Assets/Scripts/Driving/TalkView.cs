@@ -38,6 +38,8 @@ namespace TaxiKmer.Driving
         private HaggleOffer _haggleShown;
         private PaymentRefusal _refusalShown;
 
+        private readonly List<string> _ids = new List<string>();
+
         public TalkView(RectTransform overlay, Font font, GameObject taxi, DialogueConfig config, int seed)
         {
             _config = config;
@@ -84,7 +86,8 @@ namespace TaxiKmer.Driving
         {
             var message = "";
             var cabin = street.Shift.Cabin;
-            var ids = new List<string>();
+            var ids = _ids; // réutilisée à chaque image
+            ids.Clear();
             foreach (var p in cabin.Passengers) ids.Add(p.Id);
             Director.SetPassengers(ids);
             Director.MinuteOfDay = street.Shift.Clock.GameMinutes; // répliques liées à l'heure (« Bonsoir » le soir)
