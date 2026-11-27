@@ -1,0 +1,48 @@
+name: Jeu Unity (tests, parcours, APK)
+
+# Tourne sur l'exécuteur installé sur le Mac de Kevin (tools/ci/install_mac_runner.sh) : la licence Unity Personal ne
+# s'active que par Unity Hub, donc pas sur les serveurs de GitHub. Sans Mac allumé, le travail attend dans la file.
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: unity-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UNITY: /Applications/Unity/Hub/Editor/6000.3.28f1/Unity.app/Contents/MacOS/Unity
+
+jobs:
+  unity:
+    runs-on: [self-hosted, macOS, unity]
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          clean: false # garde Library/ entre deux passages (import d'Unity bien plus court)
+
+      - name: Tests EditMode (logique, données)
+        run: tools/ci/unity_tests.sh EditMode
+
+      - name: Tests PlayMode (scène, physique, parcours automatique)
+        run: tools/ci/unity_tests.sh PlayMode
+
+      - name: APK Android
+        run: |
+          "$UNITY" -batchmode -nographics -projectPath . -buildTarget Android \
+            -executeMethod TaxiKmer.EditorTools.BuildAndroid.Run -quit -logFile Logs/build.log
+          grep "\[TaxiKmer\] Build" Logs/build.log
+
+      - name: Résultats
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: taxi-kmer-${{ github.sha }}
+          retention-days: 14
+          path: |
+            build/android/TaxiKmer.apk
+            Logs/*.xml
+            Logs/parcours/
